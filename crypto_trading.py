@@ -21,7 +21,7 @@ coin_table = dict((coin_entry, dict((coin, 0) for coin in supported_coin_list if
 			for coin_entry in supported_coin_list)
 
 #Add the symbol of the coin currently held here
-current_coin = 
+current_coin = ''
 
 def get_market_ticker_price(client, ticker_symbol):
 	'''
@@ -67,7 +67,7 @@ def buy_alt(client, alt_symbol, crypto_symbol):
 		stat = client.get_order(symbol = alt_symbol+crypto_symbol, orderId = order[u'orderId'])
 		time.sleep(1)
 
-	logger.info("Bought %s", alt_symbol)
+	logger.info('Bought %s', alt_symbol)
 
 	return order
 
@@ -91,7 +91,7 @@ def sell_alt(client, alt_symbol, crypto_symbol):
 		quantity = (order_quantity)
 	)
 
-	logger.info("order")
+	logger.info('order')
 	logger.info(order)
 
 	stat = client.get_order(symbol = alt_symbol+crypto_symbol, orderId = order[u'orderId'])
@@ -105,7 +105,7 @@ def sell_alt(client, alt_symbol, crypto_symbol):
 	while(newbal >= bal):
 		newbal = get_currency_balance(client, alt_symbol)
 
-	logger.info("Sold {0}".format(alt_symbol))
+	logger.info('Sold {0}'.format(alt_symbol))
 
 	return order
 
@@ -139,7 +139,6 @@ def scout(client, transaction_fee = 0.01, multiplier = 2):
 	'''
 	Scout for potential jumps from the current coin to another coin
 	'''
-	print [coin for coin in coin_table[current_coin].copy() if coin != current_coin]
 	for optional_coin in [coin for coin in coin_table[current_coin].copy() if coin != current_coin]:
 		#Obtain (current coin)/(optional coin)
 		coin_opt_coin_ratio = float(get_market_ticker_price(client, current_coin + 'USDT'))/float(get_market_ticker_price(client, optional_coin + 'USDT'))
