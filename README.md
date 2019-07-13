@@ -36,3 +36,8 @@ The bot jumps between a configured set of coins on condition that it does not re
 
 ## Requirements
 `pip install python-binance`
+
+
+<p align="center">
+  <img src = "https://usercontent2.hubstatic.com/6061829.jpg">
+</p>
