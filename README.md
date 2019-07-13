@@ -7,7 +7,7 @@ This script was inspired by the observation that all cryptocurrencies pretty muc
 So, if coins are basically oscillating with respect to each other, it seems smart to trade the rising coin for the falling coin, and then trade back when the ratio is reversed. 
 
 ## How
-The way the bot takes advantage of this behaviour is to always downgrade from the "strong" coin to "weak" coin, under the assumption that at some point the tables will turn. It will then return to the original coin, ultimately holding more of it than it did originally. This is done while taking into consideration the trading fees. 
+The way the bot takes advantage of this behaviour is to always downgrade from the "strong" coin to thr "weak" coin, under the assumption that at some point the tables will turn. It will then return to the original coin, ultimately holding more of it than it did originally. This is done while taking into consideration the trading fees. 
 
 The trading is done in the Binance market platform, which of course does not have markets for every altcoin pair. The workaround for this is to use Tether (USDT), which is stable by design, as a bridge currency. 
 <p align="center">
