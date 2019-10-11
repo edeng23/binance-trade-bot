@@ -157,11 +157,12 @@ def main():
 
 	initialize_trade_thresholds(client)
 
-	while(True):
+	while True:
 		try:
 			time.sleep(60)
 			scout(client)
 		except:
 			logger.info('Error while scouting...')
+
 if __name__ == "__main__":
 	main()
