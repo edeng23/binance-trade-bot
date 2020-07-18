@@ -164,8 +164,8 @@ def transaction_through_tether(client, source_coin, dest_coin):
 	result = None
 	while result is None:
 		result = buy_alt(client, dest_coin, 'USDT')
-	global current_coin
-	current_coin = dest_coin
+	global g_state
+	g_state.current_coin = dest_coin
 	update_trade_threshold(client)
 
 def update_trade_threshold(client):
