@@ -12,6 +12,8 @@ fh.setLevel(logging.DEBUG)
 fh.setFormatter(formatter)
 logger.addHandler(fh)
 
+logger.info('Started')
+
 #Add supported coin symbols here
 supported_coin_list = [u'XLM', u'XRP', u'PAX', u'TRX', u'ICX', u'EOS', u'IOTA', u'ONT', u'QTUM', u'ETC']
 
@@ -21,6 +23,8 @@ coin_table = dict((coin_entry, dict((coin, 0) for coin in supported_coin_list if
 			for coin_entry in supported_coin_list)
 
 #Add the symbol of the coin currently held here
+current_coin = u''
+
 class CryptoState():
     _backup_file = ".crypto_trading_backup"
 
@@ -36,7 +40,7 @@ class CryptoState():
                 f = open(self._backup_file, "wb")
                 f.close()
         else:
-            self.current_coin = current_coint
+            self.current_coin = current_coin
 
     def __setattr__(self, name, value):
         if name == "current_coin":
@@ -46,7 +50,21 @@ class CryptoState():
             return
         self.__dict__[name] = value
 
-g_state = CryptoState('')        
+g_state = CryptoState('')
+
+def retry(howmany):
+	def tryIt(func):
+		def f(*args, **kwargs):
+			time.sleep(20)
+			attempts = 0
+			while attempts < howmany:
+				try:
+					return func(*args, **kwargs)
+				except:
+					print("Failed to Buy/Sell. Trying Again.")
+					attempts += 1
+		return f
+	return tryIt        
 
 def get_market_ticker_price(client, ticker_symbol):
 	'''
@@ -66,6 +84,7 @@ def get_currency_balance(client, currency_symbol):
 			return float(currency_balance[u'free'])
 	return None
 
+@retry(20)
 def buy_alt(client, alt_symbol, crypto_symbol):
 	'''
 	Buy altcoin
@@ -96,6 +115,7 @@ def buy_alt(client, alt_symbol, crypto_symbol):
 
 	return order
 
+@retry(20)
 def sell_alt(client, alt_symbol, crypto_symbol):
 	'''
 	Sell altcoin
@@ -138,10 +158,14 @@ def transaction_through_tether(client, source_coin, dest_coin):
 	'''
 	Jump from the source coin to the destination coin through tether
 	'''
-	sell_alt(client, source_coin, 'USDT')
-	buy_alt(client, dest_coin, 'USDT')
-	global g_state
-	g_state.current_coin = dest_coin
+	result = None
+	while result is None:
+		result = sell_alt(client, source_coin, 'USDT')
+	result = None
+	while result is None:
+		result = buy_alt(client, dest_coin, 'USDT')
+	global current_coin
+	current_coin = dest_coin
 	update_trade_threshold(client)
 
 def update_trade_threshold(client):
