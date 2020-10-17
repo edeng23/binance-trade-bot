@@ -2,6 +2,7 @@ from binance.client import Client
 import logging
 import math
 import time
+import os
 
 #Logger setup
 logger = logging.getLogger('crypto_trader_logger')
@@ -15,41 +16,39 @@ logger.addHandler(fh)
 logger.info('Started')
 
 #Add supported coin symbols here
-supported_coin_list = [u'XLM', u'XRP', u'PAX', u'TRX', u'ICX', u'EOS', u'IOTA', u'ONT', u'QTUM', u'ETC']
+supported_coin_list = supported_coin_list = [u'XLM', u'XRP', u'TRX', u'ICX', u'EOS', u'IOTA', u'ONT', u'QTUM', u'ETC', u'ADA', u'XMR', u'DASH', u'NEO', u'ATOM', u'DOGE', u'VET', u'BAT', u'OMG', u'BTT']
 
 #Dictionary of coin dictionaries.
 #Designated to keep track of the selling point for each coin with respect to all other coins.
 coin_table = dict((coin_entry, dict((coin, 0) for coin in supported_coin_list if coin != coin_entry))
 			for coin_entry in supported_coin_list)
 
-#Add the symbol of the coin currently held here
-current_coin = u''
-
 class CryptoState():
     _backup_file = ".crypto_trading_backup"
 
     def __init__(self, current_coin):
         if current_coin == '':
-            try:
-                f = open(self._backup_file, "rb")
-                coin = f.read()
-                f.close()
-                self.current_coin = coin
-            except:
-                self.current_coin = current_coin
-                f = open(self._backup_file, "wb")
-                f.close()
+        	if(os.path.isfile(self._backup_file)):
+        		f = open(self._backup_file, "r")
+        		coin = f.read()
+        		f.close()
+        		self.current_coin = coin
+        	else:
+        		print(current_coin)
+        		self.current_coin = current_coin
+        		f = open(self._backup_file, "w")
+        		f.close()
         else:
-            self.current_coin = current_coin
+        	self.current_coin = current_coin
 
     def __setattr__(self, name, value):
         if name == "current_coin":
-            with open(self._backup_file, "wb") as backup_file:
-                backup_file.write(value)
-            self.current_coin = value
-            return
-        self.__dict__[name] = value
+        	with open(self._backup_file, "w") as backup_file:
+        		backup_file.write(value)
+        	self.__dict__[name] = value
+        	return
 
+#Pass the symbol of the currently held coin here when running script for the first time
 g_state = CryptoState('')
 
 def retry(howmany):
@@ -70,10 +69,10 @@ def get_market_ticker_price(client, ticker_symbol):
 	'''
 	Get ticker price of a specific coin
 	'''
-   	for ticker in client.get_symbol_ticker():
+	for ticker in client.get_symbol_ticker():
    		if ticker[u'symbol'] == ticker_symbol:
    			return float(ticker[u'price'])
-   	return None
+	return None
 
 def get_currency_balance(client, currency_symbol):
 	'''
