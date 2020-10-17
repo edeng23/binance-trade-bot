@@ -30,8 +30,8 @@ The bot jumps between a configured set of coins on condition that it does not re
 * Get a cryptocurrncy. if its symobl is not in the default list, add it. 
 * Fill in your cryptocurrency symbol.
   ```
-  #Add the symbol of the coin currently held here
-  current_coin = ''
+  #Pass the symbol of the currently held coin here when running script for the first time
+  g_state = CryptoState('')
   ```
 
 ## Requirements
