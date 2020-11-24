@@ -3,6 +3,7 @@ import logging
 import math
 import time
 import os
+import json
 
 #Logger setup
 logger = logging.getLogger('crypto_trader_logger')
@@ -18,33 +19,39 @@ logger.info('Started')
 #Add supported coin symbols here
 supported_coin_list = supported_coin_list = [u'XLM', u'XRP', u'TRX', u'ICX', u'EOS', u'IOTA', u'ONT', u'QTUM', u'ETC', u'ADA', u'XMR', u'DASH', u'NEO', u'ATOM', u'DOGE', u'VET', u'BAT', u'OMG', u'BTT']
 
-#Dictionary of coin dictionaries.
-#Designated to keep track of the selling point for each coin with respect to all other coins.
-coin_table = dict((coin_entry, dict((coin, 0) for coin in supported_coin_list if coin != coin_entry))
-			for coin_entry in supported_coin_list)
-
 class CryptoState():
-    _backup_file = ".crypto_trading_backup"
-
+    _coin_backup_file = ".current_coin"
+    _table_backup_file = ".current_coin_table"
     def __init__(self, current_coin):
-        if current_coin == '':
-        	if(os.path.isfile(self._backup_file)):
-        		f = open(self._backup_file, "r")
-        		coin = f.read()
-        		f.close()
-        		self.current_coin = coin
-        	else:
-        		print(current_coin)
-        		self.current_coin = current_coin
-        		f = open(self._backup_file, "w")
-        		f.close()
+        if(os.path.isfile(self._coin_backup_file) and os.path.isfile(self._table_backup_file)):
+        	with open(self._coin_backup_file, "r") as backup_file:
+        		coin = backup_file.read()
+        	with open(self._table_backup_file, "r") as backup_file:
+        		coin_table = json.load(backup_file)
+        	self.current_coin = coin
+        	self.coin_table = coin_table
         else:
+        	if (not current_coin in supported_coin_list):
+        		exit("***\nERROR!\nSince there is no backup file, a proper coin name must be provided at init\n***")
         	self.current_coin = current_coin
+        	with open(self._coin_backup_file, "w") as backup_file:
+        		backup_file.write(self.current_coin)
+        	#Dictionary of coin dictionaries.
+        	#Designated to keep track of the selling point for each coin with respect to all other coins.
+        	self.coin_table = dict((coin_entry, dict((coin, 0) for coin in supported_coin_list if coin != coin_entry))
+			for coin_entry in supported_coin_list)
+        	with open(self._table_backup_file, "w") as backup_file:
+        		json.dump(self.coin_table, backup_file)
 
     def __setattr__(self, name, value):
         if name == "current_coin":
-        	with open(self._backup_file, "w") as backup_file:
+        	with open(self._coin_backup_file, "w") as backup_file:
         		backup_file.write(value)
+        	self.__dict__[name] = value
+        	return
+        elif name == "coin_table":
+        	with open(self._table_backup_file, "w") as backup_file:
+        		json.dump(value, backup_file)
         	self.__dict__[name] = value
         	return
 
@@ -54,14 +61,16 @@ g_state = CryptoState('')
 def retry(howmany):
 	def tryIt(func):
 		def f(*args, **kwargs):
-			time.sleep(20)
+			time.sleep(1)
 			attempts = 0
 			while attempts < howmany:
 				try:
 					return func(*args, **kwargs)
-				except:
+				except Exception as e:
 					print("Failed to Buy/Sell. Trying Again.")
-					attempts += 1
+					if attempts == 0:
+						logger.info(e)
+						attempts += 1
 		return f
 	return tryIt        
 
@@ -104,7 +113,14 @@ def buy_alt(client, alt_symbol, crypto_symbol):
 		price = get_market_ticker_price(client,alt_symbol+crypto_symbol)
 	)
 
-	stat = client.get_order(symbol = alt_symbol+crypto_symbol, orderId = order[u'orderId'])
+	order_recorded = False
+	while not order_recorded:
+		try:
+			time.sleep(0.5)
+			stat = client.get_order(symbol = alt_symbol+crypto_symbol, orderId = order[u'orderId'])
+			order_recorded = True
+		except:
+			pass
 
 	while stat[u'status'] != 'FILLED':
 		stat = client.get_order(symbol = alt_symbol+crypto_symbol, orderId = order[u'orderId'])
@@ -137,6 +153,9 @@ def sell_alt(client, alt_symbol, crypto_symbol):
 
 	logger.info('order')
 	logger.info(order)
+
+	#Binance server can take some time to save the order
+	time.sleep(2)
 
 	stat = client.get_order(symbol = alt_symbol+crypto_symbol, orderId = order[u'orderId'])
 	logger.info(stat)
@@ -171,27 +190,30 @@ def update_trade_threshold(client):
 	'''
 	Update all the coins with the threshold of buying the current held coin
 	'''
-	for coin_dict in coin_table.copy():
-		coin_table[coin_dict][g_state.current_coin] = float(get_market_ticker_price(client, coin_dict + 'USDT'))/float(get_market_ticker_price(client, g_state.current_coin + 'USDT'))
+	global g_state
+	for coin_dict in g_state.coin_table.copy():
+		g_state.coin_table[coin_dict][g_state.current_coin] = float(get_market_ticker_price(client, coin_dict + 'USDT'))/float(get_market_ticker_price(client, g_state.current_coin + 'USDT'))
 
 def initialize_trade_thresholds(client):
 	'''
 	Initialize the buying threshold of all the coins for trading between them
 	'''
-	for coin_dict in coin_table.copy():
+	global g_state
+	for coin_dict in g_state.coin_table.copy():
 		for coin in supported_coin_list:
 			if coin != coin_dict:
-				coin_table[coin_dict][coin] = float(get_market_ticker_price(client, coin_dict + 'USDT'))/float(get_market_ticker_price(client, coin + 'USDT'))
+				g_state.coin_table[coin_dict][coin] = float(get_market_ticker_price(client, coin_dict + 'USDT'))/float(get_market_ticker_price(client, coin + 'USDT'))
 
-def scout(client, transaction_fee = 0.01, multiplier = 2):
+def scout(client, transaction_fee = 0.001, multiplier = 5):
 	'''
 	Scout for potential jumps from the current coin to another coin
 	'''
-	for optional_coin in [coin for coin in coin_table[g_state.current_coin].copy() if coin != g_state.current_coin]:
+	global g_state
+	for optional_coin in [coin for coin in g_state.coin_table[g_state.current_coin].copy() if coin != g_state.current_coin]:
 		#Obtain (current coin)/(optional coin)
 		coin_opt_coin_ratio = float(get_market_ticker_price(client, g_state.current_coin + 'USDT'))/float(get_market_ticker_price(client, optional_coin + 'USDT'))
 
-		if (coin_opt_coin_ratio - transaction_fee * multiplier * coin_opt_coin_ratio) > coin_table[g_state.current_coin][optional_coin]:
+		if (coin_opt_coin_ratio - transaction_fee * multiplier * coin_opt_coin_ratio) > g_state.coin_table[g_state.current_coin][optional_coin]:
 			logger.info('Jumping from {0} to {1}'.format(g_state.current_coin, optional_coin))
 			transaction_through_tether(client, g_state.current_coin, optional_coin)
 
@@ -207,10 +229,11 @@ def main():
 
 	while True:
 		try:
-			time.sleep(60)
+			time.sleep(20)
 			scout(client)
-		except:
-			logger.info('Error while scouting...')
+		except Exception as e:
+			print(e)
+			logger.info('Error while scouting...\n{}\n'.format(e))
 
 if __name__ == "__main__":
 	main()
