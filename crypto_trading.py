@@ -52,13 +52,8 @@ class CryptoState():
         if name == "current_coin":
             with open(self._coin_backup_file, "w") as backup_file:
                 backup_file.write(value)
-            self.__dict__[name] = value
-            return
-        elif name == "coin_table":
-            with open(self._table_backup_file, "w") as backup_file:
-                json.dump(value, backup_file)
-            self.__dict__[name] = value
-            return
+        self.__dict__[name] = value
+        return
 
 
 # Pass the symbol of the currently held coin here when running script for the first time
@@ -211,6 +206,8 @@ def update_trade_threshold(client):
     for coin_dict in g_state.coin_table.copy():
         g_state.coin_table[coin_dict][g_state.current_coin] = float(get_market_ticker_price(
             client, coin_dict + 'USDT'))/float(get_market_ticker_price(client, g_state.current_coin + 'USDT'))
+    with open(g_state._table_backup_file, "w") as backup_file:
+        json.dump(g_state.coin_table, backup_file)
 
 
 def initialize_trade_thresholds(client):
@@ -223,6 +220,8 @@ def initialize_trade_thresholds(client):
             if coin != coin_dict:
                 g_state.coin_table[coin_dict][coin] = float(get_market_ticker_price(
                     client, coin_dict + 'USDT'))/float(get_market_ticker_price(client, coin + 'USDT'))
+    with open(g_state._table_backup_file, "w") as backup_file:
+        json.dump(g_state.coin_table, backup_file)
 
 
 def scout(client, transaction_fee=0.001, multiplier=5):
@@ -257,7 +256,6 @@ def main():
             time.sleep(20)
             scout(client)
         except Exception as e:
-            print(e)
             logger.info('Error while scouting...\n{}\n'.format(e))
 
 
