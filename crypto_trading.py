@@ -45,8 +45,6 @@ class CryptoState():
             # Designated to keep track of the selling point for each coin with respect to all other coins.
             self.coin_table = dict((coin_entry, dict((coin, 0) for coin in supported_coin_list if coin != coin_entry))
                                    for coin_entry in supported_coin_list)
-            with open(self._table_backup_file, "w") as backup_file:
-                json.dump(self.coin_table, backup_file)
 
     def __setattr__(self, name, value):
         if name == "current_coin":
@@ -121,10 +119,10 @@ def buy_alt(client, alt_symbol, crypto_symbol):
     order_recorded = False
     while not order_recorded:
         try:
-            time.sleep(0.5)
             stat = client.get_order(
                 symbol=alt_symbol+crypto_symbol, orderId=order[u'orderId'])
             order_recorded = True
+            time.sleep(10)
         except:
             pass
 
@@ -249,7 +247,9 @@ def main():
 
     client = Client(api_key, api_secret_key)
 
-    initialize_trade_thresholds(client)
+    global g_state
+    if not (os.path.isfile(g_state._table_backup_file)):
+        initialize_trade_thresholds(client)
 
     while True:
         try:
