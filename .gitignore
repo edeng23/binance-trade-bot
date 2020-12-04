@@ -1,0 +1,3 @@
+*.log
+.current_coin
+.current_coin_table
