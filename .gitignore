@@ -3,3 +3,4 @@
 .current_coin_table
 *.pyc
 __pycache__
+config.txt
