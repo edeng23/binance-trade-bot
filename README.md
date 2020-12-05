@@ -20,19 +20,8 @@ The bot jumps between a configured set of coins on condition that it does not re
 * [Create a Binance account.](https://www.binance.com/hw_register.html)
 * Enable Two-factor Authentication.
 * Create a new API key.
-* Plug the API key and API secret key into the script. 
-  ```
-  #Add API key here
-  api_key = ''
-  #Add API secret key here
-  api_secret_key = ''
-  ```
-* Get a cryptocurrncy. if its symobl is not in the default list, add it. 
-* Fill in your cryptocurrency symbol.
-  ```
-  #Pass the symbol of the currently held coin here when running script for the first time
-  g_state = CryptoState('')
-  ```
+* Get a cryptocurrency. if its symbol is not in the default list, add it. 
+* Run the script once, and enter your API key, secret key and cryptocurrency symbol when prompted (a list of supported symbols is available in the script).
 
 ## Requirements
 `pip install python-binance`

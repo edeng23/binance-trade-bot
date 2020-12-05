@@ -4,6 +4,8 @@ import math
 import time
 import os
 import json
+# Project imports
+import configman
 
 # Logger setup
 logger = logging.getLogger('crypto_trader_logger')
@@ -21,12 +23,14 @@ logger.info('Started')
 supported_coin_list = supported_coin_list = [u'XLM', u'XRP', u'TRX', u'ICX', u'EOS', u'IOTA', u'ONT',
                                              u'QTUM', u'ETC', u'ADA', u'XMR', u'DASH', u'NEO', u'ATOM', u'DOGE', u'VET', u'BAT', u'OMG', u'BTT']
 
+# configurations
+g_config = configman.ConfigMan()
 
 class CryptoState():
     _coin_backup_file = ".current_coin"
     _table_backup_file = ".current_coin_table"
 
-    def __init__(self, current_coin):
+    def __init__(self):
         if(os.path.isfile(self._coin_backup_file) and os.path.isfile(self._table_backup_file)):
             with open(self._coin_backup_file, "r") as backup_file:
                 coin = backup_file.read()
@@ -35,6 +39,7 @@ class CryptoState():
             self.current_coin = coin
             self.coin_table = coin_table
         else:
+            current_coin = g_config.get_current_coin()
             if (not current_coin in supported_coin_list):
                 exit(
                     "***\nERROR!\nSince there is no backup file, a proper coin name must be provided at init\n***")
@@ -53,9 +58,7 @@ class CryptoState():
         self.__dict__[name] = value
         return
 
-
-# Pass the symbol of the currently held coin here when running script for the first time
-g_state = CryptoState('')
+g_state = CryptoState()
 
 
 def retry(howmany):
@@ -240,10 +243,7 @@ def scout(client, transaction_fee=0.001, multiplier=5):
 
 
 def main():
-    # Add API key here
-    api_key = ''
-    # Add API secret key here
-    api_secret_key = ''
+    api_key, api_secret_key = g_config.get_api_keys()
 
     client = Client(api_key, api_secret_key)
 
