@@ -20,7 +20,7 @@ logger.addHandler(fh)
 logger.info('Started')
 
 # Add supported coin symbols here
-supported_coin_list = supported_coin_list = [u'XLM', u'XRP', u'TRX', u'ICX', u'EOS', u'IOTA', u'ONT',
+supported_coin_list = supported_coin_list = [u'XLM', u'TRX', u'ICX', u'EOS', u'IOTA', u'ONT',
                                              u'QTUM', u'ETC', u'ADA', u'XMR', u'DASH', u'NEO', u'ATOM', u'DOGE', u'VET', u'BAT', u'OMG', u'BTT']
 
 # configurations
