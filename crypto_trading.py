@@ -113,11 +113,13 @@ def buy_alt(client, alt_symbol, crypto_symbol):
                                   10**ticks[alt_symbol] / get_market_ticker_price(client, alt_symbol+crypto_symbol))/float(10**ticks[alt_symbol])))
 
     # Try to buy until successful
-    order = client.order_limit_buy(
-        symbol=alt_symbol + crypto_symbol,
-        quantity=order_quantity,
-        price=get_market_ticker_price(client, alt_symbol+crypto_symbol)
-    )
+    order = None
+    while order is None:
+        order = client.order_limit_buy(
+            symbol=alt_symbol + crypto_symbol,
+            quantity=order_quantity,
+            price=get_market_ticker_price(client, alt_symbol+crypto_symbol)
+        )
 
     order_recorded = False
     while not order_recorded:
