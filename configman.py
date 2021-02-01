@@ -38,7 +38,7 @@ class ConfigMan():
 
         values = {}
         for field in self.cfg_fields:
-            val = input("{}: ".format(field)).strip()
+            val = raw_input("{}: ".format(field)).strip()
             values[field] = val
         
         config_lines = [k + "=" + v + "\n" for k,v in values.items()]
