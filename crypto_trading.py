@@ -1,3 +1,4 @@
+#!python3
 from binance.client import Client
 from binance.exceptions import BinanceAPIException
 import logging
@@ -5,8 +6,11 @@ import math
 import time
 import os
 import json
-# Project imports
-import configman
+import configparser
+
+# Config consts
+CFG_FL_NAME = 'user.cfg'
+USER_CFG_SECTION = 'binance_user_config'
 
 # Logger setup
 logger = logging.getLogger('crypto_trader_logger')
@@ -24,8 +28,12 @@ logger.info('Started')
 supported_coin_list = supported_coin_list = [u'XLM', u'TRX', u'ICX', u'EOS', u'IOTA', u'ONT',
                                              u'QTUM', u'ETC', u'ADA', u'XMR', u'DASH', u'NEO', u'ATOM', u'DOGE', u'VET', u'BAT', u'OMG', u'BTT']
 
-# configurations
-g_config = configman.ConfigMan()
+# Init config
+config = configparser.ConfigParser()
+if not os.path.exists(CFG_FL_NAME):
+    print('No configuration file (user.cfg) found! See README.')
+    exit()
+config.read(CFG_FL_NAME)
 
 class CryptoState():
     _coin_backup_file = ".current_coin"
@@ -40,7 +48,7 @@ class CryptoState():
             self.current_coin = coin
             self.coin_table = coin_table
         else:
-            current_coin = g_config.get_current_coin()
+            current_coin = config.get(USER_CFG_SECTION, 'current_coin')
             if (not current_coin in supported_coin_list):
                 exit(
                     "***\nERROR!\nSince there is no backup file, a proper coin name must be provided at init\n***")
@@ -266,7 +274,8 @@ def scout(client, transaction_fee=0.001, multiplier=5):
 
 
 def main():
-    api_key, api_secret_key = g_config.get_api_keys()
+    api_key = config.get(USER_CFG_SECTION, 'api_key')
+    api_secret_key = config.get(USER_CFG_SECTION, 'api_secret_key')
 
     client = Client(api_key, api_secret_key)
 
