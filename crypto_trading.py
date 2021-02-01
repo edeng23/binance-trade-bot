@@ -1,4 +1,5 @@
 from binance.client import Client
+from binance.exceptions import BinanceAPIException
 import logging
 import math
 import time
@@ -111,6 +112,7 @@ def buy_alt(client, alt_symbol, crypto_symbol):
 
     order_quantity = ((math.floor(get_currency_balance(client, crypto_symbol) *
                                   10**ticks[alt_symbol] / get_market_ticker_price(client, alt_symbol+crypto_symbol))/float(10**ticks[alt_symbol])))
+    logger.info('BUY QTY %s', order_quantity)
 
     # Try to buy until successful
     order = None
@@ -120,16 +122,17 @@ def buy_alt(client, alt_symbol, crypto_symbol):
             quantity=order_quantity,
             price=get_market_ticker_price(client, alt_symbol+crypto_symbol)
         )
+        logger.info(order)
 
     order_recorded = False
     while not order_recorded:
         try:
-            stat = client.get_order(
-                symbol=alt_symbol+crypto_symbol, orderId=order[u'orderId'])
+            time.sleep(3)
+            stat = client.get_order(symbol=alt_symbol + crypto_symbol, orderId=order[u'orderId'])
             order_recorded = True
+        except BinanceAPIException as e:
+            logger.info(e)
             time.sleep(10)
-        except:
-            pass
 
     while stat[u'status'] != 'FILLED':
         stat = client.get_order(
@@ -154,22 +157,34 @@ def sell_alt(client, alt_symbol, crypto_symbol):
 
     order_quantity = (math.floor(get_currency_balance(client, alt_symbol) *
                                  10**ticks[alt_symbol])/float(10**ticks[alt_symbol]))
+    logger.info('Selling %s of %s' % (order_quantity, alt_symbol))
 
     bal = get_currency_balance(client, alt_symbol)
-
-    order = client.order_market_sell(
-        symbol=alt_symbol + crypto_symbol,
-        quantity=(order_quantity)
-    )
+    logger.info('Ballance is %s' % bal)
+    order = None
+    while order is None:
+        order = client.order_market_sell(
+            symbol=alt_symbol + crypto_symbol,
+            quantity=(order_quantity)
+        )
 
     logger.info('order')
     logger.info(order)
 
     # Binance server can take some time to save the order
-    time.sleep(2)
+    logger.info("Waiting for Binance")
+    time.sleep(5)
+    order_recorded = False
+    stat = None
+    while not order_recorded:
+        try:
+            time.sleep(3)
+            stat = client.get_order(symbol=alt_symbol + crypto_symbol, orderId=order[u'orderId'])
+            order_recorded = True
+        except BinanceAPIException as e:
+            logger.info(e)
+            time.sleep(10)
 
-    stat = client.get_order(
-        symbol=alt_symbol+crypto_symbol, orderId=order[u'orderId'])
     logger.info(stat)
     while stat[u'status'] != 'FILLED':
         logger.info(stat)
@@ -220,9 +235,11 @@ def initialize_trade_thresholds(client):
     global g_state
     for coin_dict in g_state.coin_table.copy():
         for coin in supported_coin_list:
+            logger.info("Initializing %s vs %s" % (coin_dict, coin))
             if coin != coin_dict:
                 g_state.coin_table[coin_dict][coin] = float(get_market_ticker_price(
                     client, coin_dict + 'USDT'))/float(get_market_ticker_price(client, coin + 'USDT'))
+    logger.info("Done initializing, generating file")
     with open(g_state._table_backup_file, "w") as backup_file:
         json.dump(g_state.coin_table, backup_file)
 
@@ -231,6 +248,7 @@ def scout(client, transaction_fee=0.001, multiplier=5):
     '''
     Scout for potential jumps from the current coin to another coin
     '''
+    logger.info("Scouting...")
     global g_state
     for optional_coin in [coin for coin in g_state.coin_table[g_state.current_coin].copy() if coin != g_state.current_coin]:
         # Obtain (current coin)/(optional coin)
@@ -238,10 +256,13 @@ def scout(client, transaction_fee=0.001, multiplier=5):
             client, g_state.current_coin + 'USDT'))/float(get_market_ticker_price(client, optional_coin + 'USDT'))
 
         if (coin_opt_coin_ratio - transaction_fee * multiplier * coin_opt_coin_ratio) > g_state.coin_table[g_state.current_coin][optional_coin]:
-            logger.info('Jumping from {0} to {1}'.format(
+            logger.info('Will be jumping from {0} to {1}'.format(
                 g_state.current_coin, optional_coin))
             transaction_through_tether(
                 client, g_state.current_coin, optional_coin)
+#        else:
+#            logger.info('Not worth jumping from {0} to {1}'.format(
+#                g_state.current_coin, optional_coin))
 
 
 def main():
@@ -255,7 +276,7 @@ def main():
 
     while True:
         try:
-            time.sleep(20)
+            time.sleep(5)
             scout(client)
         except Exception as e:
             logger.info('Error while scouting...\n{}\n'.format(e))
