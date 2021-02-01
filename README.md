@@ -16,16 +16,21 @@ The trading is done in the Binance market platform, which of course does not hav
 
 The bot jumps between a configured set of coins on condition that it does not return to a coin unless it is profitable in   respect to the amount held last. This means that we will never end up having less of a certain coin. The risk is that one of the coins may freefall relative to the others all of a sudden, attracting our reverse greedy algorithm. 
 
-## Setup 
+## Binance Setup
 * [Create a Binance account.](https://www.binance.com/hw_register.html)
 * Enable Two-factor Authentication.
 * Create a new API key.
-* Get a cryptocurrency. if its symbol is not in the default list, add it. 
-* Run the script once, and enter your API key, secret key and cryptocurrency symbol when prompted (a list of supported symbols is available in the script).
+* Get a cryptocurrency. if its symbol is not in the default list, add it.
 
-## Requirements
-`pip install python-binance`
+## Tool Setup
+### Install deps
+`pip install -r requirments.txt`
 
+### Create user configuration
+Create a .ini file named `user.cfg` based off `.user.cfg.example`, then add your API keys and current coin.
+
+### Run
+`./crypto_trading.py`
 
 <p align="center">
   <img src = "https://usercontent2.hubstatic.com/6061829.jpg">
