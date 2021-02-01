@@ -5,3 +5,5 @@
 __pycache__
 config.txt
 nohup.out
+
+.idea/
