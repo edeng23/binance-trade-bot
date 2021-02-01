@@ -3,7 +3,6 @@
 .current_coin_table
 *.pyc
 __pycache__
-config.txt
 nohup.out
-
+user.cfg
 .idea/
