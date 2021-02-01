@@ -6,3 +6,4 @@ __pycache__
 nohup.out
 user.cfg
 .idea/
+.vscode/
