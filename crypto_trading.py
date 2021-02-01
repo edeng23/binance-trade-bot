@@ -160,7 +160,7 @@ def sell_alt(client, alt_symbol, crypto_symbol):
     logger.info('Selling %s of %s' % (order_quantity, alt_symbol))
 
     bal = get_currency_balance(client, alt_symbol)
-    logger.info('Ballance is %s' % bal)
+    logger.info('Balance is %s' % bal)
     order = None
     while order is None:
         order = client.order_market_sell(
