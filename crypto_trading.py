@@ -125,12 +125,16 @@ def buy_alt(client, alt_symbol, crypto_symbol):
     # Try to buy until successful
     order = None
     while order is None:
-        order = client.order_limit_buy(
-            symbol=alt_symbol + crypto_symbol,
-            quantity=order_quantity,
-            price=get_market_ticker_price(client, alt_symbol+crypto_symbol)
-        )
-        logger.info(order)
+        try:
+            order = client.order_limit_buy(
+                symbol=alt_symbol + crypto_symbol,
+                quantity=order_quantity,
+                price=get_market_ticker_price(client, alt_symbol+crypto_symbol)
+            )
+            logger.info(order)
+        except BinanceAPIException as e:
+            logger.info(e)
+            time.sleep(1)
 
     order_recorded = False
     while not order_recorded:
@@ -256,7 +260,6 @@ def scout(client, transaction_fee=0.001, multiplier=5):
     '''
     Scout for potential jumps from the current coin to another coin
     '''
-    logger.info("Scouting...")
     global g_state
     for optional_coin in [coin for coin in g_state.coin_table[g_state.current_coin].copy() if coin != g_state.current_coin]:
         # Obtain (current coin)/(optional coin)
@@ -268,9 +271,6 @@ def scout(client, transaction_fee=0.001, multiplier=5):
                 g_state.current_coin, optional_coin))
             transaction_through_tether(
                 client, g_state.current_coin, optional_coin)
-#        else:
-#            logger.info('Not worth jumping from {0} to {1}'.format(
-#                g_state.current_coin, optional_coin))
 
 
 def main():
