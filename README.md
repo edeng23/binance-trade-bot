@@ -18,12 +18,12 @@ The trading is done in the Binance market platform, which of course does not hav
 
 The way the bot takes advantage of this behaviour is to always downgrade from the "strong" coin to the "weak" coin, under the assumption that at some point the tables will turn. It will then return to the original coin, ultimately holding more of it than it did originally. This is done while taking into consideration the trading fees.
 
-<p align="center">
-  <b>Coin A</b> → USDT → Coin B
-  Coin B → USDT → Coin C
-  ...
-  Coin C → USDT → <b>Coin A</b>
-</p>
+<div align="center">
+  <p><b>Coin A</b> → USDT → Coin B</p>
+  <p>Coin B → USDT → Coin C</p>
+  <p>...</p>
+  <div>Coin C → USDT → <b>Coin A</b></p>
+</div>
 
 The bot jumps between a configured set of coins on the condition that it does not return to a coin unless it is profitable in respect to the amount held last. This means that we will never end up having less of a certain coin. The risk is that one of the coins may freefall relative to the others all of a sudden, attracting our reverse greedy algorithm.
 
