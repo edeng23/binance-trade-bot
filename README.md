@@ -22,7 +22,7 @@ The way the bot takes advantage of this behaviour is to always downgrade from th
   <p><b>Coin A</b> → USDT → Coin B</p>
   <p>Coin B → USDT → Coin C</p>
   <p>...</p>
-  <div>Coin C → USDT → <b>Coin A</b></p>
+  <p>Coin C → USDT → <b>Coin A</b></p>
 </div>
 
 The bot jumps between a configured set of coins on the condition that it does not return to a coin unless it is profitable in respect to the amount held last. This means that we will never end up having less of a certain coin. The risk is that one of the coins may freefall relative to the others all of a sudden, attracting our reverse greedy algorithm.
