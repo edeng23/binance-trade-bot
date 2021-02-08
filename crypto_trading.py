@@ -233,9 +233,11 @@ def update_trade_threshold(client):
     Update all the coins with the threshold of buying the current held coin
     '''
     global g_state
+    current_coin_price = float(get_market_ticker_price(
+        client,  g_state.current_coin + 'USDT'))
     for coin_dict in g_state.coin_table.copy():
         g_state.coin_table[coin_dict][g_state.current_coin] = float(get_market_ticker_price(
-            client, coin_dict + 'USDT'))/float(get_market_ticker_price(client, g_state.current_coin + 'USDT'))
+            client, coin_dict + 'USDT'))/current_coin_price
     with open(g_state._table_backup_file, "w") as backup_file:
         json.dump(g_state.coin_table, backup_file)
 
@@ -246,11 +248,13 @@ def initialize_trade_thresholds(client):
     '''
     global g_state
     for coin_dict in g_state.coin_table.copy():
+        coin_dict_price = float(get_market_ticker_price(
+            client, coin_dict + 'USDT'))
         for coin in supported_coin_list:
             logger.info("Initializing %s vs %s" % (coin_dict, coin))
             if coin != coin_dict:
-                g_state.coin_table[coin_dict][coin] = float(get_market_ticker_price(
-                    client, coin_dict + 'USDT'))/float(get_market_ticker_price(client, coin + 'USDT'))
+                g_state.coin_table[coin_dict][coin] = coin_dict_price / \
+                    float(get_market_ticker_price(client, coin + 'USDT'))
     logger.info("Done initializing, generating file")
     with open(g_state._table_backup_file, "w") as backup_file:
         json.dump(g_state.coin_table, backup_file)
@@ -261,16 +265,19 @@ def scout(client, transaction_fee=0.001, multiplier=5):
     Scout for potential jumps from the current coin to another coin
     '''
     global g_state
+    curr_coin_price = float(get_market_ticker_price(
+        client, g_state.current_coin + 'USDT'))
     for optional_coin in [coin for coin in g_state.coin_table[g_state.current_coin].copy() if coin != g_state.current_coin]:
         # Obtain (current coin)/(optional coin)
-        coin_opt_coin_ratio = float(get_market_ticker_price(
-            client, g_state.current_coin + 'USDT'))/float(get_market_ticker_price(client, optional_coin + 'USDT'))
+        coin_opt_coin_ratio = curr_coin_price / \
+            float(get_market_ticker_price(client, optional_coin + 'USDT'))
 
         if (coin_opt_coin_ratio - transaction_fee * multiplier * coin_opt_coin_ratio) > g_state.coin_table[g_state.current_coin][optional_coin]:
             logger.info('Will be jumping from {0} to {1}'.format(
                 g_state.current_coin, optional_coin))
             transaction_through_tether(
                 client, g_state.current_coin, optional_coin)
+            break
 
 
 def main():
