@@ -147,9 +147,13 @@ def buy_alt(client, alt_symbol, crypto_symbol):
             time.sleep(10)
 
     while stat[u'status'] != 'FILLED':
-        stat = client.get_order(
-            symbol=alt_symbol+crypto_symbol, orderId=order[u'orderId'])
-        time.sleep(1)
+        try:
+            stat = client.get_order(
+                symbol=alt_symbol+crypto_symbol, orderId=order[u'orderId'])
+            time.sleep(1)
+        except BinanceAPIException as e:
+            logger.info(e)
+            time.sleep(2)
 
     logger.info('Bought %s', alt_symbol)
 
