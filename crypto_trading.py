@@ -163,7 +163,7 @@ def buy_alt(client, alt_symbol, crypto_symbol):
 
     order_quantity = ((math.floor(get_currency_balance(client, crypto_symbol) *
                                   10**ticks[alt_symbol] / get_market_ticker_price(client, alt_symbol+crypto_symbol))/float(10**ticks[alt_symbol])))
-    logger.info('BUY QTY %s', order_quantity)
+    logger.info('BUY QTY {0}'.format(order_quantity))
 
     # Try to buy until successful
     order = None
@@ -198,7 +198,7 @@ def buy_alt(client, alt_symbol, crypto_symbol):
             logger.info(e)
             time.sleep(2)
 
-    logger.info('Bought %s', alt_symbol)
+    logger.info('Bought {0}'.format(alt_symbol))
 
     return order
 
@@ -216,10 +216,10 @@ def sell_alt(client, alt_symbol, crypto_symbol):
 
     order_quantity = (math.floor(get_currency_balance(client, alt_symbol) *
                                  10**ticks[alt_symbol])/float(10**ticks[alt_symbol]))
-    logger.info('Selling %s of %s' % (order_quantity, alt_symbol))
+    logger.info('Selling {0} of {1}'.format(order_quantity, alt_symbol))
 
     bal = get_currency_balance(client, alt_symbol)
-    logger.info('Balance is %s' % bal)
+    logger.info('Balance is {0}'.format(bal))
     order = None
     while order is None:
         order = client.order_market_sell(
@@ -298,7 +298,7 @@ def initialize_trade_thresholds(client):
         coin_dict_price = float(get_market_ticker_price(
             client, coin_dict + 'USDT'))
         for coin in supported_coin_list:
-            logger.info("Initializing %s vs %s" % (coin_dict, coin))
+            logger.info("Initializing {0} vs {1}".format(coin_dict, coin))
             if coin != coin_dict:
                 g_state.coin_table[coin_dict][coin] = coin_dict_price / \
                     float(get_market_ticker_price(client, coin + 'USDT'))
