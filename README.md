@@ -44,6 +44,12 @@ Run the following line in the terminal: `pip install -r requirments.txt`.
 
 Create a .ini file named `user.cfg` based off `.user.cfg.example`, then add your API keys and current coin.
 
+### Integration with Telegram Bots
+
+You can integrate the bot with a Telegram bot that will notify you with log information. 
+This is done by creating a bot using Telegram's BotFather and inserting the Telegram Bot's TOKEN and the corresponding CHAT_ID in the configuration file. 
+For more information about Telegram bots refer to [Telegram's official documentation](https://core.telegram.org/bots).
+
 ### Run
 
 `./crypto_trading.py`
