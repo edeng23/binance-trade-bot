@@ -7,26 +7,69 @@ import time
 import os
 import json
 import configparser
+from logging import Handler, Formatter
+import datetime
+import requests
 
 # Config consts
 CFG_FL_NAME = 'user.cfg'
 USER_CFG_SECTION = 'binance_user_config'
 
+# Init config
+config = configparser.ConfigParser()
+if not os.path.exists(CFG_FL_NAME):
+    print('No configuration file (user.cfg) found! See README.')
+    exit()
+config.read(CFG_FL_NAME)
+
 # Logger setup
 logger = logging.getLogger('crypto_trader_logger')
 logger.setLevel(logging.DEBUG)
-formatter = logging.Formatter(
-    '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 fh = logging.FileHandler('crypto_trading.log')
 fh.setLevel(logging.DEBUG)
 fh.setFormatter(formatter)
 logger.addHandler(fh)
 
+# logging to console
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+ch.setFormatter(formatter)
+logger.addHandler(ch)
+
+# Telegram bot
+TELEGRAM_CHAT_ID = config.get(USER_CFG_SECTION, 'botChatID')
+TELEGRAM_TOKEN = config.get(USER_CFG_SECTION, 'botToken')
+
+class RequestsHandler(Handler):
+    def emit(self, record):
+        log_entry = self.format(record)
+        payload = {
+            'chat_id': TELEGRAM_CHAT_ID,
+            'text': log_entry,
+            'parse_mode': 'HTML'
+        }
+        return requests.post("https://api.telegram.org/bot{token}/sendMessage".format(token=TELEGRAM_TOKEN),data=payload).content
+
+class LogstashFormatter(Formatter):
+    def __init__(self):
+        super(LogstashFormatter, self).__init__()
+
+    def format(self, record):
+        t = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+
+        return "<i>{datetime}</i><pre>\n{message}</pre>".format(message=record.msg, datetime=t)
+
+# logging to Telegram
+th = RequestsHandler()
+formatter = LogstashFormatter()
+th.setFormatter(formatter)
+logger.addHandler(th)
+
 logger.info('Started')
 
 # Add supported coin symbols here
-supported_coin_list = [u'XLM', u'TRX', u'ICX', u'EOS', u'IOTA', u'ONT',
-                                             u'QTUM', u'ETC', u'ADA', u'XMR', u'DASH', u'NEO', u'ATOM', u'DOGE', u'VET', u'BAT', u'OMG', u'BTT']
+supported_coin_list = [u'XLM', u'TRX', u'ICX', u'EOS', u'IOTA', u'ONT', u'QTUM', u'ETC', u'ADA', u'XMR', u'DASH', u'NEO', u'ATOM', u'DOGE', u'VET', u'BAT', u'OMG', u'BTT']
 
 # Init config
 config = configparser.ConfigParser()
