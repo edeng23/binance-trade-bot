@@ -178,6 +178,8 @@ def buy_alt(client, alt_symbol, crypto_symbol):
         except BinanceAPIException as e:
             logger.info(e)
             time.sleep(1)
+        except Exception as e:
+            logger.info("Unexpected Error: {0}".format(e))
 
     order_recorded = False
     while not order_recorded:
@@ -188,7 +190,8 @@ def buy_alt(client, alt_symbol, crypto_symbol):
         except BinanceAPIException as e:
             logger.info(e)
             time.sleep(10)
-
+        except Exception as e:
+            logger.info("Unexpected Error: {0}".format(e))
     while stat[u'status'] != 'FILLED':
         try:
             stat = client.get_order(
@@ -197,6 +200,8 @@ def buy_alt(client, alt_symbol, crypto_symbol):
         except BinanceAPIException as e:
             logger.info(e)
             time.sleep(2)
+        except Exception as e:
+            logger.info("Unexpected Error: {0}".format(e))
 
     logger.info('Bought {0}'.format(alt_symbol))
 
@@ -243,13 +248,21 @@ def sell_alt(client, alt_symbol, crypto_symbol):
         except BinanceAPIException as e:
             logger.info(e)
             time.sleep(10)
+        except Exception as e:
+            logger.info("Unexpected Error: {0}".format(e))
 
     logger.info(stat)
     while stat[u'status'] != 'FILLED':
         logger.info(stat)
-        stat = client.get_order(
-            symbol=alt_symbol+crypto_symbol, orderId=order[u'orderId'])
-        time.sleep(1)
+        try:
+            stat = client.get_order(
+                symbol=alt_symbol+crypto_symbol, orderId=order[u'orderId'])
+            time.sleep(1)
+        except BinanceAPIException as e:
+            logger.info(e)
+            time.sleep(2)
+        except Exception as e:
+            logger.info("Unexpected Error: {0}".format(e))
 
     newbal = get_currency_balance(client, alt_symbol)
     while(newbal >= bal):
