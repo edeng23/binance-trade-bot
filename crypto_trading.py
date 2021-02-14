@@ -60,16 +60,21 @@ class LogstashFormatter(Formatter):
 
         return "<i>{datetime}</i><pre>\n{message}</pre>".format(message=record.msg, datetime=t)
 
-# logging to Telegram
-th = RequestsHandler()
-formatter = LogstashFormatter()
-th.setFormatter(formatter)
-logger.addHandler(th)
+# logging to Telegram if token exists
+if TELEGRAM_TOKEN:
+    th = RequestsHandler()
+    formatter = LogstashFormatter()
+    th.setFormatter(formatter)
+    logger.addHandler(th)
 
 logger.info('Started')
 
-# Add supported coin symbols here
-supported_coin_list = [u'XLM', u'TRX', u'ICX', u'EOS', u'IOTA', u'ONT', u'QTUM', u'ETC', u'ADA', u'XMR', u'DASH', u'NEO', u'ATOM', u'DOGE', u'VET', u'BAT', u'OMG', u'BTT']
+
+supported_coin_list = []
+
+# Get supported coin list from supported_coin_list file
+with open('supported_coin_list') as f:
+    supported_coin_list = f.read().upper().splitlines()
 
 # Init config
 config = configparser.ConfigParser()
