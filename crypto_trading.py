@@ -10,6 +10,7 @@ import configparser
 from logging import Handler, Formatter
 import datetime
 import requests
+import random
 
 # Config consts
 CFG_FL_NAME = 'user.cfg'
@@ -58,7 +59,15 @@ class LogstashFormatter(Formatter):
     def format(self, record):
         t = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
 
-        return "<i>{datetime}</i><pre>\n{message}</pre>".format(message=record.msg, datetime=t)
+        if isinstance(record.msg, dict):
+            message = "<i>{datetime}</i>".format(datetime=t)
+
+            for key in record.msg:
+                message = message + ("<pre>\n{title}: <strong>{value}</strong></pre>".format(title=key, value=record.msg[key]))
+
+            return message
+        else:
+            return "<i>{datetime}</i><pre>\n{message}</pre>".format(message=record.msg, datetime=t)
 
 # logging to Telegram if token exists
 if TELEGRAM_TOKEN:
@@ -68,7 +77,6 @@ if TELEGRAM_TOKEN:
     logger.addHandler(th)
 
 logger.info('Started')
-
 
 supported_coin_list = []
 
@@ -96,7 +104,15 @@ class CryptoState():
             self.current_coin = coin
             self.coin_table = coin_table
         else:
+
             current_coin = config.get(USER_CFG_SECTION, 'current_coin')
+
+            if not current_coin:
+
+                current_coin = random.choice(supported_coin_list)
+
+            logger.info("Setting initial coin to {0}".format(current_coin))
+
             if (not current_coin in supported_coin_list):
                 exit(
                     "***\nERROR!\nSince there is no backup file, a proper coin name must be provided at init\n***")
@@ -313,13 +329,19 @@ def initialize_trade_thresholds(client):
     '''
     global g_state
     for coin_dict in g_state.coin_table.copy():
-        coin_dict_price = float(get_market_ticker_price(
-            client, coin_dict + 'USDT'))
-        for coin in supported_coin_list:
-            logger.info("Initializing {0} vs {1}".format(coin_dict, coin))
-            if coin != coin_dict:
-                g_state.coin_table[coin_dict][coin] = coin_dict_price / \
-                    float(get_market_ticker_price(client, coin + 'USDT'))
+        coin_dict_price = get_market_ticker_price(client, coin_dict + 'USDT')
+        if coin_dict_price is not None:
+            for coin in supported_coin_list:
+                logger.info("Initializing {0} vs {1}".format(coin_dict, coin))
+                if coin != coin_dict:
+                    coin_price = get_market_ticker_price(client, coin + 'USDT')
+                    if coin_price is not None:
+                        g_state.coin_table[coin_dict][coin] = float(coin_dict_price) / float(coin_price)
+                    else:
+                        logger.info("{0} is not a valid pair on Binance, encountered error while initializing {1} vs {2}".format(coin + 'USDT', coin_dict, coin))
+        else:
+            logger.info("{0} is not a valid pair on Binance, encountered error while initializing {1}".format(coin_dict + 'USDT', coin_dict))
+
     logger.info("Done initializing, generating file")
     with open(g_state._table_backup_file, "w") as backup_file:
         json.dump(g_state.coin_table, backup_file)
@@ -354,6 +376,10 @@ def main():
     global g_state
     if not (os.path.isfile(g_state._table_backup_file)):
         initialize_trade_thresholds(client)
+
+        logger.info("Purchasing {0} to begin trading".format(g_state.current_coin))
+        buy_alt(client, g_state.current_coin, "USDT")
+        logger.info("Ready to start trading")
 
     while True:
         try:
