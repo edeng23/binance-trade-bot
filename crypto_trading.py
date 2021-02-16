@@ -370,10 +370,10 @@ def main():
     global g_state
     if not (os.path.isfile(g_state._table_backup_file)):
         initialize_trade_thresholds(client)
-
-        logger.info("Purchasing {0} to begin trading".format(g_state.current_coin))
-        buy_alt(client, g_state.current_coin, "USDT")
-        logger.info("Ready to start trading")
+        if config.get(USER_CFG_SECTION, 'current_coin') == '':
+            logger.info("Purchasing {0} to begin trading".format(g_state.current_coin))
+            buy_alt(client, g_state.current_coin, "USDT")
+            logger.info("Ready to start trading")
 
     while True:
         try:
