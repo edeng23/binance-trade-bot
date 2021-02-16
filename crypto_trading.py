@@ -329,18 +329,12 @@ def initialize_trade_thresholds(client):
     '''
     global g_state
     for coin_dict in g_state.coin_table.copy():
-        coin_dict_price = get_market_ticker_price(client, coin_dict + 'USDT')
-        if coin_dict_price is not None:
-            for coin in supported_coin_list:
-                logger.info("Initializing {0} vs {1}".format(coin_dict, coin))
-                if coin != coin_dict:
-                    coin_price = get_market_ticker_price(client, coin + 'USDT')
-                    if coin_price is not None:
-                        g_state.coin_table[coin_dict][coin] = float(coin_dict_price) / float(coin_price)
-                    else:
-                        logger.info("{0} is not a valid pair on Binance, encountered error while initializing {1} vs {2}".format(coin + 'USDT', coin_dict, coin))
-        else:
-            logger.info("{0} is not a valid pair on Binance, encountered error while initializing {1}".format(coin_dict + 'USDT', coin_dict))
+        coin_dict_price = float(get_market_ticker_price(client, coin_dict + 'USDT'))
+        for coin in supported_coin_list:
+            logger.info("Initializing {0} vs {1}".format(coin_dict, coin))
+            if coin != coin_dict:
+                coin_price = float(get_market_ticker_price(client, coin + 'USDT'))
+                g_state.coin_table[coin_dict][coin] = coin_dict_price / coin_price
 
     logger.info("Done initializing, generating file")
     with open(g_state._table_backup_file, "w") as backup_file:
