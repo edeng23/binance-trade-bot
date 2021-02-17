@@ -348,17 +348,26 @@ def scout(client, transaction_fee=0.001, multiplier=5):
     global g_state
     curr_coin_price = float(get_market_ticker_price(
         client, g_state.current_coin + 'USDT'))
+
+    ratio_dict = {}
     for optional_coin in [coin for coin in g_state.coin_table[g_state.current_coin].copy() if coin != g_state.current_coin]:
         # Obtain (current coin)/(optional coin)
         coin_opt_coin_ratio = curr_coin_price / \
             float(get_market_ticker_price(client, optional_coin + 'USDT'))
 
-        if (coin_opt_coin_ratio - transaction_fee * multiplier * coin_opt_coin_ratio) > g_state.coin_table[g_state.current_coin][optional_coin]:
-            logger.info('Will be jumping from {0} to {1}'.format(
-                g_state.current_coin, optional_coin))
-            transaction_through_tether(
-                client, g_state.current_coin, optional_coin)
-            break
+        # save ratio so we can pick the best option, not necessarily the first
+        ratio_dict[optional_coin] = (coin_opt_coin_ratio - transaction_fee * multiplier * coin_opt_coin_ratio) - g_state.coin_table[g_state.current_coin][optional_coin]
+
+    # keep only ratios bigger than zero
+    ratio_dict = dict(filter(lambda x: x[1] > 0, ratio_dict.items()))
+
+    # if we have any viable options, pick the one with the biggest ratio
+    if ratio_dict:
+      max_optional_coin = max(ratio_dict, key=ratio_dict.get)
+      logger.info('Will be jumping from {0} to {1}'.format(
+            g_state.current_coin, optional_coin))
+      transaction_through_tether(
+          client, g_state.current_coin, optional_coin)
 
 
 def main():
