@@ -77,8 +77,24 @@ if TELEGRAM_TOKEN:
     logger.addHandler(th)
 
 logger.info('Started')
-
-supported_coin_list = []
+#you need to add decimal places down here, so if you need to buy TRX binance accepts 1 decimal place (0,1 = 10) ICX (0,01 = 100) etc
+larger_coins_digits = {
+'XLM': 10,
+'ICX': 100,
+'ONT': 100,
+'NEAR': 100,
+'SUSHI': 1000,
+'RUNE': 100,
+'TOMO': 100,
+'EOS': 100,
+'QTUM': 1000,
+'ETC': 100,
+'XMR': 100000,
+'DASH': 100000,
+'NEO': 1000,
+'ATOM': 1000,
+'OMG': 100
+}
 
 # Get supported coin list from supported_coin_list file
 with open('supported_coin_list') as f:
@@ -134,23 +150,6 @@ class CryptoState():
 g_state = CryptoState()
 
 
-def retry(howmany):
-    def tryIt(func):
-        def f(*args, **kwargs):
-            time.sleep(1)
-            attempts = 0
-            while attempts < howmany:
-                try:
-                    return func(*args, **kwargs)
-                except Exception as e:
-                    print("Failed to Buy/Sell. Trying Again.")
-                    if attempts == 0:
-                        logger.info(e)
-                        attempts += 1
-        return f
-    return tryIt
-
-
 def get_market_ticker_price(client, ticker_symbol):
     '''
     Get ticker price of a specific coin
@@ -171,93 +170,118 @@ def get_currency_balance(client, currency_symbol):
     return None
 
 
-@retry(20)
-def buy_alt(client, alt_symbol, crypto_symbol):
-    '''
-    Buy altcoin
-    '''
+def round_down(value, divider):
+    #round down coin to acceptable stepSize by it's divider
+    rounded = math.floor(value * divider)/divider
+    return rounded
+    pass
+
+def getorderq(client, alt_symbol, crypto_symbol, side):
     ticks = {}
     for filt in client.get_symbol_info(alt_symbol + crypto_symbol)['filters']:
         if filt['filterType'] == 'LOT_SIZE':
             ticks[alt_symbol] = filt['stepSize'].find('1') - 2
             break
 
-    order_quantity = ((math.floor(get_currency_balance(client, crypto_symbol) *
-                                  10**ticks[alt_symbol] / get_market_ticker_price(client, alt_symbol+crypto_symbol))/float(10**ticks[alt_symbol])))
-    logger.info('BUY QTY {0}'.format(order_quantity))
+    order_quantity = 0
+    while order_quantity == 0:
+        if side == 'buy':
+            if alt_symbol in larger_coins_digits:
+                divider = larger_coins_digits[alt_symbol]
+                order_quantity = ((get_currency_balance(client, crypto_symbol) *
+                                        10**ticks[alt_symbol] / get_market_ticker_price(client, alt_symbol+crypto_symbol))/float(10**ticks[alt_symbol]))
+                order_quantity = round_down(order_quantity, divider)
+            else:
+                order_quantity = math.floor(((get_currency_balance(client, crypto_symbol) *
+                                        10**ticks[alt_symbol] / get_market_ticker_price(client, alt_symbol+crypto_symbol))/float(10**ticks[alt_symbol])))
+        if side == 'sell':
+            if alt_symbol in larger_coins_digits:
+                print(f'{alt_symbol} is in larger')
+                divider = larger_coins_digits[alt_symbol]
+                order_quantity = (get_currency_balance(client, alt_symbol) *
+                                        10**ticks[alt_symbol])/float(10**ticks[alt_symbol])
+                order_quantity = round_down(order_quantity, divider)
+            else:
+                order_quantity = math.floor((get_currency_balance(client, alt_symbol) *
+                                            10**ticks[alt_symbol])/float(10**ticks[alt_symbol]))
+
+    return order_quantity
+
+def buy_alt(client, alt_symbol, crypto_symbol):
+    '''
+    Buy altcoin
+    '''
+
+    #order_quantity = getorderq(client, alt_symbol, crypto_symbol, 'buy')
+
+    #logger.info(f'BUY: {alt_symbol} QUANTITY: {order_quantity}')
 
     # Try to buy until successful
     order = None
     while order is None:
         try:
+            order_quantity = getorderq(client, alt_symbol, crypto_symbol, 'buy')
+            logger.info(f'BUY: {alt_symbol} QUANTITY: {order_quantity}')
             order = client.order_limit_buy(
-                symbol=alt_symbol + crypto_symbol,
-                quantity=order_quantity,
-                price=get_market_ticker_price(client, alt_symbol+crypto_symbol)
+            symbol=alt_symbol + crypto_symbol,
+            quantity=order_quantity,
+            price=get_market_ticker_price(client, alt_symbol+crypto_symbol)
             )
             logger.info(order)
         except BinanceAPIException as e:
-            logger.info(e)
-            time.sleep(1)
-        except Exception as e:
-            logger.info("Unexpected Error: {0}".format(e))
+            order = None
+            #logger.info(e)
+            time.sleep(10)
 
+    #logger.info("Waiting for Binance")
+    time.sleep(5)
     order_recorded = False
     while not order_recorded:
         try:
             time.sleep(3)
             stat = client.get_order(symbol=alt_symbol + crypto_symbol, orderId=order[u'orderId'])
-            order_recorded = True
         except BinanceAPIException as e:
-            logger.info(e)
+            #logger.info(e)
             time.sleep(10)
-        except Exception as e:
-            logger.info("Unexpected Error: {0}".format(e))
+        else:
+            order_recorded = True
+
     while stat[u'status'] != 'FILLED':
         try:
             stat = client.get_order(
                 symbol=alt_symbol+crypto_symbol, orderId=order[u'orderId'])
             time.sleep(1)
         except BinanceAPIException as e:
-            logger.info(e)
-            time.sleep(2)
-        except Exception as e:
-            logger.info("Unexpected Error: {0}".format(e))
-
-    logger.info('Bought {0}'.format(alt_symbol))
+            #logger.info(e)
+            time.sleep(10)
+    logger.info(f'Bought {alt_symbol}')
 
     return order
 
 
-@retry(20)
 def sell_alt(client, alt_symbol, crypto_symbol):
     '''
     Sell altcoin
     '''
-    ticks = {}
-    for filt in client.get_symbol_info(alt_symbol + crypto_symbol)['filters']:
-        if filt['filterType'] == 'LOT_SIZE':
-            ticks[alt_symbol] = filt['stepSize'].find('1') - 2
-            break
 
-    order_quantity = (math.floor(get_currency_balance(client, alt_symbol) *
-                                 10**ticks[alt_symbol])/float(10**ticks[alt_symbol]))
-    logger.info('Selling {0} of {1}'.format(order_quantity, alt_symbol))
+    order_quantity = getorderq(client, alt_symbol, crypto_symbol, 'sell')
+    logger.info(f'SELL: {alt_symbol} QUANTITY: {order_quantity}')
+
 
     bal = get_currency_balance(client, alt_symbol)
-    logger.info('Balance is {0}'.format(bal))
+    logger.info(f'Balance is {bal}')
     order = None
     while order is None:
-        order = client.order_market_sell(
-            symbol=alt_symbol + crypto_symbol,
-            quantity=(order_quantity)
-        )
+        try:
+            order = client.order_market_sell(
+                symbol=alt_symbol + crypto_symbol,
+                quantity=(order_quantity)
+                )
+        except BinanceAPIException as e:
+            order = None
+            logger.info(e)
+            time.sleep(10)
 
-    logger.info('order')
-    logger.info(order)
-
-    # Binance server can take some time to save the order
-    logger.info("Waiting for Binance")
     time.sleep(5)
     order_recorded = False
     stat = None
@@ -265,34 +289,27 @@ def sell_alt(client, alt_symbol, crypto_symbol):
         try:
             time.sleep(3)
             stat = client.get_order(symbol=alt_symbol + crypto_symbol, orderId=order[u'orderId'])
-            order_recorded = True
         except BinanceAPIException as e:
             logger.info(e)
             time.sleep(10)
-        except Exception as e:
-            logger.info("Unexpected Error: {0}".format(e))
+            order_recorded = False
+        else:
+            order_recorded = True
 
-    logger.info(stat)
+
     while stat[u'status'] != 'FILLED':
-        logger.info(stat)
-        try:
-            stat = client.get_order(
-                symbol=alt_symbol+crypto_symbol, orderId=order[u'orderId'])
-            time.sleep(1)
-        except BinanceAPIException as e:
-            logger.info(e)
-            time.sleep(2)
-        except Exception as e:
-            logger.info("Unexpected Error: {0}".format(e))
+        #logger.info(stat) <- if you want order info for debugging uncomment this line
+        stat = client.get_order(
+            symbol=alt_symbol+crypto_symbol, orderId=order[u'orderId'])
+        time.sleep(1)
 
     newbal = get_currency_balance(client, alt_symbol)
     while(newbal >= bal):
         newbal = get_currency_balance(client, alt_symbol)
 
-    logger.info('Sold {0}'.format(alt_symbol))
+    logger.info(f'Sold {alt_symbol}')
 
     return order
-
 
 def transaction_through_tether(client, source_coin, dest_coin):
     '''
