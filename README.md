@@ -38,7 +38,7 @@ The bot jumps between a configured set of coins on the condition that it does no
 
 ### Install Python dependencies
 
-Run the following line in the terminal: `pip install -r requirments.txt`.
+Run the following line in the terminal: `pip install -r requirements.txt`.
 
 ### Create user configuration
 
