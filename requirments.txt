@@ -1,1 +1,0 @@
-python-binance>=0.3
