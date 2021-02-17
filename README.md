@@ -54,13 +54,13 @@ For more information about Telegram bots refer to [Telegram's official documenta
 
 `./crypto_trading.py`
 
-<p align="center">
-  <img src = "https://usercontent2.hubstatic.com/6061829.jpg">
-</p>
-
 # Join the Chat
 
 * **Discord**: [Invite Link](https://discord.gg/CaUAfc4T)
+
+<p align="center">
+  <img src = "https://usercontent2.hubstatic.com/6061829.jpg">
+</p>
 
 # Disclaimer
 
