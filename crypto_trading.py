@@ -365,9 +365,9 @@ def scout(client, transaction_fee=0.001, multiplier=5):
     if ratio_dict:
       max_optional_coin = max(ratio_dict, key=ratio_dict.get)
       logger.info('Will be jumping from {0} to {1}'.format(
-            g_state.current_coin, optional_coin))
+            g_state.current_coin, max_optional_coin))
       transaction_through_tether(
-          client, g_state.current_coin, optional_coin)
+          client, g_state.current_coin, max_optional_coin)
 
 
 def main():
