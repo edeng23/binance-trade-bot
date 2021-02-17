@@ -56,7 +56,7 @@ For more information about Telegram bots refer to [Telegram's official documenta
 
 # Join the Chat
 
-* **Discord**: [Invite Link](https://discord.gg/CaUAfc4T)
+* **Discord**: [Invite Link](https://discord.gg/m4TNaxreCN)
 
 <p align="center">
   <img src = "https://usercontent2.hubstatic.com/6061829.jpg">
