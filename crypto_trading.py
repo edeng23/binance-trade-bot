@@ -79,11 +79,8 @@ if TELEGRAM_TOKEN:
 
 logger.info('Started')
 
-supported_coin_list = []
-
-# Get supported coin list from supported_coin_list file
-with open('supported_coin_list') as f:
-    supported_coin_list = f.read().upper().splitlines()
+# Get supported coin list from config file
+supported_coin_list = config.get(COIN_LST_SECTION, 'supported_coins').split()
 
 class CryptoState():
     _coin_backup_file = ".current_coin"
