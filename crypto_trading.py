@@ -85,13 +85,6 @@ supported_coin_list = []
 with open('supported_coin_list') as f:
     supported_coin_list = f.read().upper().splitlines()
 
-# Init config
-config = configparser.ConfigParser()
-if not os.path.exists(CFG_FL_NAME):
-    print('No configuration file (user.cfg) found! See README.')
-    exit()
-config.read(CFG_FL_NAME)
-
 class CryptoState():
     _coin_backup_file = ".current_coin"
     _table_backup_file = ".current_coin_table"
