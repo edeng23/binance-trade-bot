@@ -54,6 +54,10 @@ For more information about Telegram bots refer to [Telegram's official documenta
 
 `./crypto_trading.py`
 
+### Docker
+
+`docker-compose up`
+
 # Join the Chat
 
 * **Discord**: [Invite Link](https://discord.gg/m4TNaxreCN)
