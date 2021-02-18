@@ -43,6 +43,7 @@ logger.addHandler(ch)
 # Telegram bot
 TELEGRAM_CHAT_ID = config.get(USER_CFG_SECTION, 'botChatID')
 TELEGRAM_TOKEN = config.get(USER_CFG_SECTION, 'botToken')
+BRIDGE = config.get(USER_CFG_SECTION, 'botToken')
 
 class RequestsHandler(Handler):
     def emit(self, record):
@@ -327,10 +328,10 @@ def transaction_through_tether(client, source_coin, dest_coin):
     '''
     result = None
     while result is None:
-        result = sell_alt(client, source_coin, 'USDT')
+        result = sell_alt(client, source_coin, BRIDGE)
     result = None
     while result is None:
-        result = buy_alt(client, dest_coin, 'USDT')
+        result = buy_alt(client, dest_coin, BRIDGE)
     global g_state
     g_state.current_coin = dest_coin
     update_trade_threshold(client)
@@ -345,17 +346,17 @@ def update_trade_threshold(client):
 
     global g_state
     
-    current_coin_price = get_market_ticker_price_from_list(all_tickers, g_state.current_coin + 'USDT')
+    current_coin_price = get_market_ticker_price_from_list(all_tickers, g_state.current_coin + BRIDGE)
 
     if current_coin_price is None:
-        logger.info("Skipping update... current coin {0} not found".format(g_state.current_coin + 'USDT'))
+        logger.info("Skipping update... current coin {0} not found".format(g_state.current_coin + BRIDGE))
         return
 
     for coin_dict in g_state.coin_table.copy():
-        coin_dict_price = get_market_ticker_price_from_list(all_tickers, coin_dict + 'USDT')
+        coin_dict_price = get_market_ticker_price_from_list(all_tickers, coin_dict + BRIDGE)
         
         if coin_dict_price is None:
-            logger.info("Skipping update for coin {0} not found".format(coin_dict + 'USDT'))
+            logger.info("Skipping update for coin {0} not found".format(coin_dict + BRIDGE))
             continue
 
         g_state.coin_table[coin_dict][g_state.current_coin] = coin_dict_price/current_coin_price
@@ -372,19 +373,19 @@ def initialize_trade_thresholds(client):
     
     global g_state
     for coin_dict in g_state.coin_table.copy():
-        coin_dict_price = get_market_ticker_price_from_list(all_tickers, coin_dict + 'USDT')
+        coin_dict_price = get_market_ticker_price_from_list(all_tickers, coin_dict + BRIDGE)
         
         if coin_dict_price is None:
-            logger.info("Skipping initializing {0}, symbol not found".format(coin_dict + 'USDT'))
+            logger.info("Skipping initializing {0}, symbol not found".format(coin_dict + BRIDGE))
             continue
 
         for coin in supported_coin_list:
             logger.info("Initializing {0} vs {1}".format(coin_dict, coin))
             if coin != coin_dict:
-                coin_price = get_market_ticker_price_from_list(all_tickers, coin + 'USDT')
+                coin_price = get_market_ticker_price_from_list(all_tickers, coin + BRIDGE)
 
                 if coin_price is None:
-                    logger.info("Skipping initializing {0}, symbol not found".format(coin + 'USDT'))
+                    logger.info("Skipping initializing {0}, symbol not found".format(coin + BRIDGE))
                     continue
 
                 g_state.coin_table[coin_dict][coin] = coin_dict_price / coin_price
@@ -403,17 +404,17 @@ def scout(client, transaction_fee=0.001, multiplier=5):
 
     global g_state
     
-    current_coin_price = get_market_ticker_price_from_list(all_tickers, g_state.current_coin + 'USDT')
+    current_coin_price = get_market_ticker_price_from_list(all_tickers, g_state.current_coin + BRIDGE)
     
     if current_coin_price is None:
-        logger.info("Skipping scouting... current coin {0} not found".format(g_state.current_coin + 'USDT'))
+        logger.info("Skipping scouting... current coin {0} not found".format(g_state.current_coin + BRIDGE))
         return
 
     for optional_coin in [coin for coin in g_state.coin_table[g_state.current_coin].copy() if coin != g_state.current_coin]:
-        optional_coin_price =  get_market_ticker_price_from_list(all_tickers, optional_coin + 'USDT')
+        optional_coin_price =  get_market_ticker_price_from_list(all_tickers, optional_coin + BRIDGE)
 
         if optional_coin_price is None:
-            logger.info("Skipping scouting... optional coin {0} not found".format(optional_coin + 'USDT'))
+            logger.info("Skipping scouting... optional coin {0} not found".format(optional_coin + BRIDGE))
             continue
 
         # Obtain (current coin)/(optional coin)
@@ -439,7 +440,7 @@ def main():
         initialize_trade_thresholds(client)
         if config.get(USER_CFG_SECTION, 'current_coin') == '':
             logger.info("Purchasing {0} to begin trading".format(g_state.current_coin))
-            buy_alt(client, g_state.current_coin, "USDT")
+            buy_alt(client, g_state.current_coin, BRIDGE)
             logger.info("Ready to start trading")
 
     while True:
