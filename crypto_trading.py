@@ -344,9 +344,10 @@ def update_trade_threshold(client):
     all_tickers = get_all_market_tickers(client)
 
     global g_state
+    
     current_coin_price = get_market_ticker_price_from_list(all_tickers, g_state.current_coin + 'USDT')
 
-    if curr_coin_price is None:
+    if current_coin_price is None:
         logger.info("Skipping update... current coin {0} not found".format(g_state.current_coin + 'USDT'))
         return
 
@@ -402,9 +403,9 @@ def scout(client, transaction_fee=0.001, multiplier=5):
 
     global g_state
     
-    curr_coin_price = get_market_ticker_price_from_list(all_tickers, g_state.current_coin + 'USDT')
+    current_coin_price = get_market_ticker_price_from_list(all_tickers, g_state.current_coin + 'USDT')
     
-    if curr_coin_price is None:
+    if current_coin_price is None:
         logger.info("Skipping scouting... current coin {0} not found".format(g_state.current_coin + 'USDT'))
         return
 
@@ -416,7 +417,7 @@ def scout(client, transaction_fee=0.001, multiplier=5):
             continue
 
         # Obtain (current coin)/(optional coin)
-        coin_opt_coin_ratio = curr_coin_price / \
+        coin_opt_coin_ratio = current_coin_price / \
            optional_coin_price
 
         if (coin_opt_coin_ratio - transaction_fee * multiplier * coin_opt_coin_ratio) > g_state.coin_table[g_state.current_coin][optional_coin]:
