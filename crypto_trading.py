@@ -15,6 +15,7 @@ import random
 # Config consts
 CFG_FL_NAME = 'user.cfg'
 USER_CFG_SECTION = 'binance_user_config'
+COIN_LST_SECTION = 'supported_coin_list'
 
 # Init config
 config = configparser.ConfigParser()
