@@ -4,3 +4,24 @@ api_secret_key=NhqPtmdSJYdKjVHjA7PZj4Mge3R5YNiP1e3UZjInClVN65XAbvqqM6A7H5fATj0j
 current_coin=
 botChatID=
 botToken=
+[supported_coin_list]
+supported_coins=
+    XLM
+    TRX
+    ICX
+    EOS
+    IOTA
+    ONT
+    QTUM
+    ETC
+    ADA
+    XMR
+    DASH
+    NEO
+    ATOM
+    DOGE
+    VET
+    BAT
+    OMG
+    BTT
+    
