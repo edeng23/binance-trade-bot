@@ -43,7 +43,7 @@ logger.addHandler(ch)
 # Telegram bot
 TELEGRAM_CHAT_ID = config.get(USER_CFG_SECTION, 'botChatID')
 TELEGRAM_TOKEN = config.get(USER_CFG_SECTION, 'botToken')
-BRIDGE = config.get(USER_CFG_SECTION, 'botToken')
+BRIDGE = config.get(USER_CFG_SECTION, 'bridge')
 
 class RequestsHandler(Handler):
     def emit(self, record):
