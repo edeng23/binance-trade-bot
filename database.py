@@ -55,11 +55,20 @@ def set_coins(symbols: List[str]):
                         session.add(Pair(from_coin, to_coin))
 
 
-def set_current_coin(coin: Union[Coin, str]):
+def get_coin(coin: Union[Coin, str]) -> Coin:
+    if type(coin) == Coin:
+        return coin
     session: Session
     with db_session() as session:
-        if type(coin) == str:
-            coin = session.query(Coin).get(coin)
+        coin = session.query(Coin).get(coin)
+        session.expunge(coin)
+        return coin
+
+
+def set_current_coin(coin: Union[Coin, str]):
+    coin = get_coin(coin)
+    session: Session
+    with db_session() as session:
         if type(coin) == Coin:
             coin = session.merge(coin)
         session.add(CurrentCoin(coin))
@@ -76,14 +85,18 @@ def get_current_coin() -> Optional[Coin]:
         return coin
 
 
-def get_pair(from_coin: Coin, to_coin: Coin):
+def get_pair(from_coin: Union[Coin, str], to_coin: Union[Coin, str]):
+    from_coin = get_coin(from_coin)
+    to_coin = get_coin(to_coin)
     session: Session
     with db_session() as session:
         pair: Pair = session.query(Pair).get((from_coin.symbol, to_coin.symbol))
+        session.expunge(pair)
         return pair
 
 
-def get_pairs_from(from_coin: Coin):
+def get_pairs_from(from_coin: Union[Coin, str]):
+    from_coin = get_coin(from_coin)
     session: Session
     with db_session() as session:
         pairs: List[pair] = session.query(Pair).filter(Pair.from_coin == from_coin)

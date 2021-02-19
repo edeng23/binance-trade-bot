@@ -20,3 +20,6 @@ class Pair(Base):
         self.from_coin = from_coin
         self.to_coin = to_coin
         self.ratio = ratio
+
+    def __repr__(self):
+        return f"<{self.from_coin_id}->{self.to_coin_id} :: {self.ratio}>"
