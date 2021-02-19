@@ -6,3 +6,4 @@ bridge=USDT
 botChatID=
 botToken=
 botLogLevel=INFO
+heartbeat_duration=0
