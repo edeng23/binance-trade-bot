@@ -322,16 +322,28 @@ def sell_alt(client, alt_symbol, crypto_symbol):
     return order
 
 
-def transaction_through_tether(client, source_coin, dest_coin):
+def transaction(client, source_coin, dest_coin, available_tickers):
     '''
-    Jump from the source coin to the destination coin through tether
+    Jump from the source coin to the destination coin. Check if direct pair exists otherwise execute via bridge currency
     '''
-    result = None
-    while result is None:
-        result = sell_alt(client, source_coin, BRIDGE)
-    result = None
-    while result is None:
-        result = buy_alt(client, dest_coin, BRIDGE)
+    if source_coin+dest_coin in available_tickers:
+        logger.info("Direct pair {0}{1} exists. Selling {0} for {1}".format(source_coin, dest_coin))
+        result = None
+        while result is None:
+            result = sell_alt(client, source_coin, dest_coin)
+    elif dest_coin+source_coin in available_tickers:
+        logger.info("Direct pair {0}{1} exists. Buying {0} with {1}".format(dest_coin, source_coin))
+        result = None
+        while result is None:
+            result = buy_alt(client, dest_coin, source_coin)
+    else:
+        logger.info("Direct pair does not exist. Executing trade through bridge currency.")
+        result = None
+        while result is None:
+            result = sell_alt(client, source_coin, BRIDGE)
+        result = None
+        while result is None:
+            result = buy_alt(client, dest_coin, BRIDGE)
     global g_state
     g_state.current_coin = dest_coin
     update_trade_threshold(client)
@@ -395,7 +407,7 @@ def initialize_trade_thresholds(client):
         json.dump(g_state.coin_table, backup_file)
 
 
-def scout(client, transaction_fee=0.001, multiplier=5):
+def scout(client, available_tickers, transaction_fee=0.001, multiplier=5):
     '''
     Scout for potential jumps from the current coin to another coin
     '''
@@ -424,8 +436,7 @@ def scout(client, transaction_fee=0.001, multiplier=5):
         if (coin_opt_coin_ratio - transaction_fee * multiplier * coin_opt_coin_ratio) > g_state.coin_table[g_state.current_coin][optional_coin]:
             logger.info('Will be jumping from {0} to {1}'.format(
                 g_state.current_coin, optional_coin))
-            transaction_through_tether(
-                client, g_state.current_coin, optional_coin)
+            transaction(client, g_state.current_coin, optional_coin, available_tickers)
             break
 
 
@@ -434,6 +445,10 @@ def main():
     api_secret_key = config.get(USER_CFG_SECTION, 'api_secret_key')
 
     client = Client(api_key, api_secret_key)
+
+    available_tickers = {}
+    for ticker in client.get_all_tickers():
+        available_tickers[ticker['symbol']] = None
 
     global g_state
     if not (os.path.isfile(g_state._table_backup_file)):
@@ -446,7 +461,7 @@ def main():
     while True:
         try:
             time.sleep(5)
-            scout(client)
+            scout(client, available_tickers)
         except Exception as e:
             logger.info('Error while scouting...\n{}\n'.format(e))
 
