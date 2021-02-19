@@ -17,7 +17,7 @@ import queue
 from sqlalchemy.orm import Session
 
 from database import set_coins, set_current_coin, get_current_coin, get_pairs_from, \
-    db_session, create_database
+    db_session, create_database, get_pair
 from models import Coin, Pair
 
 # Config consts
@@ -404,6 +404,31 @@ def scout(client: Client, transaction_fee=0.001, multiplier=5):
             break
 
 
+def migrate_old_state():
+    if os.path.isfile('.current_coin'):
+        with open('.current_coin', 'r') as f:
+            coin = f.read().strip()
+            logger.info(f".current_coin file found, loading current coin {coin}")
+            set_current_coin(coin)
+        os.rename('.current_coin', '.current_coin.old')
+        logger.info(f".current_coin renamed to .current_coin.old - You can now delete this file")
+
+    if os.path.isfile('.current_coin_table'):
+        with open('.current_coin_table', 'r') as f:
+            logger.info(f".current_coin_table file found, loading into database")
+            table: dict = json.load(f)
+            session: Session
+            with db_session() as session:
+                for from_coin, to_coin_dict in table.items():
+                    for to_coin, ratio in to_coin_dict.items():
+                        pair = get_pair(from_coin, to_coin)
+                        pair.ratio = ratio
+                        session.add(pair)
+
+        os.rename('.current_coin_table', '.current_coin_table.old')
+        logger.info(f".current_coin_table renamed to .current_coin_table.old - You can now delete this file")
+
+
 def main():
     api_key = config.get(USER_CFG_SECTION, 'api_key')
     api_secret_key = config.get(USER_CFG_SECTION, 'api_secret_key')
@@ -415,6 +440,8 @@ def main():
         create_database()
 
     set_coins(supported_coin_list)
+
+    migrate_old_state()
 
     initialize_trade_thresholds(client)
 
