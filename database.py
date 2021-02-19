@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 from typing import List, Union, Optional
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, and_
 from sqlalchemy.orm import sessionmaker, scoped_session, Session
 
 from models import *
@@ -50,7 +50,8 @@ def set_coins(symbols: List[str]):
         for from_coin in coins:
             for to_coin in coins:
                 if from_coin != to_coin:
-                    pair = session.query(Pair).get((from_coin.symbol, to_coin.symbol))
+                    pair = session.query(Pair).filter(
+                        and_(Pair.from_coin == from_coin, Pair.to_coin == to_coin)).first()
                     if pair is None:
                         session.add(Pair(from_coin, to_coin))
 
@@ -90,7 +91,8 @@ def get_pair(from_coin: Union[Coin, str], to_coin: Union[Coin, str]):
     to_coin = get_coin(to_coin)
     session: Session
     with db_session() as session:
-        pair: Pair = session.query(Pair).get((from_coin.symbol, to_coin.symbol))
+        pair: Pair = session.query(Pair).filter(
+            and_(Pair.from_coin == from_coin, Pair.to_coin == to_coin)).first()
         session.expunge(pair)
         return pair
 

@@ -1,18 +1,20 @@
-from sqlalchemy import Column, String, ForeignKey, Float
+from sqlalchemy import Column, String, ForeignKey, Float, Integer
 from sqlalchemy.orm import relationship
 
-from .coin import Coin
 from .base import Base
+from .coin import Coin
 
 
 class Pair(Base):
     __tablename__ = "pairs"
 
-    from_coin_id = Column(String, ForeignKey('coins.symbol'), primary_key=True)
-    from_coin = relationship("Coin", foreign_keys=[from_coin_id])
+    id = Column(Integer, primary_key=True)
 
-    to_coin_id = Column(String, ForeignKey('coins.symbol'), primary_key=True)
-    to_coin = relationship("Coin", foreign_keys=[to_coin_id])
+    from_coin_id = Column(String, ForeignKey('coins.symbol'))
+    from_coin = relationship("Coin", foreign_keys=[from_coin_id], lazy='joined')
+
+    to_coin_id = Column(String, ForeignKey('coins.symbol'))
+    to_coin = relationship("Coin", foreign_keys=[to_coin_id], lazy='joined')
 
     ratio = Column(Float)
 

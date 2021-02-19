@@ -1,19 +1,19 @@
 #!python3
-from binance.client import Client
-from binance.exceptions import BinanceAPIException
-import logging
+import configparser
+import datetime
+import json
 import logging.handlers
 import math
-import time
 import os
-import json
-import configparser
-from logging import Handler, Formatter
-import datetime
-import requests
-import random
 import queue
+import random
+import time
+import traceback
+from logging import Handler, Formatter
 
+import requests
+from binance.client import Client
+from binance.exceptions import BinanceAPIException
 from sqlalchemy.orm import Session
 
 from database import set_coins, set_current_coin, get_current_coin, get_pairs_from, \
@@ -435,7 +435,7 @@ def main():
 
     client = Client(api_key, api_secret_key)
 
-    if not os.path.isfile('crypto_trading.db'):
+    if not os.path.isfile('data/crypto_trading.db'):
         logger.info("Creating database schema")
         create_database()
 
@@ -467,7 +467,7 @@ def main():
             time.sleep(5)
             scout(client)
         except Exception as e:
-            logger.info('Error while scouting...\n{}\n'.format(e))
+            logger.info('Error while scouting...\n{}\n'.format(traceback.format_exc()))
 
 
 if __name__ == "__main__":
