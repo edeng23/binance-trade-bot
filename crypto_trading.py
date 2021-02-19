@@ -88,7 +88,7 @@ logger.info('Started')
 supported_coin_list = []
 
 # Get supported coin list from supported_coin_list file
-with open('supported_coin_list') as f:
+with open('data/supported_coin_list') as f:
     supported_coin_list = f.read().upper().splitlines()
 
 # Init config
@@ -99,11 +99,11 @@ if not os.path.exists(CFG_FL_NAME):
 config.read(CFG_FL_NAME)
 
 class CryptoState():
-    _coin_backup_file = ".current_coin"
-    _table_backup_file = ".current_coin_table"
+    _coin_backup_file = "data/.current_coin"
+    _table_backup_file = "data/.current_coin_table"
 
     def __init__(self):
-        if(os.path.isfile(self._coin_backup_file) and os.path.isfile(self._table_backup_file)):
+        if os.path.isfile(self._coin_backup_file) and os.path.isfile(self._table_backup_file):
             with open(self._coin_backup_file, "r") as backup_file:
                 coin = backup_file.read()
             with open(self._table_backup_file, "r") as backup_file:
@@ -345,7 +345,7 @@ def update_trade_threshold(client):
     all_tickers = get_all_market_tickers(client)
 
     global g_state
-    
+
     current_coin_price = get_market_ticker_price_from_list(all_tickers, g_state.current_coin + BRIDGE)
 
     if current_coin_price is None:
@@ -354,7 +354,7 @@ def update_trade_threshold(client):
 
     for coin_dict in g_state.coin_table.copy():
         coin_dict_price = get_market_ticker_price_from_list(all_tickers, coin_dict + BRIDGE)
-        
+
         if coin_dict_price is None:
             logger.info("Skipping update for coin {0} not found".format(coin_dict + BRIDGE))
             continue
@@ -368,13 +368,13 @@ def initialize_trade_thresholds(client):
     '''
     Initialize the buying threshold of all the coins for trading between them
     '''
-    
+
     all_tickers = get_all_market_tickers(client)
-    
+
     global g_state
     for coin_dict in g_state.coin_table.copy():
         coin_dict_price = get_market_ticker_price_from_list(all_tickers, coin_dict + BRIDGE)
-        
+
         if coin_dict_price is None:
             logger.info("Skipping initializing {0}, symbol not found".format(coin_dict + BRIDGE))
             continue
@@ -403,9 +403,9 @@ def scout(client, transaction_fee=0.001, multiplier=5):
     all_tickers = get_all_market_tickers(client)
 
     global g_state
-    
+
     current_coin_price = get_market_ticker_price_from_list(all_tickers, g_state.current_coin + BRIDGE)
-    
+
     if current_coin_price is None:
         logger.info("Skipping scouting... current coin {0} not found".format(g_state.current_coin + BRIDGE))
         return

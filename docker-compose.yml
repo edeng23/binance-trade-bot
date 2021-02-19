@@ -5,6 +5,5 @@ services:
     build: .
     container_name: binance_trader
     volumes:
-    - ./user.cfg:/app/user.cfg
-    - ./.current_coin:/app/.current_coin
-    - ./.current_coin_table:/app/.current_coin_table
+      - ./user.cfg:/app/user.cfg:ro
+      - ./data/:/app/data/
