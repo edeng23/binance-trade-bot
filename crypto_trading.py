@@ -43,6 +43,7 @@ logger.addHandler(ch)
 # Telegram bot
 TELEGRAM_CHAT_ID = config.get(USER_CFG_SECTION, 'botChatID')
 TELEGRAM_TOKEN = config.get(USER_CFG_SECTION, 'botToken')
+TELEGRAM_LOG_LEVEL = config.get(USER_CFG_SECTION, 'botLogLevel', fallback='INFO')
 BRIDGE = config.get(USER_CFG_SECTION, 'bridge')
 
 class RequestsHandler(Handler):
@@ -77,6 +78,8 @@ if TELEGRAM_TOKEN:
     que = queue.Queue(-1)  # no limit on size
     queue_handler = logging.handlers.QueueHandler(que)
     th = RequestsHandler()
+    level = logging.getLevelName(TELEGRAM_LOG_LEVEL)
+    th.setLevel(level)
     listener = logging.handlers.QueueListener(que, th)
     formatter = LogstashFormatter()
     th.setFormatter(formatter)
@@ -223,12 +226,12 @@ def buy_alt(client, alt_symbol, crypto_symbol):
                 quantity=order_quantity,
                 price=get_market_ticker_price(client, alt_symbol+crypto_symbol)
             )
-            logger.info(order)
+            logger.debug(order)
         except BinanceAPIException as e:
-            logger.info(e)
+            logger.warn(e)
             time.sleep(1)
         except Exception as e:
-            logger.info("Unexpected Error: {0}".format(e))
+            logger.error("Unexpected Error: {0}".format(e))
 
     order_recorded = False
     while not order_recorded:
@@ -237,20 +240,20 @@ def buy_alt(client, alt_symbol, crypto_symbol):
             stat = client.get_order(symbol=alt_symbol + crypto_symbol, orderId=order[u'orderId'])
             order_recorded = True
         except BinanceAPIException as e:
-            logger.info(e)
+            logger.warn(e)
             time.sleep(10)
         except Exception as e:
-            logger.info("Unexpected Error: {0}".format(e))
+            logger.error("Unexpected Error: {0}".format(e))
     while stat[u'status'] != 'FILLED':
         try:
             stat = client.get_order(
                 symbol=alt_symbol+crypto_symbol, orderId=order[u'orderId'])
             time.sleep(1)
         except BinanceAPIException as e:
-            logger.info(e)
+            logger.warn(e)
             time.sleep(2)
         except Exception as e:
-            logger.info("Unexpected Error: {0}".format(e))
+            logger.error("Unexpected Error: {0}".format(e))
 
     logger.info('Bought {0}'.format(alt_symbol))
 
@@ -281,8 +284,8 @@ def sell_alt(client, alt_symbol, crypto_symbol):
             quantity=(order_quantity)
         )
 
-    logger.info('order')
-    logger.info(order)
+    logger.debug('order')
+    logger.debug(order)
 
     # Binance server can take some time to save the order
     logger.info("Waiting for Binance")
@@ -295,23 +298,23 @@ def sell_alt(client, alt_symbol, crypto_symbol):
             stat = client.get_order(symbol=alt_symbol + crypto_symbol, orderId=order[u'orderId'])
             order_recorded = True
         except BinanceAPIException as e:
-            logger.info(e)
+            logger.warn(e)
             time.sleep(10)
         except Exception as e:
-            logger.info("Unexpected Error: {0}".format(e))
+            logger.error("Unexpected Error: {0}".format(e))
 
-    logger.info(stat)
+    logger.debug(stat)
     while stat[u'status'] != 'FILLED':
-        logger.info(stat)
+        logger.debug(stat)
         try:
             stat = client.get_order(
                 symbol=alt_symbol+crypto_symbol, orderId=order[u'orderId'])
             time.sleep(1)
         except BinanceAPIException as e:
-            logger.info(e)
+            logger.warn(e)
             time.sleep(2)
         except Exception as e:
-            logger.info("Unexpected Error: {0}".format(e))
+            logger.error("Unexpected Error: {0}".format(e))
 
     newbal = get_currency_balance(client, alt_symbol)
     while(newbal >= bal):
@@ -349,14 +352,14 @@ def update_trade_threshold(client):
     current_coin_price = get_market_ticker_price_from_list(all_tickers, g_state.current_coin + BRIDGE)
 
     if current_coin_price is None:
-        logger.info("Skipping update... current coin {0} not found".format(g_state.current_coin + BRIDGE))
+        logger.warn("Skipping update... current coin {0} not found".format(g_state.current_coin + BRIDGE))
         return
 
     for coin_dict in g_state.coin_table.copy():
         coin_dict_price = get_market_ticker_price_from_list(all_tickers, coin_dict + BRIDGE)
         
         if coin_dict_price is None:
-            logger.info("Skipping update for coin {0} not found".format(coin_dict + BRIDGE))
+            logger.warn("Skipping update for coin {0} not found".format(coin_dict + BRIDGE))
             continue
 
         g_state.coin_table[coin_dict][g_state.current_coin] = coin_dict_price/current_coin_price
@@ -376,7 +379,7 @@ def initialize_trade_thresholds(client):
         coin_dict_price = get_market_ticker_price_from_list(all_tickers, coin_dict + BRIDGE)
         
         if coin_dict_price is None:
-            logger.info("Skipping initializing {0}, symbol not found".format(coin_dict + BRIDGE))
+            logger.warn("Skipping initializing {0}, symbol not found".format(coin_dict + BRIDGE))
             continue
 
         for coin in supported_coin_list:
@@ -385,7 +388,7 @@ def initialize_trade_thresholds(client):
                 coin_price = get_market_ticker_price_from_list(all_tickers, coin + BRIDGE)
 
                 if coin_price is None:
-                    logger.info("Skipping initializing {0}, symbol not found".format(coin + BRIDGE))
+                    logger.warn("Skipping initializing {0}, symbol not found".format(coin + BRIDGE))
                     continue
 
                 g_state.coin_table[coin_dict][coin] = coin_dict_price / coin_price
@@ -448,7 +451,7 @@ def main():
             time.sleep(5)
             scout(client)
         except Exception as e:
-            logger.info('Error while scouting...\n{}\n'.format(e))
+            logger.error('Error while scouting...\n{}\n'.format(e))
 
 
 if __name__ == "__main__":
