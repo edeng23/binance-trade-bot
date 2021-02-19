@@ -1,7 +1,16 @@
 import datetime
 import enum
 
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Float, Enum, Boolean
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    ForeignKey,
+    DateTime,
+    Float,
+    Enum,
+    Boolean,
+)
 from sqlalchemy.orm import relationship
 
 from .base import Base
@@ -19,11 +28,11 @@ class Trade(Base):
 
     id = Column(Integer, primary_key=True)
 
-    alt_coin_id = Column(String, ForeignKey('coins.symbol'))
-    alt_coin = relationship("Coin", foreign_keys=[alt_coin_id], lazy='joined')
+    alt_coin_id = Column(String, ForeignKey("coins.symbol"))
+    alt_coin = relationship("Coin", foreign_keys=[alt_coin_id], lazy="joined")
 
-    crypto_coin_id = Column(String, ForeignKey('coins.symbol'))
-    crypto_coin = relationship("Coin", foreign_keys=[crypto_coin_id], lazy='joined')
+    crypto_coin_id = Column(String, ForeignKey("coins.symbol"))
+    crypto_coin = relationship("Coin", foreign_keys=[crypto_coin_id], lazy="joined")
 
     selling = Column(Boolean)
 
