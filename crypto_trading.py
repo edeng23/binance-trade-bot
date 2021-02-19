@@ -17,7 +17,7 @@ from binance.exceptions import BinanceAPIException
 from sqlalchemy.orm import Session
 
 from database import set_coins, set_current_coin, get_current_coin, get_pairs_from, \
-    db_session, create_database, get_pair
+    db_session, create_database, get_pair, log_scout
 from models import Coin, Pair
 
 # Config consts
@@ -400,6 +400,8 @@ def scout(client: Client, transaction_fee=0.001, multiplier=5):
         if optional_coin_price is None:
             logger.info("Skipping scouting... optional coin {0} not found".format(pair.to_coin + BRIDGE))
             continue
+
+        log_scout(pair, pair.ratio, current_coin_price, optional_coin_price)
 
         # Obtain (current coin)/(optional coin)
         coin_opt_coin_ratio = current_coin_price / optional_coin_price
