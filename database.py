@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker, scoped_session, Session
 
 from models import *
 
-engine = create_engine("sqlite:///crypto_trading.db")
+engine = create_engine("sqlite:///data/crypto_trading.db")
 
 SessionMaker = sessionmaker(bind=engine)
 SessionMaker()
