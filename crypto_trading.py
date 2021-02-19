@@ -88,7 +88,7 @@ logger.info('Started')
 supported_coin_list = []
 
 # Get supported coin list from supported_coin_list file
-with open('data/supported_coin_list') as f:
+with open('supported_coin_list') as f:
     supported_coin_list = f.read().upper().splitlines()
 
 # Init config
@@ -99,8 +99,8 @@ if not os.path.exists(CFG_FL_NAME):
 config.read(CFG_FL_NAME)
 
 class CryptoState():
-    _coin_backup_file = "data/.current_coin"
-    _table_backup_file = "data/.current_coin_table"
+    _coin_backup_file = "data/current_coin"
+    _table_backup_file = "data/current_coin_table"
 
     def __init__(self):
         if os.path.isfile(self._coin_backup_file) and os.path.isfile(self._table_backup_file):

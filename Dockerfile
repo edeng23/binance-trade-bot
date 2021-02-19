@@ -8,7 +8,7 @@ WORKDIR /install
 
 COPY requirements.txt /requirements.txt
 
-RUN pip install --prefix=/install -r /requirements.txt
+RUN pip install --prefix=/install -r /requirements.txt --no-warn-script-location
 
 FROM base
 
