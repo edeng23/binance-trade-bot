@@ -164,6 +164,19 @@ def first(iterable, condition = lambda x: True):
         return None
 
 
+def get_enhanced_error_message(error_code):
+    '''
+    Get an enhanced error message based on the API error code
+    '''
+    enhanced_error_messages = dict([(
+        -2013, 'Order has not been filled yet.'
+    )])
+    try:
+        return enhanced_error_messages[error_code]
+    except:
+        return ''
+
+
 def get_all_market_tickers(client):
     '''
     Get ticker price of all coins
@@ -248,6 +261,9 @@ def buy_alt(client, alt_symbol, crypto_symbol):
             time.sleep(1)
         except BinanceAPIException as e:
             logger.info(e)
+            enhanced_error_message = get_enhanced_error_message(e.code)
+            if enhanced_error_message:
+                logger.info(enhanced_error_message)
             time.sleep(2)
         except Exception as e:
             logger.info("Unexpected Error: {0}".format(e))
@@ -309,6 +325,9 @@ def sell_alt(client, alt_symbol, crypto_symbol):
             time.sleep(1)
         except BinanceAPIException as e:
             logger.info(e)
+            enhanced_error_message = get_enhanced_error_message(e.code)
+            if enhanced_error_message:
+                logger.info(enhanced_error_message)
             time.sleep(2)
         except Exception as e:
             logger.info("Unexpected Error: {0}".format(e))
