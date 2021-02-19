@@ -432,6 +432,7 @@ def scout(client, transaction_fee=0.001, multiplier=5):
 def main():
     api_key = config.get(USER_CFG_SECTION, 'api_key')
     api_secret_key = config.get(USER_CFG_SECTION, 'api_secret_key')
+    heartbeat_duration = int(config.get(USER_CFG_SECTION, 'heartbeat_duration'))
     heartbeat = time.time()
 
     client = Client(api_key, api_secret_key)
@@ -448,7 +449,7 @@ def main():
         try:
             time.sleep(5)
             scout(client)
-            if time.time() - heartbeat > 3600:
+            if heartbeat_duration != 0 and time.time() - heartbeat > heartbeat_duration:
                 logger.info('Still scouting...')
                 heartbeat = time.time()
         except Exception as e:
