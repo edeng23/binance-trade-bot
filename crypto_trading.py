@@ -25,11 +25,14 @@ if not os.path.exists(CFG_FL_NAME):
     exit()
 config.read(CFG_FL_NAME)
 
+# Locations
+data_location = config.get(USER_CFG_SECTION, 'data_location') or '.'
+
 # Logger setup
 logger = logging.getLogger('crypto_trader_logger')
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-fh = logging.FileHandler('crypto_trading.log')
+fh = logging.FileHandler(os.path.join(data_location, 'crypto_trading.log'))
 fh.setLevel(logging.DEBUG)
 fh.setFormatter(formatter)
 logger.addHandler(fh)
@@ -99,8 +102,8 @@ if not os.path.exists(CFG_FL_NAME):
 config.read(CFG_FL_NAME)
 
 class CryptoState():
-    _coin_backup_file = ".current_coin"
-    _table_backup_file = ".current_coin_table"
+    _coin_backup_file = os.path.join(data_location, '.current_coin')
+    _table_backup_file = os.path.join(data_location, '.current_coin_table')
 
     def __init__(self):
         if(os.path.isfile(self._coin_backup_file) and os.path.isfile(self._table_backup_file)):
