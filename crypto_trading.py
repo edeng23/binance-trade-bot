@@ -434,8 +434,9 @@ def migrate_old_state():
 def main():
     api_key = config.get(USER_CFG_SECTION, 'api_key')
     api_secret_key = config.get(USER_CFG_SECTION, 'api_secret_key')
+    tld = config.get(USER_CFG_SECTION, 'tld') or 'com' # Default Top-level domain is 'com'
 
-    client = Client(api_key, api_secret_key)
+    client = Client(api_key, api_secret_key, tld=tld)
 
     if not os.path.isfile('data/crypto_trading.db'):
         logger.info("Creating database schema")
