@@ -10,6 +10,7 @@ import random
 import time
 import traceback
 from logging import Handler, Formatter
+from typing import Dict
 
 import requests
 from binance.client import Client
@@ -17,7 +18,7 @@ from binance.exceptions import BinanceAPIException
 from sqlalchemy.orm import Session
 
 from database import set_coins, set_current_coin, get_current_coin, get_pairs_from, \
-    db_session, create_database, get_pair, log_scout
+    db_session, create_database, get_pair, log_scout, TradeLog
 from models import Coin, Pair
 
 # Config consts
@@ -50,7 +51,7 @@ logger.addHandler(ch)
 TELEGRAM_CHAT_ID = config.get(USER_CFG_SECTION, 'botChatID')
 TELEGRAM_TOKEN = config.get(USER_CFG_SECTION, 'botToken')
 BRIDGE_SYMBOL = config.get(USER_CFG_SECTION, 'bridge')
-BRIDGE = Coin(BRIDGE_SYMBOL)
+BRIDGE = Coin(BRIDGE_SYMBOL, False)
 
 
 class RequestsHandler(Handler):
@@ -176,6 +177,7 @@ def buy_alt(client: Client, alt: Coin, crypto: Coin):
     '''
     Buy altcoin
     '''
+    trade_log = TradeLog(alt, crypto, False)
     alt_symbol = alt.symbol
     crypto_symbol = crypto.symbol
     ticks = {}
@@ -183,11 +185,14 @@ def buy_alt(client: Client, alt: Coin, crypto: Coin):
         if filt['filterType'] == 'LOT_SIZE':
             if filt['stepSize'].find('1') == 0:
                 ticks[alt_symbol] = 1 - filt['stepSize'].find('.')
-            else:    
+            else:
                 ticks[alt_symbol] = filt['stepSize'].find('1') - 1
             break
 
-    order_quantity = ((math.floor(get_currency_balance(client, crypto_symbol) *
+    alt_balance = get_currency_balance(client, alt_symbol)
+    crypto_balance = get_currency_balance(client, crypto_symbol)
+
+    order_quantity = ((math.floor(crypto_balance *
                                   10 ** ticks[alt_symbol] / get_market_ticker_price(client,
                                                                                     alt_symbol + crypto_symbol)) / float(
         10 ** ticks[alt_symbol])))
@@ -208,6 +213,8 @@ def buy_alt(client: Client, alt: Coin, crypto: Coin):
             time.sleep(1)
         except Exception as e:
             logger.info("Unexpected Error: {0}".format(e))
+
+    trade_log.set_ordered(alt_balance, crypto_balance, order_quantity)
 
     order_recorded = False
     while not order_recorded:
@@ -233,6 +240,8 @@ def buy_alt(client: Client, alt: Coin, crypto: Coin):
 
     logger.info('Bought {0}'.format(alt_symbol))
 
+    trade_log.set_complete(stat['cummulativeQuoteQty'])
+
     return order
 
 
@@ -241,6 +250,7 @@ def sell_alt(client: Client, alt: Coin, crypto: Coin):
     '''
     Sell altcoin
     '''
+    trade_log = TradeLog(alt, crypto, True)
     alt_symbol = alt.symbol
     crypto_symbol = crypto.symbol
     ticks = {}
@@ -248,7 +258,7 @@ def sell_alt(client: Client, alt: Coin, crypto: Coin):
         if filt['filterType'] == 'LOT_SIZE':
             if filt['stepSize'].find('1') == 0:
                 ticks[alt_symbol] = 1 - filt['stepSize'].find('.')
-            else:    
+            else:
                 ticks[alt_symbol] = filt['stepSize'].find('1') - 1
             break
 
@@ -256,8 +266,9 @@ def sell_alt(client: Client, alt: Coin, crypto: Coin):
                                  10 ** ticks[alt_symbol]) / float(10 ** ticks[alt_symbol]))
     logger.info('Selling {0} of {1}'.format(order_quantity, alt_symbol))
 
-    bal = get_currency_balance(client, alt_symbol)
-    logger.info('Balance is {0}'.format(bal))
+    alt_balance = get_currency_balance(client, alt_symbol)
+    crypto_balance = get_currency_balance(client, crypto_symbol)
+    logger.info('Balance is {0}'.format(alt_balance))
     order = None
     while order is None:
         order = client.order_market_sell(
@@ -267,6 +278,8 @@ def sell_alt(client: Client, alt: Coin, crypto: Coin):
 
     logger.info('order')
     logger.info(order)
+
+    trade_log.set_ordered(alt_balance, crypto_balance, order_quantity)
 
     # Binance server can take some time to save the order
     logger.info("Waiting for Binance")
@@ -298,26 +311,28 @@ def sell_alt(client: Client, alt: Coin, crypto: Coin):
             logger.info("Unexpected Error: {0}".format(e))
 
     newbal = get_currency_balance(client, alt_symbol)
-    while (newbal >= bal):
+    while (newbal >= alt_balance):
         newbal = get_currency_balance(client, alt_symbol)
 
     logger.info('Sold {0}'.format(alt_symbol))
 
+    trade_log.set_complete(stat['cummulativeQuoteQty'])
+
     return order
 
 
-def transaction_through_tether(client: Client, source_coin: Coin, dest_coin: Coin):
+def transaction_through_tether(client: Client, pair: Pair):
     '''
     Jump from the source coin to the destination coin through tether
     '''
     result = None
     while result is None:
-        result = sell_alt(client, source_coin, BRIDGE)
+        result = sell_alt(client, pair.from_coin, BRIDGE)
     result = None
     while result is None:
-        result = buy_alt(client, dest_coin, BRIDGE)
+        result = buy_alt(client, pair.to_coin, BRIDGE)
 
-    set_current_coin(dest_coin)
+    set_current_coin(pair.to_coin)
     update_trade_threshold(client)
 
 
@@ -390,8 +405,8 @@ def scout(client: Client, transaction_fee=0.001, multiplier=5):
         logger.info("Skipping scouting... current coin {0} not found".format(current_coin + BRIDGE))
         return
 
-    ratio_dict = {}
-    
+    ratio_dict: Dict[Pair, float] = {}
+
     for pair in get_pairs_from(current_coin):
         if not pair.to_coin.enabled:
             continue
@@ -407,18 +422,18 @@ def scout(client: Client, transaction_fee=0.001, multiplier=5):
         coin_opt_coin_ratio = current_coin_price / optional_coin_price
 
         # save ratio so we can pick the best option, not necessarily the first
-        ratio_dict[pair.to_coin] = (coin_opt_coin_ratio - transaction_fee * multiplier * coin_opt_coin_ratio) - pair.ratio
+        ratio_dict[pair] = (coin_opt_coin_ratio - transaction_fee * multiplier * coin_opt_coin_ratio) - pair.ratio
 
     # keep only ratios bigger than zero
-    ratio_dict = dict(filter(lambda x: x[1] > 0, ratio_dict.items()))
+    ratio_dict = {k: v for k, v in ratio_dict.items() if v > 0}
 
     # if we have any viable options, pick the one with the biggest ratio
     if ratio_dict:
-        max_optional_coin = max(ratio_dict, key=ratio_dict.get)
+        best_pair = max(ratio_dict, key=ratio_dict.get)
         logger.info('Will be jumping from {0} to {1}'.format(
-                current_coin, max_optional_coin))
+            current_coin, best_pair.to_coin_id))
         transaction_through_tether(
-                client, current_coin, max_optional_coin)
+            client, best_pair)
 
 
 def migrate_old_state():
