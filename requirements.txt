@@ -4,3 +4,4 @@ schedule
 apprise
 Flask
 gunicorn
+flask-cors
