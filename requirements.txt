@@ -3,3 +3,4 @@ sqlalchemy
 schedule
 apprise
 Flask
+gunicorn
