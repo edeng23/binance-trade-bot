@@ -17,6 +17,7 @@ import queue
 # Config consts
 CFG_FL_NAME = 'user.cfg'
 USER_CFG_SECTION = 'binance_user_config'
+DRY_RUN = True
 
 # Init config
 config = configparser.ConfigParser()
@@ -101,9 +102,10 @@ config.read(CFG_FL_NAME)
 class CryptoState():
     _coin_backup_file = ".current_coin"
     _table_backup_file = ".current_coin_table"
+    _balance_file = ".balance_coin_table"
 
     def __init__(self):
-        if(os.path.isfile(self._coin_backup_file) and os.path.isfile(self._table_backup_file)):
+        if os.path.isfile(self._coin_backup_file) and os.path.isfile(self._table_backup_file):
             with open(self._coin_backup_file, "r") as backup_file:
                 coin = backup_file.read()
             with open(self._table_backup_file, "r") as backup_file:
@@ -111,7 +113,6 @@ class CryptoState():
             self.current_coin = coin
             self.coin_table = coin_table
         else:
-
             current_coin = config.get(USER_CFG_SECTION, 'current_coin')
 
             if not current_coin:
@@ -130,6 +131,11 @@ class CryptoState():
             # Designated to keep track of the selling point for each coin with respect to all other coins.
             self.coin_table = dict((coin_entry, dict((coin, 0) for coin in supported_coin_list if coin != coin_entry))
                                    for coin_entry in supported_coin_list)
+        self.coin_balance = None
+        if DRY_RUN:
+            if os.path.isfile(self._balance_file):
+                with open(self._balance_file, "r") as backup_file:
+                    self.coin_balance = json.load(backup_file)
 
     def __setattr__(self, name, value):
         if name == "current_coin":
@@ -137,6 +143,15 @@ class CryptoState():
                 backup_file.write(value)
         self.__dict__[name] = value
         return
+
+    def sell(self, alt_coin, price, quantity):
+        self.coin_balance[BRIDGE] += price * quantity
+        self.coin_balance[alt_coin] -= quantity
+
+    def buy(self, alt_coin, price, quantity):
+        self.coin_balance[BRIDGE] -= price * quantity
+        self.coin_balance[alt_coin] = quantity
+
 
 g_state = CryptoState()
 
@@ -193,11 +208,22 @@ def get_currency_balance(client, currency_symbol):
     '''
     Get balance of a specific coin
     '''
+    if DRY_RUN:
+        global g_state
+        if g_state.coin_balance is None:  # first time fill the table
+            g_state.coin_balance = {}
+            for currency_balance in client.get_account()[u'balances']:
+                currency = currency_balance[u'asset']
+                g_state.coin_balance[currency] = float(currency_balance[u'free'])
+            for currency in supported_coin_list:
+                g_state.coin_balance[currency] = g_state.coin_balance.get(currency, 0)
+            g_state.coin_balance[BRIDGE] = g_state.coin_balance.get(BRIDGE, 0)
+        return g_state.coin_balance[currency_symbol]
+
     for currency_balance in client.get_account()[u'balances']:
         if currency_balance[u'asset'] == currency_symbol:
             return float(currency_balance[u'free'])
     return None
-
 
 @retry(20)
 def buy_alt(client, alt_symbol, crypto_symbol):
@@ -212,47 +238,55 @@ def buy_alt(client, alt_symbol, crypto_symbol):
 
     order_quantity = ((math.floor(get_currency_balance(client, crypto_symbol) *
                                   10**ticks[alt_symbol] / get_market_ticker_price(client, alt_symbol+crypto_symbol))/float(10**ticks[alt_symbol])))
-    logger.info('BUY QTY {0}'.format(order_quantity))
+    price = get_market_ticker_price(client, alt_symbol + crypto_symbol)
+    logger.info('Qty of {0} increases by {1}'.format(alt_symbol, order_quantity))
 
     # Try to buy until successful
     order = None
-    while order is None:
-        try:
-            order = client.order_limit_buy(
-                symbol=alt_symbol + crypto_symbol,
-                quantity=order_quantity,
-                price=get_market_ticker_price(client, alt_symbol+crypto_symbol)
-            )
-            logger.info(order)
-        except BinanceAPIException as e:
-            logger.info(e)
-            time.sleep(1)
-        except Exception as e:
-            logger.info("Unexpected Error: {0}".format(e))
+    if not DRY_RUN:
+        while order is None:
+            try:
+                order = client.order_limit_buy(
+                    symbol=alt_symbol + crypto_symbol,
+                    quantity=order_quantity,
+                    price=price,
+                )
+                logger.info(order)
+            except BinanceAPIException as e:
+                logger.info(e)
+                time.sleep(1)
+            except Exception as e:
+                logger.info("Unexpected Error: {0}".format(e))
 
     order_recorded = False
-    while not order_recorded:
-        try:
-            time.sleep(3)
-            stat = client.get_order(symbol=alt_symbol + crypto_symbol, orderId=order[u'orderId'])
-            order_recorded = True
-        except BinanceAPIException as e:
-            logger.info(e)
-            time.sleep(10)
-        except Exception as e:
-            logger.info("Unexpected Error: {0}".format(e))
-    while stat[u'status'] != 'FILLED':
-        try:
-            stat = client.get_order(
-                symbol=alt_symbol+crypto_symbol, orderId=order[u'orderId'])
-            time.sleep(1)
-        except BinanceAPIException as e:
-            logger.info(e)
-            time.sleep(2)
-        except Exception as e:
-            logger.info("Unexpected Error: {0}".format(e))
+    if not DRY_RUN:
+        while not order_recorded:
+            try:
+                time.sleep(3)
+                stat = client.get_order(symbol=alt_symbol + crypto_symbol, orderId=order[u'orderId'])
+                order_recorded = True
+            except BinanceAPIException as e:
+                logger.info(e)
+                time.sleep(10)
+            except Exception as e:
+                logger.info("Unexpected Error: {0}".format(e))
 
-    logger.info('Bought {0}'.format(alt_symbol))
+    if not DRY_RUN:
+        while stat[u'status'] != 'FILLED':
+            try:
+                stat = client.get_order(
+                    symbol=alt_symbol+crypto_symbol, orderId=order[u'orderId'])
+                time.sleep(1)
+            except BinanceAPIException as e:
+                logger.info(e)
+                time.sleep(2)
+            except Exception as e:
+                logger.info("Unexpected Error: {0}".format(e))
+    else:
+        global g_state
+        g_state.buy(alt_symbol, price, order_quantity)
+
+    logger.info('Bought {0} at price {1}, total price {2}'.format(alt_symbol, price, price * order_quantity))
 
     return order
 
@@ -270,54 +304,60 @@ def sell_alt(client, alt_symbol, crypto_symbol):
 
     order_quantity = (math.floor(get_currency_balance(client, alt_symbol) *
                                  10**ticks[alt_symbol])/float(10**ticks[alt_symbol]))
+    price = get_market_ticker_price(client, alt_symbol + crypto_symbol)
     logger.info('Selling {0} of {1}'.format(order_quantity, alt_symbol))
 
     bal = get_currency_balance(client, alt_symbol)
-    logger.info('Balance is {0}'.format(bal))
+    logger.info('Balance od {0} was {1}'.format(alt_symbol, bal))
     order = None
-    while order is None:
-        order = client.order_market_sell(
-            symbol=alt_symbol + crypto_symbol,
-            quantity=(order_quantity)
-        )
-
-    logger.info('order')
-    logger.info(order)
+    if not DRY_RUN:
+        while order is None:
+            order = client.order_market_sell(
+                symbol=alt_symbol + crypto_symbol,
+                quantity=(order_quantity)
+            )
+        logger.info('order')
+        logger.info(order)
 
     # Binance server can take some time to save the order
-    logger.info("Waiting for Binance")
-    time.sleep(5)
-    order_recorded = False
-    stat = None
-    while not order_recorded:
-        try:
-            time.sleep(3)
-            stat = client.get_order(symbol=alt_symbol + crypto_symbol, orderId=order[u'orderId'])
-            order_recorded = True
-        except BinanceAPIException as e:
-            logger.info(e)
-            time.sleep(10)
-        except Exception as e:
-            logger.info("Unexpected Error: {0}".format(e))
-
-    logger.info(stat)
-    while stat[u'status'] != 'FILLED':
+    if not DRY_RUN:
+        logger.info("Waiting for Binance")
+        time.sleep(5)
+        order_recorded = False
+        stat = None
+        while not order_recorded:
+            try:
+                time.sleep(3)
+                stat = client.get_order(symbol=alt_symbol + crypto_symbol, orderId=order[u'orderId'])
+                order_recorded = True
+            except BinanceAPIException as e:
+                logger.info(e)
+                time.sleep(10)
+            except Exception as e:
+                logger.info("Unexpected Error: {0}".format(e))
         logger.info(stat)
-        try:
-            stat = client.get_order(
-                symbol=alt_symbol+crypto_symbol, orderId=order[u'orderId'])
-            time.sleep(1)
-        except BinanceAPIException as e:
-            logger.info(e)
-            time.sleep(2)
-        except Exception as e:
-            logger.info("Unexpected Error: {0}".format(e))
+
+    if not DRY_RUN:
+        while stat[u'status'] != 'FILLED':
+            logger.info(stat)
+            try:
+                stat = client.get_order(
+                    symbol=alt_symbol+crypto_symbol, orderId=order[u'orderId'])
+                time.sleep(1)
+            except BinanceAPIException as e:
+                logger.info(e)
+                time.sleep(2)
+            except Exception as e:
+                logger.info("Unexpected Error: {0}".format(e))
+    else:
+        global g_state
+        g_state.sell(alt_symbol, price, order_quantity)
 
     newbal = get_currency_balance(client, alt_symbol)
-    while(newbal >= bal):
+    while newbal >= bal:
         newbal = get_currency_balance(client, alt_symbol)
 
-    logger.info('Sold {0}'.format(alt_symbol))
+    logger.info('Sold {0} at price {1}, total price {2}'.format(alt_symbol, price, price * order_quantity))
 
     return order
 
@@ -329,9 +369,11 @@ def transaction_through_tether(client, source_coin, dest_coin):
     result = None
     while result is None:
         result = sell_alt(client, source_coin, BRIDGE)
+        result = result or DRY_RUN
     result = None
     while result is None:
         result = buy_alt(client, dest_coin, BRIDGE)
+        result = result or DRY_RUN
     global g_state
     g_state.current_coin = dest_coin
     update_trade_threshold(client)
@@ -362,7 +404,8 @@ def update_trade_threshold(client):
         g_state.coin_table[coin_dict][g_state.current_coin] = coin_dict_price/current_coin_price
     with open(g_state._table_backup_file, "w") as backup_file:
         json.dump(g_state.coin_table, backup_file)
-
+    with open(g_state._balance_file, "w") as backup_file:
+        json.dump(g_state.coin_balance, backup_file)
 
 def initialize_trade_thresholds(client):
     '''
@@ -393,7 +436,6 @@ def initialize_trade_thresholds(client):
     logger.info("Done initializing, generating file")
     with open(g_state._table_backup_file, "w") as backup_file:
         json.dump(g_state.coin_table, backup_file)
-
 
 def scout(client, transaction_fee=0.001, multiplier=5):
     '''
