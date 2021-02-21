@@ -10,7 +10,7 @@ import random
 import time
 import traceback
 from logging import Handler, Formatter
-from typing import Dict
+from typing import List, Dict
 
 import requests
 from binance.client import Client
@@ -18,7 +18,7 @@ from binance.exceptions import BinanceAPIException
 from sqlalchemy.orm import Session
 
 from database import set_coins, set_current_coin, get_current_coin, get_pairs_from, \
-    db_session, create_database, get_pair, log_scout, TradeLog
+    db_session, create_database, get_pair, log_scout, TradeLog, CoinValue
 from models import Coin, Pair
 
 # Config consts
@@ -436,6 +436,21 @@ def scout(client: Client, transaction_fee=0.001, multiplier=5):
             client, best_pair)
 
 
+def update_values(client: Client):
+    all_ticker_values = get_all_market_tickers(client)
+
+    session: Session
+    with db_session() as session:
+        coins: List[Coin] = session.query(Coin).all()
+        for coin in coins:
+            balance = get_currency_balance(client, coin.symbol)
+            if balance == 0:
+                continue
+            usd_value = get_market_ticker_price_from_list(all_ticker_values, coin + "USDT")
+            btc_value = get_market_ticker_price_from_list(all_ticker_values, coin + "BTC")
+            session.add(CoinValue(coin, balance, usd_value, btc_value))
+
+
 def migrate_old_state():
     if os.path.isfile('.current_coin'):
         with open('.current_coin', 'r') as f:
@@ -501,6 +516,7 @@ def main():
         try:
             time.sleep(5)
             scout(client)
+            update_values(client)
         except Exception as e:
             logger.info('Error while scouting...\n{}\n'.format(traceback.format_exc()))
 
