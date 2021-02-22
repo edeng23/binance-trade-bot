@@ -181,7 +181,10 @@ def buy_alt(client: Client, alt: Coin, crypto: Coin):
     ticks = {}
     for filt in client.get_symbol_info(alt_symbol + crypto_symbol)['filters']:
         if filt['filterType'] == 'LOT_SIZE':
-            ticks[alt_symbol] = filt['stepSize'].find('1') - 2
+            if filt['stepSize'].find('1') == 0:
+                ticks[alt_symbol] = 1 - filt['stepSize'].find('.')
+            else:    
+                ticks[alt_symbol] = filt['stepSize'].find('1') - 1
             break
 
     order_quantity = ((math.floor(get_currency_balance(client, crypto_symbol) *
@@ -243,7 +246,10 @@ def sell_alt(client: Client, alt: Coin, crypto: Coin):
     ticks = {}
     for filt in client.get_symbol_info(alt_symbol + crypto_symbol)['filters']:
         if filt['filterType'] == 'LOT_SIZE':
-            ticks[alt_symbol] = filt['stepSize'].find('1') - 2
+            if filt['stepSize'].find('1') == 0:
+                ticks[alt_symbol] = 1 - filt['stepSize'].find('.')
+            else:    
+                ticks[alt_symbol] = filt['stepSize'].find('1') - 1
             break
 
     order_quantity = (math.floor(get_currency_balance(client, alt_symbol) *
