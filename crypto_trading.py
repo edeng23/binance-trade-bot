@@ -122,7 +122,7 @@ def retry(howmany):
                     print("Failed to Buy/Sell. Trying Again.")
                     if attempts == 0:
                         logger.info(e)
-                        attempts += 1
+                    attempts += 1
 
         return f
 
