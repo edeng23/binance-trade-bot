@@ -421,7 +421,9 @@ def migrate_old_state():
             with db_session() as session:
                 for from_coin, to_coin_dict in table.items():
                     for to_coin, ratio in to_coin_dict.items():
-                        pair = get_pair(from_coin, to_coin)
+                        if from_coin == to_coin:
+                            continue
+                        pair = session.merge(get_pair(from_coin, to_coin))
                         pair.ratio = ratio
                         session.add(pair)
 
