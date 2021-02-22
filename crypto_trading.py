@@ -308,9 +308,10 @@ def transaction_through_tether(client: Client, source_coin: Coin, dest_coin: Coi
     if sell_alt(client, source_coin, BRIDGE) is None:
         logger.info("Couldn't sell, going back to scouting mode...")
         return None
-    if buy_alt(client, dest_coin, BRIDGE) is None:
-        logger.info("Couldn't buy, going back to scouting mode...")
-        return None
+    # This isn't pretty, but at the moment we don't have implemented logic to escape from a bridge coin... This'll do for now
+    result = None
+    while result is None:
+        result = buy_alt(client, dest_coin, BRIDGE)
 
     set_current_coin(dest_coin)
     update_trade_threshold(client)
