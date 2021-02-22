@@ -123,6 +123,7 @@ def retry(howmany):
                     if attempts == 0:
                         logger.info(e)
                     attempts += 1
+            return None
 
         return f
 
