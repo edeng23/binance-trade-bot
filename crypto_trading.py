@@ -384,6 +384,8 @@ def scout(client: Client, transaction_fee=0.001, multiplier=5):
         logger.info("Skipping scouting... current coin {0} not found".format(current_coin + BRIDGE))
         return
 
+    ratio_dict = {}
+    
     for pair in get_pairs_from(current_coin):
         if not pair.to_coin.enabled:
             continue
