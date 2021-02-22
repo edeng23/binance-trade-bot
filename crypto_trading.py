@@ -306,8 +306,10 @@ def transaction_through_tether(client: Client, source_coin: Coin, dest_coin: Coi
     Jump from the source coin to the destination coin through tether
     '''
     if sell_alt(client, source_coin, BRIDGE) is None:
+        logger.info("Couldn't sell, going back to scouting mode...")
         return None
     if buy_alt(client, dest_coin, BRIDGE) is None:
+        logger.info("Couldn't buy, going back to scouting mode...")
         return None
 
     set_current_coin(dest_coin)
