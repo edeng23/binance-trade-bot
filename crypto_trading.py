@@ -305,12 +305,10 @@ def transaction_through_tether(client: Client, source_coin: Coin, dest_coin: Coi
     '''
     Jump from the source coin to the destination coin through tether
     '''
-    result = None
-    while result is None:
-        result = sell_alt(client, source_coin, BRIDGE)
-    result = None
-    while result is None:
-        result = buy_alt(client, dest_coin, BRIDGE)
+    if sell_alt(client, source_coin, BRIDGE) is None:
+        return None
+    if buy_alt(client, dest_coin, BRIDGE) is None:
+        return None
 
     set_current_coin(dest_coin)
     update_trade_threshold(client)
