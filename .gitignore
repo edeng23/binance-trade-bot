@@ -1,6 +1,7 @@
 *.log
 .current_coin
 .current_coin_table
+supported_coin_list
 *.pyc
 __pycache__
 nohup.out
@@ -8,4 +9,4 @@ user.cfg
 .idea/
 .vscode/
 venv/
-crypto_trading.db
+data/
