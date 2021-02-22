@@ -1,0 +1,9 @@
+version: "3"
+
+services:
+  crypto-trading:
+    build: .
+    container_name: binance_trader
+    volumes:
+    - ./user.cfg:/app/user.cfg
+    - ./data:/app/data

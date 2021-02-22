@@ -1,16 +1,24 @@
 #!python3
+import configparser
+import datetime
+import json
+import logging.handlers
+import math
+import os
+import queue
+import random
+import time
+import traceback
+from logging import Handler, Formatter
+
+import requests
 from binance.client import Client
 from binance.exceptions import BinanceAPIException
-import logging
-import math
-import time
-import os
-import json
-import configparser
-from logging import Handler, Formatter
-import datetime
-import requests
-import random
+from sqlalchemy.orm import Session
+
+from database import set_coins, set_current_coin, get_current_coin, get_pairs_from, \
+    db_session, create_database, get_pair
+from models import Coin, Pair
 
 # Config consts
 CFG_FL_NAME = 'user.cfg'
@@ -41,6 +49,9 @@ logger.addHandler(ch)
 # Telegram bot
 TELEGRAM_CHAT_ID = config.get(USER_CFG_SECTION, 'botChatID')
 TELEGRAM_TOKEN = config.get(USER_CFG_SECTION, 'botToken')
+BRIDGE_SYMBOL = config.get(USER_CFG_SECTION, 'bridge')
+BRIDGE = Coin(BRIDGE_SYMBOL)
+
 
 class RequestsHandler(Handler):
     def emit(self, record):
@@ -50,7 +61,9 @@ class RequestsHandler(Handler):
             'text': log_entry,
             'parse_mode': 'HTML'
         }
-        return requests.post("https://api.telegram.org/bot{token}/sendMessage".format(token=TELEGRAM_TOKEN),data=payload).content
+        return requests.post("https://api.telegram.org/bot{token}/sendMessage".format(token=TELEGRAM_TOKEN),
+                             data=payload).content
+
 
 class LogstashFormatter(Formatter):
     def __init__(self):
@@ -63,7 +76,8 @@ class LogstashFormatter(Formatter):
             message = "<i>{datetime}</i>".format(datetime=t)
 
             for key in record.msg:
-                message = message + ("<pre>\n{title}: <strong>{value}</strong></pre>".format(title=key, value=record.msg[key]))
+                message = message + (
+                    "<pre>\n{title}: <strong>{value}</strong></pre>".format(title=key, value=record.msg[key]))
 
             return message
         else:
@@ -71,10 +85,14 @@ class LogstashFormatter(Formatter):
 
 # logging to Telegram if token exists
 if TELEGRAM_TOKEN:
+    que = queue.Queue(-1)  # no limit on size
+    queue_handler = logging.handlers.QueueHandler(que)
     th = RequestsHandler()
+    listener = logging.handlers.QueueListener(que, th)
     formatter = LogstashFormatter()
     th.setFormatter(formatter)
-    logger.addHandler(th)
+    logger.addHandler(queue_handler)
+    listener.start()
 
 logger.info('Started')
 
@@ -91,48 +109,6 @@ if not os.path.exists(CFG_FL_NAME):
     exit()
 config.read(CFG_FL_NAME)
 
-class CryptoState():
-    _coin_backup_file = ".current_coin"
-    _table_backup_file = ".current_coin_table"
-
-    def __init__(self):
-        if(os.path.isfile(self._coin_backup_file) and os.path.isfile(self._table_backup_file)):
-            with open(self._coin_backup_file, "r") as backup_file:
-                coin = backup_file.read()
-            with open(self._table_backup_file, "r") as backup_file:
-                coin_table = json.load(backup_file)
-            self.current_coin = coin
-            self.coin_table = coin_table
-        else:
-
-            current_coin = config.get(USER_CFG_SECTION, 'current_coin')
-
-            if not current_coin:
-
-                current_coin = random.choice(supported_coin_list)
-
-            logger.info("Setting initial coin to {0}".format(current_coin))
-
-            if (not current_coin in supported_coin_list):
-                exit(
-                    "***\nERROR!\nSince there is no backup file, a proper coin name must be provided at init\n***")
-            self.current_coin = current_coin
-            with open(self._coin_backup_file, "w") as backup_file:
-                backup_file.write(self.current_coin)
-            # Dictionary of coin dictionaries.
-            # Designated to keep track of the selling point for each coin with respect to all other coins.
-            self.coin_table = dict((coin_entry, dict((coin, 0) for coin in supported_coin_list if coin != coin_entry))
-                                   for coin_entry in supported_coin_list)
-
-    def __setattr__(self, name, value):
-        if name == "current_coin":
-            with open(self._coin_backup_file, "w") as backup_file:
-                backup_file.write(value)
-        self.__dict__[name] = value
-        return
-
-g_state = CryptoState()
-
 
 def retry(howmany):
     def tryIt(func):
@@ -147,8 +123,24 @@ def retry(howmany):
                     if attempts == 0:
                         logger.info(e)
                         attempts += 1
+
         return f
+
     return tryIt
+
+
+def first(iterable, condition=lambda x: True):
+    try:
+        return next(x for x in iterable if condition(x))
+    except StopIteration:
+        return None
+
+
+def get_all_market_tickers(client):
+    '''
+    Get ticker price of all coins
+    '''
+    return client.get_all_tickers()
 
 
 def get_market_ticker_price(client, ticker_symbol):
@@ -161,7 +153,15 @@ def get_market_ticker_price(client, ticker_symbol):
     return None
 
 
-def get_currency_balance(client, currency_symbol):
+def get_market_ticker_price_from_list(all_tickers, ticker_symbol):
+    '''
+    Get ticker price of a specific coin
+    '''
+    ticker = first(all_tickers, condition=lambda x: x[u'symbol'] == ticker_symbol)
+    return float(ticker[u'price']) if ticker else None
+
+
+def get_currency_balance(client: Client, currency_symbol: str):
     '''
     Get balance of a specific coin
     '''
@@ -172,10 +172,12 @@ def get_currency_balance(client, currency_symbol):
 
 
 @retry(20)
-def buy_alt(client, alt_symbol, crypto_symbol):
+def buy_alt(client: Client, alt: Coin, crypto: Coin):
     '''
     Buy altcoin
     '''
+    alt_symbol = alt.symbol
+    crypto_symbol = crypto.symbol
     ticks = {}
     for filt in client.get_symbol_info(alt_symbol + crypto_symbol)['filters']:
         if filt['filterType'] == 'LOT_SIZE':
@@ -183,7 +185,9 @@ def buy_alt(client, alt_symbol, crypto_symbol):
             break
 
     order_quantity = ((math.floor(get_currency_balance(client, crypto_symbol) *
-                                  10**ticks[alt_symbol] / get_market_ticker_price(client, alt_symbol+crypto_symbol))/float(10**ticks[alt_symbol])))
+                                  10 ** ticks[alt_symbol] / get_market_ticker_price(client,
+                                                                                    alt_symbol + crypto_symbol)) / float(
+        10 ** ticks[alt_symbol])))
     logger.info('BUY QTY {0}'.format(order_quantity))
 
     # Try to buy until successful
@@ -193,7 +197,7 @@ def buy_alt(client, alt_symbol, crypto_symbol):
             order = client.order_limit_buy(
                 symbol=alt_symbol + crypto_symbol,
                 quantity=order_quantity,
-                price=get_market_ticker_price(client, alt_symbol+crypto_symbol)
+                price=get_market_ticker_price(client, alt_symbol + crypto_symbol)
             )
             logger.info(order)
         except BinanceAPIException as e:
@@ -216,7 +220,7 @@ def buy_alt(client, alt_symbol, crypto_symbol):
     while stat[u'status'] != 'FILLED':
         try:
             stat = client.get_order(
-                symbol=alt_symbol+crypto_symbol, orderId=order[u'orderId'])
+                symbol=alt_symbol + crypto_symbol, orderId=order[u'orderId'])
             time.sleep(1)
         except BinanceAPIException as e:
             logger.info(e)
@@ -230,10 +234,12 @@ def buy_alt(client, alt_symbol, crypto_symbol):
 
 
 @retry(20)
-def sell_alt(client, alt_symbol, crypto_symbol):
+def sell_alt(client: Client, alt: Coin, crypto: Coin):
     '''
     Sell altcoin
     '''
+    alt_symbol = alt.symbol
+    crypto_symbol = crypto.symbol
     ticks = {}
     for filt in client.get_symbol_info(alt_symbol + crypto_symbol)['filters']:
         if filt['filterType'] == 'LOT_SIZE':
@@ -241,7 +247,7 @@ def sell_alt(client, alt_symbol, crypto_symbol):
             break
 
     order_quantity = (math.floor(get_currency_balance(client, alt_symbol) *
-                                 10**ticks[alt_symbol])/float(10**ticks[alt_symbol]))
+                                 10 ** ticks[alt_symbol]) / float(10 ** ticks[alt_symbol]))
     logger.info('Selling {0} of {1}'.format(order_quantity, alt_symbol))
 
     bal = get_currency_balance(client, alt_symbol)
@@ -277,7 +283,7 @@ def sell_alt(client, alt_symbol, crypto_symbol):
         logger.info(stat)
         try:
             stat = client.get_order(
-                symbol=alt_symbol+crypto_symbol, orderId=order[u'orderId'])
+                symbol=alt_symbol + crypto_symbol, orderId=order[u'orderId'])
             time.sleep(1)
         except BinanceAPIException as e:
             logger.info(e)
@@ -286,7 +292,7 @@ def sell_alt(client, alt_symbol, crypto_symbol):
             logger.info("Unexpected Error: {0}".format(e))
 
     newbal = get_currency_balance(client, alt_symbol)
-    while(newbal >= bal):
+    while (newbal >= bal):
         newbal = get_currency_balance(client, alt_symbol)
 
     logger.info('Sold {0}'.format(alt_symbol))
@@ -294,69 +300,104 @@ def sell_alt(client, alt_symbol, crypto_symbol):
     return order
 
 
-def transaction_through_tether(client, source_coin, dest_coin):
+def transaction_through_tether(client: Client, source_coin: Coin, dest_coin: Coin):
     '''
     Jump from the source coin to the destination coin through tether
     '''
     result = None
     while result is None:
-        result = sell_alt(client, source_coin, 'USDT')
+        result = sell_alt(client, source_coin, BRIDGE)
     result = None
     while result is None:
-        result = buy_alt(client, dest_coin, 'USDT')
-    global g_state
-    g_state.current_coin = dest_coin
+        result = buy_alt(client, dest_coin, BRIDGE)
+
+    set_current_coin(dest_coin)
     update_trade_threshold(client)
 
 
-def update_trade_threshold(client):
+def update_trade_threshold(client: Client):
     '''
     Update all the coins with the threshold of buying the current held coin
     '''
-    global g_state
-    current_coin_price = float(get_market_ticker_price(
-        client,  g_state.current_coin + 'USDT'))
-    for coin_dict in g_state.coin_table.copy():
-        g_state.coin_table[coin_dict][g_state.current_coin] = float(get_market_ticker_price(
-            client, coin_dict + 'USDT'))/current_coin_price
-    with open(g_state._table_backup_file, "w") as backup_file:
-        json.dump(g_state.coin_table, backup_file)
+
+    all_tickers = get_all_market_tickers(client)
+
+    current_coin = get_current_coin()
+
+    current_coin_price = get_market_ticker_price_from_list(all_tickers, current_coin + BRIDGE)
+
+    if current_coin_price is None:
+        logger.info("Skipping update... current coin {0} not found".format(current_coin + BRIDGE))
+        return
+
+    session: Session
+    with db_session() as session:
+        for pair in session.query(Pair).filter(Pair.to_coin == current_coin):
+            from_coin_price = get_market_ticker_price_from_list(all_tickers, pair.from_coin + BRIDGE)
+
+            if from_coin_price is None:
+                logger.info("Skipping update for coin {0} not found".format(pair.from_coin + BRIDGE))
+                continue
+
+            pair.ratio = from_coin_price / current_coin_price
 
 
-def initialize_trade_thresholds(client):
+def initialize_trade_thresholds(client: Client):
     '''
     Initialize the buying threshold of all the coins for trading between them
     '''
-    global g_state
-    for coin_dict in g_state.coin_table.copy():
-        coin_dict_price = float(get_market_ticker_price(client, coin_dict + 'USDT'))
-        for coin in supported_coin_list:
-            logger.info("Initializing {0} vs {1}".format(coin_dict, coin))
-            if coin != coin_dict:
-                coin_price = float(get_market_ticker_price(client, coin + 'USDT'))
-                g_state.coin_table[coin_dict][coin] = coin_dict_price / coin_price
 
-    logger.info("Done initializing, generating file")
-    with open(g_state._table_backup_file, "w") as backup_file:
-        json.dump(g_state.coin_table, backup_file)
+    all_tickers = get_all_market_tickers(client)
+
+    session: Session
+    with db_session() as session:
+        for pair in session.query(Pair).filter(Pair.ratio == None).all():
+            if not pair.from_coin.enabled or not pair.to_coin.enabled:
+                continue
+            logger.info("Initializing {0} vs {1}".format(pair.from_coin, pair.to_coin))
+
+            from_coin_price = get_market_ticker_price_from_list(all_tickers, pair.from_coin + BRIDGE)
+            if from_coin_price is None:
+                logger.info("Skipping initializing {0}, symbol not found".format(pair.from_coin + BRIDGE))
+                continue
+
+            to_coin_price = get_market_ticker_price_from_list(all_tickers, pair.to_coin + BRIDGE)
+            if to_coin_price is None:
+                logger.info("Skipping initializing {0}, symbol not found".format(pair.to_coin + BRIDGE))
+                continue
+
+            pair.ratio = from_coin_price / to_coin_price
 
 
-def scout(client, transaction_fee=0.001, multiplier=5):
+def scout(client: Client, transaction_fee=0.001, multiplier=5):
     '''
     Scout for potential jumps from the current coin to another coin
     '''
-    global g_state
-    curr_coin_price = float(get_market_ticker_price(
-        client, g_state.current_coin + 'USDT'))
 
-    ratio_dict = {}
-    for optional_coin in [coin for coin in g_state.coin_table[g_state.current_coin].copy() if coin != g_state.current_coin]:
+    all_tickers = get_all_market_tickers(client)
+
+    current_coin = get_current_coin()
+
+    current_coin_price = get_market_ticker_price_from_list(all_tickers, current_coin + BRIDGE)
+
+    if current_coin_price is None:
+        logger.info("Skipping scouting... current coin {0} not found".format(current_coin + BRIDGE))
+        return
+
+    for pair in get_pairs_from(current_coin):
+        if not pair.to_coin.enabled:
+            continue
+        optional_coin_price = get_market_ticker_price_from_list(all_tickers, pair.to_coin + BRIDGE)
+
+        if optional_coin_price is None:
+            logger.info("Skipping scouting... optional coin {0} not found".format(pair.to_coin + BRIDGE))
+            continue
+
         # Obtain (current coin)/(optional coin)
-        coin_opt_coin_ratio = curr_coin_price / \
-            float(get_market_ticker_price(client, optional_coin + 'USDT'))
+        coin_opt_coin_ratio = current_coin_price / optional_coin_price
 
         # save ratio so we can pick the best option, not necessarily the first
-        ratio_dict[optional_coin] = (coin_opt_coin_ratio - transaction_fee * multiplier * coin_opt_coin_ratio) - g_state.coin_table[g_state.current_coin][optional_coin]
+        ratio_dict[pair.to_coin] = (coin_opt_coin_ratio - transaction_fee * multiplier * coin_opt_coin_ratio) - pair.ratio
 
     # keep only ratios bigger than zero
     ratio_dict = dict(filter(lambda x: x[1] > 0, ratio_dict.items()))
@@ -365,23 +406,70 @@ def scout(client, transaction_fee=0.001, multiplier=5):
     if ratio_dict:
       max_optional_coin = max(ratio_dict, key=ratio_dict.get)
       logger.info('Will be jumping from {0} to {1}'.format(
-            g_state.current_coin, max_optional_coin))
+            current_coin, max_optional_coin))
       transaction_through_tether(
-          client, g_state.current_coin, max_optional_coin)
+          client, current_coin, max_optional_coin)
+
+
+def migrate_old_state():
+    if os.path.isfile('.current_coin'):
+        with open('.current_coin', 'r') as f:
+            coin = f.read().strip()
+            logger.info(f".current_coin file found, loading current coin {coin}")
+            set_current_coin(coin)
+        os.rename('.current_coin', '.current_coin.old')
+        logger.info(f".current_coin renamed to .current_coin.old - You can now delete this file")
+
+    if os.path.isfile('.current_coin_table'):
+        with open('.current_coin_table', 'r') as f:
+            logger.info(f".current_coin_table file found, loading into database")
+            table: dict = json.load(f)
+            session: Session
+            with db_session() as session:
+                for from_coin, to_coin_dict in table.items():
+                    for to_coin, ratio in to_coin_dict.items():
+                        if from_coin == to_coin:
+                            continue
+                        pair = session.merge(get_pair(from_coin, to_coin))
+                        pair.ratio = ratio
+                        session.add(pair)
+
+        os.rename('.current_coin_table', '.current_coin_table.old')
+        logger.info(f".current_coin_table renamed to .current_coin_table.old - You can now delete this file")
 
 
 def main():
     api_key = config.get(USER_CFG_SECTION, 'api_key')
     api_secret_key = config.get(USER_CFG_SECTION, 'api_secret_key')
+    tld = config.get(USER_CFG_SECTION, 'tld') or 'com' # Default Top-level domain is 'com'
 
-    client = Client(api_key, api_secret_key)
+    client = Client(api_key, api_secret_key, tld=tld)
 
-    global g_state
-    if not (os.path.isfile(g_state._table_backup_file)):
-        initialize_trade_thresholds(client)
+    if not os.path.isfile('data/crypto_trading.db'):
+        logger.info("Creating database schema")
+        create_database()
+
+    set_coins(supported_coin_list)
+
+    migrate_old_state()
+
+    initialize_trade_thresholds(client)
+
+    if get_current_coin() is None:
+        current_coin_symbol = config.get(USER_CFG_SECTION, 'current_coin')
+        if not current_coin_symbol:
+            current_coin_symbol = random.choice(supported_coin_list)
+
+        logger.info("Setting initial coin to {0}".format(current_coin_symbol))
+
+        if current_coin_symbol not in supported_coin_list:
+            exit("***\nERROR!\nSince there is no backup file, a proper coin name must be provided at init\n***")
+        set_current_coin(current_coin_symbol)
+
         if config.get(USER_CFG_SECTION, 'current_coin') == '':
-            logger.info("Purchasing {0} to begin trading".format(g_state.current_coin))
-            buy_alt(client, g_state.current_coin, "USDT")
+            current_coin = get_current_coin()
+            logger.info("Purchasing {0} to begin trading".format(current_coin))
+            buy_alt(client, current_coin, BRIDGE)
             logger.info("Ready to start trading")
 
     while True:
@@ -389,7 +477,7 @@ def main():
             time.sleep(5)
             scout(client)
         except Exception as e:
-            logger.info('Error while scouting...\n{}\n'.format(e))
+            logger.info('Error while scouting...\n{}\n'.format(traceback.format_exc()))
 
 
 if __name__ == "__main__":
