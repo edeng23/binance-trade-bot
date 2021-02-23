@@ -1,11 +1,19 @@
 import datetime
+import enum
 
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Float
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Float, Enum
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 
 from .base import Base
 from .coin import Coin
+
+
+class Interval(enum.Enum):
+    MINUTELY = "MINUTELY"
+    HOURLY = "HOURLY"
+    DAILY = "DAILY"
+    WEEKLY = "WEEKLY"
 
 
 class CoinValue(Base):
@@ -20,13 +28,16 @@ class CoinValue(Base):
     usd_price = Column(Float)
     btc_price = Column(Float)
 
+    interval = Column(Enum(Interval))
+
     datetime = Column(DateTime, default=datetime.datetime.utcnow)
 
-    def __init__(self, coin: Coin, balance: float, usd_price: float, btc_price: float):
+    def __init__(self, coin: Coin, balance: float, usd_price: float, btc_price: float, interval=Interval.MINUTELY):
         self.coin = coin
         self.balance = balance
         self.usd_price = usd_price
         self.btc_price = btc_price
+        self.interval = interval
 
     @hybrid_property
     def usd_value(self):

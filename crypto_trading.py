@@ -18,7 +18,7 @@ from binance.exceptions import BinanceAPIException
 from sqlalchemy.orm import Session
 
 from database import set_coins, set_current_coin, get_current_coin, get_pairs_from, \
-    db_session, create_database, get_pair, log_scout, TradeLog, CoinValue, prune_scout_history
+    db_session, create_database, get_pair, log_scout, TradeLog, CoinValue, prune_scout_history, prune_value_history
 from models import Coin, Pair
 
 # Config consts
@@ -455,15 +455,6 @@ def update_values(client: Client):
             btc_value = get_market_ticker_price_from_list(all_ticker_values, coin + "BTC")
             session.add(CoinValue(coin, balance, usd_value, btc_value))
 
-            # Prune oldest entry if over limit
-            # Disabled for now but might be useful later
-            # Should add a more long term log for day to day performance
-            if False:
-                log_entries = session.query(CoinValue).filter(CoinValue.coin == coin).count()
-                if log_entries > 300_000:
-                    oldest = session.query(CoinValue).order_by(CoinValue.datetime.asc()).limit(1).first()
-                    session.delete(oldest)
-
 
 def migrate_old_state():
     if os.path.isfile('.current_coin'):
@@ -530,7 +521,14 @@ def main():
         try:
             time.sleep(5)
             scout(client)
-            update_values(client)
+
+            # Only log values once per minute
+            if datetime.datetime.now().second < 5:
+                update_values(client)
+
+                # Prune log every hour
+                if datetime.datetime.now().minute == 0:
+                    prune_value_history()
         except Exception as e:
             logger.info('Error while scouting...\n{}\n'.format(traceback.format_exc()))
 
