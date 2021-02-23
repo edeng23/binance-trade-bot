@@ -7,9 +7,6 @@ nohup.out
 user.cfg
 .idea/
 .vscode/
-<<<<<<< HEAD
 .replit
-=======
 venv/
 crypto_trading.db
->>>>>>> origin/master
