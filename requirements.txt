@@ -5,3 +5,6 @@ apprise
 Flask
 gunicorn
 flask-cors
+flask-socketio
+eventlet
+python-socketio[client]
