@@ -9,4 +9,4 @@ user.cfg
 .idea/
 .vscode/
 venv/
-data/
+/data/
