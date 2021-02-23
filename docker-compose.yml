@@ -6,8 +6,9 @@ services:
     image: binance_trader
     container_name: binance_trader
     volumes:
-    - ./user.cfg:/app/user.cfg
-    - ./data:/app/data
+      - ./user.cfg:/app/user.cfg
+      - ./data:/app/data
+      - ./logs:/app/logs
     command: python crypto_trading.py
 
   api:
