@@ -6,5 +6,17 @@ services:
     container_name: binance_trader
     volumes:
     - ./user.cfg:/app/user.cfg
-    - ./.current_coin:/app/.current_coin
-    - ./.current_coin_table:/app/.current_coin_table
+    - ./data:/app/data
+
+  sqlitebrowser:
+    image: ghcr.io/linuxserver/sqlitebrowser
+    container_name: sqlitebrowser
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Berlin
+    volumes:
+      - ./data/config:/config
+      - ./data:/data
+    ports:
+      - 3000:3000
