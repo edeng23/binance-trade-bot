@@ -2,7 +2,7 @@ from contextlib import contextmanager
 from datetime import datetime, timedelta
 from typing import List, Union, Optional
 
-from sqlalchemy import create_engine, and_
+from sqlalchemy import create_engine, func
 from sqlalchemy.orm import sessionmaker, scoped_session, Session
 
 from models import *
@@ -51,8 +51,7 @@ def set_coins(symbols: List[str]):
         for from_coin in coins:
             for to_coin in coins:
                 if from_coin != to_coin:
-                    pair = session.query(Pair).filter(
-                        and_(Pair.from_coin == from_coin, Pair.to_coin == to_coin)).first()
+                    pair = session.query(Pair).filter(Pair.from_coin == from_coin, Pair.to_coin == to_coin).first()
                     if pair is None:
                         session.add(Pair(from_coin, to_coin))
 
@@ -92,8 +91,7 @@ def get_pair(from_coin: Union[Coin, str], to_coin: Union[Coin, str]):
     to_coin = get_coin(to_coin)
     session: Session
     with db_session() as session:
-        pair: Pair = session.query(Pair).filter(
-            and_(Pair.from_coin == from_coin, Pair.to_coin == to_coin)).first()
+        pair: Pair = session.query(Pair).filter(Pair.from_coin == from_coin, Pair.to_coin == to_coin).first()
         session.expunge(pair)
         return pair
 
@@ -119,6 +117,45 @@ def prune_scout_history(hours: float):
     session: Session
     with db_session() as session:
         session.query(ScoutHistory).filter(ScoutHistory.datetime < time_diff).delete()
+
+
+def prune_value_history():
+    session: Session
+    with db_session() as session:
+        # Sets the first entry for each coin for each hour as 'hourly'
+        hourly_entries: List[CoinValue] = session.query(CoinValue).group_by(
+            CoinValue.coin_id, func.strftime('%H', CoinValue.datetime)).all()
+        for entry in hourly_entries:
+            entry.interval = Interval.HOURLY
+
+        # Sets the first entry for each coin for each day as 'daily'
+        daily_entries: List[CoinValue] = session.query(CoinValue).group_by(
+            CoinValue.coin_id, func.date(CoinValue.datetime)).all()
+        for entry in daily_entries:
+            entry.interval = Interval.DAILY
+
+        # Sets the first entry for each coin for each month as 'weekly' (Sunday is the start of the week)
+        weekly_entries: List[CoinValue] = session.query(CoinValue).group_by(
+            CoinValue.coin_id, func.strftime("%Y-%W", CoinValue.datetime)).all()
+        for entry in weekly_entries:
+            entry.interval = Interval.WEEKLY
+
+        # The last 24 hours worth of minutely entries will be kept, so count(coins) * 1440 entries
+        time_diff = datetime.now() - timedelta(hours=24)
+        session.query(CoinValue).filter(CoinValue.interval == Interval.MINUTELY,
+                                        CoinValue.datetime < time_diff).delete()
+
+        # The last 28 days worth of hourly entries will be kept, so count(coins) * 672 entries
+        time_diff = datetime.now() - timedelta(days=28)
+        session.query(CoinValue).filter(CoinValue.interval == Interval.HOURLY,
+                                        CoinValue.datetime < time_diff).delete()
+
+        # The last years worth of daily entries will be kept, so count(coins) * 365 entries
+        time_diff = datetime.now() - timedelta(days=365)
+        session.query(CoinValue).filter(CoinValue.interval == Interval.DAILY,
+                                        CoinValue.datetime < time_diff).delete()
+
+        # All weekly entries will be kept forever
 
 
 class TradeLog:
