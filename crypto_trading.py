@@ -138,37 +138,11 @@ if not os.path.exists(CFG_FL_NAME):
 config.read(CFG_FL_NAME)
 
 
-def retry(howmany):
-    def tryIt(func):
-        def f(*args, **kwargs):
-            time.sleep(1)
-            attempts = 0
-            while attempts < howmany:
-                try:
-                    return func(*args, **kwargs)
-                except Exception as e:
-                    print("Failed to Buy/Sell. Trying Again.")
-                    if attempts == 0:
-                        logger.info(e)
-                        attempts += 1
-
-        return f
-
-    return tryIt
-
-
-def first(iterable, condition=lambda x: True):
-    try:
-        return next(x for x in iterable if condition(x))
-    except StopIteration:
-        return None
-
-
 def get_market_ticker_price_from_list(all_tickers, ticker_symbol):
     """
     Get ticker price of a specific coin
     """
-    ticker = first(all_tickers, condition=lambda x: x["symbol"] == ticker_symbol)
+    ticker = next((ticker for ticker in all_tickers if ticker["symbol"] == ticker_symbol), None)
     return float(ticker["price"]) if ticker else None
 
 
@@ -307,7 +281,7 @@ def scout(transaction_fee=0.001, multiplier=5):
         coin_opt_coin_ratio = current_coin_price / optional_coin_price
 
         if (
-            coin_opt_coin_ratio - transaction_fee * multiplier * coin_opt_coin_ratio
+                coin_opt_coin_ratio - transaction_fee * multiplier * coin_opt_coin_ratio
         ) > pair.ratio:
             logger.info(
                 "Will be jumping from {0} to {1}".format(current_coin, pair.to_coin)
