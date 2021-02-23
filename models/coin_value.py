@@ -1,5 +1,5 @@
-import datetime
 import enum
+from datetime import datetime as _datetime
 
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Float, Enum
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -30,14 +30,16 @@ class CoinValue(Base):
 
     interval = Column(Enum(Interval))
 
-    datetime = Column(DateTime, default=datetime.datetime.utcnow)
+    datetime = Column(DateTime)
 
-    def __init__(self, coin: Coin, balance: float, usd_price: float, btc_price: float, interval=Interval.MINUTELY):
+    def __init__(self, coin: Coin, balance: float, usd_price: float, btc_price: float, interval=Interval.MINUTELY,
+                 datetime: _datetime = None):
         self.coin = coin
         self.balance = balance
         self.usd_price = usd_price
         self.btc_price = btc_price
         self.interval = interval
+        self.datetime = datetime or _datetime.now()
 
     @hybrid_property
     def usd_value(self):
