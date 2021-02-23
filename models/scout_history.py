@@ -12,8 +12,8 @@ class ScoutHistory(Base):
     __tablename__ = "scout_history"
 
     id = Column(Integer, primary_key=True)
-    
-    pair_id = Column(String, ForeignKey('pairs.id'))
+
+    pair_id = Column(String, ForeignKey("pairs.id"))
     pair = relationship("Pair")
 
     target_ratio = Column(Float)
@@ -22,7 +22,13 @@ class ScoutHistory(Base):
 
     datetime = Column(DateTime, default=datetime.datetime.utcnow)
 
-    def __init__(self, pair: Pair, target_ratio: float, current_coin_price: float, other_coin_price: float):
+    def __init__(
+        self,
+        pair: Pair,
+        target_ratio: float,
+        current_coin_price: float,
+        other_coin_price: float,
+    ):
         self.pair = pair
         self.target_ratio = target_ratio
         self.current_coin_price = current_coin_price
@@ -31,5 +37,3 @@ class ScoutHistory(Base):
     @hybrid_property
     def current_ratio(self):
         return self.current_coin_price / self.other_coin_price
-
-

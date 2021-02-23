@@ -21,7 +21,7 @@ class CoinValue(Base):
 
     id = Column(Integer, primary_key=True)
 
-    coin_id = Column(String, ForeignKey('coins.symbol'))
+    coin_id = Column(String, ForeignKey("coins.symbol"))
     coin = relationship("Coin")
 
     balance = Column(Float)
@@ -32,8 +32,15 @@ class CoinValue(Base):
 
     datetime = Column(DateTime)
 
-    def __init__(self, coin: Coin, balance: float, usd_price: float, btc_price: float, interval=Interval.MINUTELY,
-                 datetime: _datetime = None):
+    def __init__(
+        self,
+        coin: Coin,
+        balance: float,
+        usd_price: float,
+        btc_price: float,
+        interval=Interval.MINUTELY,
+        datetime: _datetime = None,
+    ):
         self.coin = coin
         self.balance = balance
         self.usd_price = usd_price

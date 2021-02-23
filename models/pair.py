@@ -10,11 +10,11 @@ class Pair(Base):
 
     id = Column(Integer, primary_key=True)
 
-    from_coin_id = Column(String, ForeignKey('coins.symbol'))
-    from_coin = relationship("Coin", foreign_keys=[from_coin_id], lazy='joined')
+    from_coin_id = Column(String, ForeignKey("coins.symbol"))
+    from_coin = relationship("Coin", foreign_keys=[from_coin_id], lazy="joined")
 
-    to_coin_id = Column(String, ForeignKey('coins.symbol'))
-    to_coin = relationship("Coin", foreign_keys=[to_coin_id], lazy='joined')
+    to_coin_id = Column(String, ForeignKey("coins.symbol"))
+    to_coin = relationship("Coin", foreign_keys=[to_coin_id], lazy="joined")
 
     ratio = Column(Float)
 
