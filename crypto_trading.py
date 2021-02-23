@@ -442,6 +442,8 @@ def scout(client: Client, transaction_fee=0.001, multiplier=5):
 def update_values(client: Client):
     all_ticker_values = get_all_market_tickers(client)
 
+    now = datetime.datetime.now()
+
     session: Session
     with db_session() as session:
         coins: List[Coin] = session.query(Coin).all()
@@ -451,7 +453,7 @@ def update_values(client: Client):
                 continue
             usd_value = get_market_ticker_price_from_list(all_ticker_values, coin + "USDT")
             btc_value = get_market_ticker_price_from_list(all_ticker_values, coin + "BTC")
-            session.add(CoinValue(coin, balance, usd_value, btc_value))
+            session.add(CoinValue(coin, balance, usd_value, btc_value, datetime=now))
 
 
 def migrate_old_state():
