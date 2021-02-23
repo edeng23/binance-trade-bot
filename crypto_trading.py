@@ -18,7 +18,7 @@ from binance.exceptions import BinanceAPIException
 from sqlalchemy.orm import Session
 
 from database import set_coins, set_current_coin, get_current_coin, get_pairs_from, \
-    db_session, create_database, get_pair, log_scout, TradeLog, CoinValue
+    db_session, create_database, get_pair, log_scout, TradeLog, CoinValue, prune_scout_history
 from models import Coin, Pair
 
 # Config consts
@@ -52,6 +52,9 @@ TELEGRAM_CHAT_ID = config.get(USER_CFG_SECTION, 'botChatID')
 TELEGRAM_TOKEN = config.get(USER_CFG_SECTION, 'botToken')
 BRIDGE_SYMBOL = config.get(USER_CFG_SECTION, 'bridge')
 BRIDGE = Coin(BRIDGE_SYMBOL, False)
+
+# Prune settings
+SCOUT_HISTORY_PRUNE_TIME = float(config.get(USER_CFG_SECTION, 'hourToKeepScoutHistory', fallback="1"))
 
 
 class RequestsHandler(Handler):
@@ -434,6 +437,8 @@ def scout(client: Client, transaction_fee=0.001, multiplier=5):
             current_coin, best_pair.to_coin_id))
         transaction_through_tether(
             client, best_pair)
+
+    prune_scout_history(SCOUT_HISTORY_PRUNE_TIME)
 
 
 def update_values(client: Client):

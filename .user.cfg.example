@@ -6,3 +6,4 @@ bridge=USDT
 botChatID=
 botToken=
 tld=com
+hourToKeepScoutHistory=1
