@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+from datetime import datetime, timedelta
 from typing import List, Union, Optional
 
 from sqlalchemy import create_engine, and_
@@ -111,6 +112,13 @@ def log_scout(pair: Pair, target_ratio: float, current_coin_price: float, other_
         pair = session.merge(pair)
         sh = ScoutHistory(pair, target_ratio, current_coin_price, other_coin_price)
         session.add(sh)
+
+
+def prune_scout_history(hours: float):
+    time_diff = datetime.now() - timedelta(hours=hours)
+    session: Session
+    with db_session() as session:
+        session.query(ScoutHistory).filter(ScoutHistory.datetime < time_diff).delete()
 
 
 class TradeLog:
