@@ -3,7 +3,7 @@ import logging.handlers
 from logging import Handler, Formatter
 from notifications import NotificationHandler
 
-LOG_PATH = "crypto_trading.log"
+LOG_PATH = "logs/crypto_trading.log"
 
 
 class Logger:
