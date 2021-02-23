@@ -8,7 +8,6 @@ import os
 import queue
 import random
 import time
-import traceback
 from logging import Handler, Formatter
 from typing import List
 
@@ -20,6 +19,7 @@ from sqlalchemy.orm import Session
 from database import set_coins, set_current_coin, get_current_coin, get_pairs_from, \
     db_session, create_database, get_pair, log_scout, TradeLog, CoinValue, prune_scout_history, prune_value_history
 from models import Coin, Pair
+from scheduler import SafeScheduler
 
 # Config consts
 CFG_FL_NAME = 'user.cfg'
@@ -422,7 +422,6 @@ def scout(client: Client, transaction_fee=0.001, multiplier=5):
             transaction_through_tether(
                 client, pair)
             break
-    prune_scout_history(SCOUT_HISTORY_PRUNE_TIME)
 
 
 def update_values(client: Client):
@@ -501,20 +500,15 @@ def main():
             buy_alt(client, current_coin, BRIDGE)
             logger.info("Ready to start trading")
 
+    schedule = SafeScheduler(logger)
+    schedule.every(5).seconds.do(scout, client=client).tag("scouting")
+    schedule.every(1).minutes.do(update_values, client=client).tag("updating value history")
+    schedule.every(1).minutes.do(prune_scout_history, hours=SCOUT_HISTORY_PRUNE_TIME).tag("pruning scout history")
+    schedule.every(1).hours.do(prune_value_history).tag("pruning value history")
+
     while True:
-        try:
-            time.sleep(5)
-            scout(client)
-
-            # Only log values once per minute
-            if datetime.datetime.now().second < 5:
-                update_values(client)
-
-                # Prune log every hour
-                if datetime.datetime.now().minute == 0:
-                    prune_value_history()
-        except Exception as e:
-            logger.info('Error while scouting...\n{}\n'.format(traceback.format_exc()))
+        schedule.run_pending()
+        time.sleep(1)
 
 
 if __name__ == "__main__":
