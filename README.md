@@ -64,9 +64,11 @@ if you only want to start the sqlitebrowser
 ```shell
 docker-compose up -d sqlitebrowser
 ```
+## Support the Project
 
+<a href="https://www.buymeacoffee.com/edeng" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="41" width="174"></a>
 
-# Join the Chat
+## Join the Chat
 
 * **Discord**: [Invite Link](https://discord.gg/m4TNaxreCN)
 
@@ -74,7 +76,7 @@ docker-compose up -d sqlitebrowser
   <img src = "https://usercontent2.hubstatic.com/6061829.jpg">
 </p>
 
-# Disclaimer
+## Disclaimer
 
 The code within this repository comes with no guarantee. Run it at your own risk. 
 Do not risk money which you are afraid to lose. There might be bugs in the code - this software does not come with any warranty.
