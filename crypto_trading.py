@@ -1,5 +1,4 @@
 #!python3
-import configparser
 import datetime
 import json
 import logging.handlers
@@ -81,18 +80,6 @@ class LogstashFormatter(Formatter):
             return message
         else:
             return f"<i>{t}</i><pre>\n{record.msg}</pre>"
-
-
-# Get supported coin list from supported_coin_list file
-with open("supported_coin_list") as f:
-    supported_coin_list = f.read().upper().splitlines()
-
-# Init config
-config = configparser.ConfigParser()
-if not os.path.exists(Config.CFG_FL_NAME):
-    print("No configuration file (user.cfg) found! See README.")
-    exit()
-config.read(Config.CFG_FL_NAME)
 
 
 def get_market_ticker_price_from_list(all_tickers, ticker_symbol):
@@ -292,6 +279,10 @@ def main():
         logger.info("Creating database schema")
         db.create_database()
 
+    # Get supported coin list from supported_coin_list file
+    with open("supported_coin_list") as f:
+        supported_coin_list = f.read().upper().splitlines()
+
     db.set_coins(supported_coin_list)
 
     migrate_old_state()
@@ -299,19 +290,19 @@ def main():
     initialize_trade_thresholds()
 
     if db.get_current_coin() is None:
-        current_coin_symbol = config.get(Config.USER_CFG_SECTION, "current_coin")
-        if not current_coin_symbol:
-            current_coin_symbol = random.choice(supported_coin_list)
+        starting_coin_symbol = Config.STARTING_COIN
+        if not starting_coin_symbol:
+            starting_coin_symbol = random.choice(supported_coin_list)
 
-        logger.info(f"Setting initial coin to {current_coin_symbol}")
+        logger.info(f"Setting initial coin to {starting_coin_symbol}")
 
-        if current_coin_symbol not in supported_coin_list:
+        if starting_coin_symbol not in supported_coin_list:
             exit(
                 "***\nERROR!\nSince there is no backup file, a proper coin name must be provided at init\n***"
             )
-        db.set_current_coin(current_coin_symbol)
+        db.set_current_coin(starting_coin_symbol)
 
-        if config.get(Config.USER_CFG_SECTION, "current_coin") == "":
+        if Config.STARTING_COIN == "":
             current_coin = db.get_current_coin()
             logger.info(f"Purchasing {current_coin} to begin trading")
             binance_manager.buy_alt(current_coin, Config.BRIDGE)
@@ -339,5 +330,4 @@ binance_manager = BinanceApiManager(
 logger.info("Started")
 
 if __name__ == "__main__":
-
     main()

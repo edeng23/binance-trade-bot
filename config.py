@@ -35,3 +35,6 @@ class Config:
     BINANCE_TLD = (
         config.get(USER_CFG_SECTION, "tld") or "com"
     )  # Default Top-level domain is 'com'
+
+    # Starting coin
+    STARTING_COIN = config.get(USER_CFG_SECTION, "current_coin")
