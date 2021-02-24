@@ -24,17 +24,17 @@ class BinanceApiManager:
         Get ticker price of a specific coin
         """
         for ticker in self.client.get_symbol_ticker():
-            if ticker[u"symbol"] == ticker_symbol:
-                return float(ticker[u"price"])
+            if ticker["symbol"] == ticker_symbol:
+                return float(ticker["price"])
         return None
 
     def get_currency_balance(self, currency_symbol: str):
         """
         Get balance of a specific coin
         """
-        for currency_balance in self.client.get_account()[u"balances"]:
-            if currency_balance[u"asset"] == currency_symbol:
-                return float(currency_balance[u"free"])
+        for currency_balance in self.client.get_account()["balances"]:
+            if currency_balance["asset"] == currency_symbol:
+                return float(currency_balance["free"])
         return None
 
     def retry(self, func, *args, **kwargs):
@@ -54,7 +54,7 @@ class BinanceApiManager:
             try:
                 time.sleep(3)
                 stat = self.client.get_order(
-                    symbol=alt_symbol + crypto_symbol, orderId=order[u"orderId"]
+                    symbol=alt_symbol + crypto_symbol, orderId=order["orderId"]
                 )
                 break
             except BinanceAPIException as e:
@@ -65,17 +65,17 @@ class BinanceApiManager:
 
         self.logger.info(stat)
 
-        while stat[u"status"] != "FILLED":
+        while stat["status"] != "FILLED":
             try:
                 stat = self.client.get_order(
-                    symbol=alt_symbol + crypto_symbol, orderId=order[u"orderId"]
+                    symbol=alt_symbol + crypto_symbol, orderId=order["orderId"]
                 )
                 time.sleep(1)
             except BinanceAPIException as e:
                 self.logger.info(e)
                 time.sleep(2)
             except Exception as e:
-                self.logger.info("Unexpected Error: {0}".format(e))
+                self.logger.info(f"Unexpected Error: {e}")
 
         return stat
 
@@ -108,7 +108,7 @@ class BinanceApiManager:
             * 10 ** ticks[alt_symbol]
             / self.get_market_ticker_price(alt_symbol + crypto_symbol)
         ) / float(10 ** ticks[alt_symbol])
-        self.logger.info("BUY QTY {0}".format(order_quantity))
+        self.logger.info(f"BUY QTY {order_quantity}")
 
         # Try to buy until successful
         order = None
@@ -124,13 +124,13 @@ class BinanceApiManager:
                 self.logger.info(e)
                 time.sleep(1)
             except Exception as e:
-                self.logger.info("Unexpected Error: {0}".format(e))
+                self.logger.info(f"Unexpected Error: {e}")
 
         trade_log.set_ordered(alt_balance, crypto_balance, order_quantity)
 
         stat = self.wait_for_order(alt_symbol, crypto_symbol, order)
 
-        self.logger.info("Bought {0}".format(alt_symbol))
+        self.logger.info(f"Bought {alt_symbol}")
 
         trade_log.set_complete(stat["cummulativeQuoteQty"])
 
@@ -152,11 +152,11 @@ class BinanceApiManager:
         order_quantity = math.floor(
             self.get_currency_balance(alt_symbol) * 10 ** ticks[alt_symbol]
         ) / float(10 ** ticks[alt_symbol])
-        self.logger.info("Selling {0} of {1}".format(order_quantity, alt_symbol))
+        self.logger.info(f"Selling {order_quantity} of {alt_symbol}")
 
         alt_balance = self.get_currency_balance(alt_symbol)
         crypto_balance = self.get_currency_balance(crypto_symbol)
-        self.logger.info("Balance is {0}".format(alt_balance))
+        self.logger.info(f"Balance is {alt_balance}")
         order = None
         while order is None:
             order = self.client.order_market_sell(
@@ -178,7 +178,7 @@ class BinanceApiManager:
         while new_balance >= alt_balance:
             new_balance = self.get_currency_balance(alt_symbol)
 
-        self.logger.info("Sold {0}".format(alt_symbol))
+        self.logger.info(f"Sold {alt_symbol}")
 
         trade_log.set_complete(stat["cummulativeQuoteQty"])
 

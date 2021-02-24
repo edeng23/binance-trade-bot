@@ -72,20 +72,26 @@ class Config:
     # Setup binance
     api_key = config.get(USER_CFG_SECTION, "api_key")
     api_secret_key = config.get(USER_CFG_SECTION, "api_secret_key")
-    tld = config.get(USER_CFG_SECTION, "tld") or "com"  # Default Top-level domain is 'com'
+    tld = (
+        config.get(USER_CFG_SECTION, "tld") or "com"
+    )  # Default Top-level domain is 'com'
 
 
-binance_manager = BinanceApiManager(Config.api_key, Config.api_secret_key, Config.tld, logger)
+binance_manager = BinanceApiManager(
+    Config.api_key, Config.api_secret_key, Config.tld, logger
+)
 
 
 class RequestsHandler(Handler):
     def emit(self, record):
         log_entry = self.format(record)
-        payload = {"chat_id": Config.TELEGRAM_CHAT_ID, "text": log_entry, "parse_mode": "HTML"}
+        payload = {
+            "chat_id": Config.TELEGRAM_CHAT_ID,
+            "text": log_entry,
+            "parse_mode": "HTML",
+        }
         return requests.post(
-            "https://api.telegram.org/bot{token}/sendMessage".format(
-                token=Config.TELEGRAM_TOKEN
-            ),
+            f"https://api.telegram.org/bot{Config.TELEGRAM_TOKEN}/sendMessage",
             data=payload,
         ).content
 
@@ -98,20 +104,16 @@ class LogstashFormatter(Formatter):
         t = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
 
         if isinstance(record.msg, dict):
-            message = "<i>{datetime}</i>".format(datetime=t)
+            message = f"<i>{t}</i>"
 
             for key in record.msg:
                 message = message + (
-                    "<pre>\n{title}: <strong>{value}</strong></pre>".format(
-                        title=key, value=record.msg[key]
-                    )
+                    f"<pre>\n{key}: <strong>{record.msg[key]}</strong></pre>"
                 )
 
             return message
         else:
-            return "<i>{datetime}</i><pre>\n{message}</pre>".format(
-                message=record.msg, datetime=t
-            )
+            return f"<i>{t}</i><pre>\n{record.msg}</pre>"
 
 
 # logging to Telegram if token exists
@@ -143,7 +145,9 @@ def get_market_ticker_price_from_list(all_tickers, ticker_symbol):
     """
     Get ticker price of a specific coin
     """
-    ticker = next((ticker for ticker in all_tickers if ticker["symbol"] == ticker_symbol), None)
+    ticker = next(
+        (ticker for ticker in all_tickers if ticker["symbol"] == ticker_symbol), None
+    )
     return float(ticker["price"]) if ticker else None
 
 
@@ -177,9 +181,7 @@ def update_trade_threshold():
 
     if current_coin_price is None:
         logger.info(
-            "Skipping update... current coin {0} not found".format(
-                current_coin + Config.BRIDGE
-            )
+            f"Skipping update... current coin {current_coin + Config.BRIDGE} not found"
         )
         return
 
@@ -192,9 +194,7 @@ def update_trade_threshold():
 
             if from_coin_price is None:
                 logger.info(
-                    "Skipping update for coin {0} not found".format(
-                        pair.from_coin + Config.BRIDGE
-                    )
+                    f"Skipping update for coin {pair.from_coin + Config.BRIDGE} not found"
                 )
                 continue
 
@@ -213,16 +213,14 @@ def initialize_trade_thresholds():
         for pair in session.query(Pair).filter(Pair.ratio == None).all():
             if not pair.from_coin.enabled or not pair.to_coin.enabled:
                 continue
-            logger.info("Initializing {0} vs {1}".format(pair.from_coin, pair.to_coin))
+            logger.info(f"Initializing {pair.from_coin} vs {pair.to_coin}")
 
             from_coin_price = get_market_ticker_price_from_list(
                 all_tickers, pair.from_coin + Config.BRIDGE
             )
             if from_coin_price is None:
                 logger.info(
-                    "Skipping initializing {0}, symbol not found".format(
-                        pair.from_coin + Config.BRIDGE
-                    )
+                    f"Skipping initializing {pair.from_coin + Config.BRIDGE}, symbol not found"
                 )
                 continue
 
@@ -231,9 +229,7 @@ def initialize_trade_thresholds():
             )
             if to_coin_price is None:
                 logger.info(
-                    "Skipping initializing {0}, symbol not found".format(
-                        pair.to_coin + Config.BRIDGE
-                    )
+                    f"Skipping initializing {pair.to_coin + Config.BRIDGE}, symbol not found"
                 )
                 continue
 
@@ -255,9 +251,7 @@ def scout(transaction_fee=0.001, multiplier=5):
 
     if current_coin_price is None:
         logger.info(
-            "Skipping scouting... current coin {0} not found".format(
-                current_coin + Config.BRIDGE
-            )
+            f"Skipping scouting... current coin {current_coin + Config.BRIDGE} not found"
         )
         return
 
@@ -270,9 +264,7 @@ def scout(transaction_fee=0.001, multiplier=5):
 
         if optional_coin_price is None:
             logger.info(
-                "Skipping scouting... optional coin {0} not found".format(
-                    pair.to_coin + Config.BRIDGE
-                )
+                f"Skipping scouting... optional coin {pair.to_coin + Config.BRIDGE} not found"
             )
             continue
 
@@ -282,11 +274,9 @@ def scout(transaction_fee=0.001, multiplier=5):
         coin_opt_coin_ratio = current_coin_price / optional_coin_price
 
         if (
-                coin_opt_coin_ratio - transaction_fee * multiplier * coin_opt_coin_ratio
+            coin_opt_coin_ratio - transaction_fee * multiplier * coin_opt_coin_ratio
         ) > pair.ratio:
-            logger.info(
-                "Will be jumping from {0} to {1}".format(current_coin, pair.to_coin)
-            )
+            logger.info(f"Will be jumping from {current_coin} to {pair.to_coin}")
             transaction_through_tether(pair)
             break
 
@@ -320,12 +310,12 @@ def migrate_old_state():
             set_current_coin(coin)
         os.rename(".current_coin", ".current_coin.old")
         logger.info(
-            f".current_coin renamed to .current_coin.old - You can now delete this file"
+            ".current_coin renamed to .current_coin.old - You can now delete this file"
         )
 
     if os.path.isfile(".current_coin_table"):
         with open(".current_coin_table", "r") as f:
-            logger.info(f".current_coin_table file found, loading into database")
+            logger.info(".current_coin_table file found, loading into database")
             table: dict = json.load(f)
             session: Session
             with db_session() as session:
@@ -339,7 +329,7 @@ def migrate_old_state():
 
         os.rename(".current_coin_table", ".current_coin_table.old")
         logger.info(
-            f".current_coin_table renamed to .current_coin_table.old - You can now delete this file"
+            ".current_coin_table renamed to .current_coin_table.old - You can now delete this file"
         )
 
 
@@ -359,7 +349,7 @@ def main():
         if not current_coin_symbol:
             current_coin_symbol = random.choice(supported_coin_list)
 
-        logger.info("Setting initial coin to {0}".format(current_coin_symbol))
+        logger.info(f"Setting initial coin to {current_coin_symbol}")
 
         if current_coin_symbol not in supported_coin_list:
             exit(
@@ -369,7 +359,7 @@ def main():
 
         if config.get(Config.USER_CFG_SECTION, "current_coin") == "":
             current_coin = get_current_coin()
-            logger.info("Purchasing {0} to begin trading".format(current_coin))
+            logger.info(f"Purchasing {current_coin} to begin trading")
             binance_manager.buy_alt(current_coin, Config.BRIDGE)
             logger.info("Ready to start trading")
 
