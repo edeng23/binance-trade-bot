@@ -410,7 +410,7 @@ def scout(client: Client, transaction_fee=0.001, multiplier=5):
       logger.info('Will be jumping from {0} to {1}'.format(
             current_coin, max_optional_coin))
       transaction_through_tether(
-          client, current_coin, max_optional_coin)
+            client, current_coin, max_optional_coin)
 
 
 def migrate_old_state():
