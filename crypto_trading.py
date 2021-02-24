@@ -1,6 +1,5 @@
 #!python3
 import datetime
-import json
 import logging.handlers
 import os
 import queue
@@ -12,17 +11,22 @@ from typing import List
 import requests
 from sqlalchemy.orm import Session
 
+import config
 import database as db
+from auto_trader import AutoTrader
 from binance_api_manager import BinanceApiManager
-from config import Config
-from models import Coin, Pair
+from database import migrate_old_state
+from models import Coin
 from scheduler import SafeScheduler
+from utils import get_market_ticker_price_from_list
 
 
 def create_logger():
     _logger = logging.getLogger("crypto_trader_logger")
     _logger.setLevel(logging.DEBUG)
-    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
     fh = logging.FileHandler("crypto_trading.log")
     fh.setLevel(logging.DEBUG)
     fh.setFormatter(formatter)
@@ -35,7 +39,7 @@ def create_logger():
     _logger.addHandler(ch)
 
     # logging to Telegram if token exists
-    if Config.TELEGRAM_TOKEN:
+    if config.TELEGRAM_TOKEN:
         que = queue.Queue(-1)  # no limit on size
         queue_handler = logging.handlers.QueueHandler(que)
         th = RequestsHandler()
@@ -52,12 +56,12 @@ class RequestsHandler(Handler):
     def emit(self, record):
         log_entry = self.format(record)
         payload = {
-            "chat_id": Config.TELEGRAM_CHAT_ID,
+            "chat_id": config.TELEGRAM_CHAT_ID,
             "text": log_entry,
             "parse_mode": "HTML",
         }
         return requests.post(
-            f"https://api.telegram.org/bot{Config.TELEGRAM_TOKEN}/sendMessage",
+            f"https://api.telegram.org/bot{config.TELEGRAM_TOKEN}/sendMessage",
             data=payload,
         ).content
 
@@ -82,147 +86,7 @@ class LogstashFormatter(Formatter):
             return f"<i>{t}</i><pre>\n{record.msg}</pre>"
 
 
-def get_market_ticker_price_from_list(all_tickers, ticker_symbol):
-    """
-    Get ticker price of a specific coin
-    """
-    ticker = next(
-        (ticker for ticker in all_tickers if ticker["symbol"] == ticker_symbol), None
-    )
-    return float(ticker["price"]) if ticker else None
-
-
-def transaction_through_tether(pair: Pair):
-    """
-    Jump from the source coin to the destination coin through tether
-    """
-    result = binance_manager.sell_alt(pair.from_coin, Config.BRIDGE)
-    if result is None:
-        logger.info("Selling failed, cancelling transaction")
-    result = binance_manager.buy_alt(pair.to_coin, Config.BRIDGE)
-    if result is None:
-        logger.info("Buying failed, cancelling transaction")
-
-    db.set_current_coin(pair.to_coin)
-    update_trade_threshold()
-
-
-def update_trade_threshold():
-    """
-    Update all the coins with the threshold of buying the current held coin
-    """
-
-    all_tickers = binance_manager.get_all_market_tickers()
-
-    current_coin = db.get_current_coin()
-
-    current_coin_price = get_market_ticker_price_from_list(
-        all_tickers, current_coin + Config.BRIDGE
-    )
-
-    if current_coin_price is None:
-        logger.info(
-            f"Skipping update... current coin {current_coin + Config.BRIDGE} not found"
-        )
-        return
-
-    session: Session
-    with db.db_session() as session:
-        for pair in session.query(Pair).filter(Pair.to_coin == current_coin):
-            from_coin_price = get_market_ticker_price_from_list(
-                all_tickers, pair.from_coin + Config.BRIDGE
-            )
-
-            if from_coin_price is None:
-                logger.info(
-                    f"Skipping update for coin {pair.from_coin + Config.BRIDGE} not found"
-                )
-                continue
-
-            pair.ratio = from_coin_price / current_coin_price
-
-
-def initialize_trade_thresholds():
-    """
-    Initialize the buying threshold of all the coins for trading between them
-    """
-
-    all_tickers = binance_manager.get_all_market_tickers()
-
-    session: Session
-    with db.db_session() as session:
-        for pair in session.query(Pair).filter(Pair.ratio == None).all():
-            if not pair.from_coin.enabled or not pair.to_coin.enabled:
-                continue
-            logger.info(f"Initializing {pair.from_coin} vs {pair.to_coin}")
-
-            from_coin_price = get_market_ticker_price_from_list(
-                all_tickers, pair.from_coin + Config.BRIDGE
-            )
-            if from_coin_price is None:
-                logger.info(
-                    f"Skipping initializing {pair.from_coin + Config.BRIDGE}, symbol not found"
-                )
-                continue
-
-            to_coin_price = get_market_ticker_price_from_list(
-                all_tickers, pair.to_coin + Config.BRIDGE
-            )
-            if to_coin_price is None:
-                logger.info(
-                    f"Skipping initializing {pair.to_coin + Config.BRIDGE}, symbol not found"
-                )
-                continue
-
-            pair.ratio = from_coin_price / to_coin_price
-
-
-def scout(transaction_fee=0.001, multiplier=5):
-    """
-    Scout for potential jumps from the current coin to another coin
-    """
-
-    all_tickers = binance_manager.get_all_market_tickers()
-
-    current_coin = db.get_current_coin()
-
-    current_coin_price = get_market_ticker_price_from_list(
-        all_tickers, current_coin + Config.BRIDGE
-    )
-
-    if current_coin_price is None:
-        logger.info(
-            f"Skipping scouting... current coin {current_coin + Config.BRIDGE} not found"
-        )
-        return
-
-    for pair in db.get_pairs_from(current_coin):
-        if not pair.to_coin.enabled:
-            continue
-        optional_coin_price = get_market_ticker_price_from_list(
-            all_tickers, pair.to_coin + Config.BRIDGE
-        )
-
-        if optional_coin_price is None:
-            logger.info(
-                f"Skipping scouting... optional coin {pair.to_coin + Config.BRIDGE} not found"
-            )
-            continue
-
-        db.log_scout(pair, pair.ratio, current_coin_price, optional_coin_price)
-
-        # Obtain (current coin)/(optional coin)
-        coin_opt_coin_ratio = current_coin_price / optional_coin_price
-
-        if (
-            coin_opt_coin_ratio - transaction_fee * multiplier * coin_opt_coin_ratio
-        ) > pair.ratio:
-            logger.info(f"Will be jumping from {current_coin} to {pair.to_coin}")
-            transaction_through_tether(pair)
-            break
-
-
-def update_values():
+def update_values(binance_manager: BinanceApiManager):
     all_ticker_values = binance_manager.get_all_market_tickers()
 
     now = datetime.datetime.now()
@@ -243,38 +107,17 @@ def update_values():
             session.add(db.CoinValue(coin, balance, usd_value, btc_value, datetime=now))
 
 
-def migrate_old_state():
-    if os.path.isfile(".current_coin"):
-        with open(".current_coin", "r") as f:
-            coin = f.read().strip()
-            logger.info(f".current_coin file found, loading current coin {coin}")
-            db.set_current_coin(coin)
-        os.rename(".current_coin", ".current_coin.old")
-        logger.info(
-            ".current_coin renamed to .current_coin.old - You can now delete this file"
-        )
-
-    if os.path.isfile(".current_coin_table"):
-        with open(".current_coin_table", "r") as f:
-            logger.info(".current_coin_table file found, loading into database")
-            table: dict = json.load(f)
-            session: Session
-            with db.db_session() as session:
-                for from_coin, to_coin_dict in table.items():
-                    for to_coin, ratio in to_coin_dict.items():
-                        if from_coin == to_coin:
-                            continue
-                        pair = session.merge(db.get_pair(from_coin, to_coin))
-                        pair.ratio = ratio
-                        session.add(pair)
-
-        os.rename(".current_coin_table", ".current_coin_table.old")
-        logger.info(
-            ".current_coin_table renamed to .current_coin_table.old - You can now delete this file"
-        )
-
-
 def main():
+    logger = create_logger()
+
+    logger.info("Starting")
+    binance_manager = BinanceApiManager(
+        config.BINANCE_API_KEY,
+        config.BINANCE_API_SECRET_KEY,
+        config.BINANCE_TLD,
+        logger,
+    )
+
     if not os.path.isfile("data/crypto_trading.db"):
         logger.info("Creating database schema")
         db.create_database()
@@ -285,12 +128,14 @@ def main():
 
     db.set_coins(supported_coin_list)
 
-    migrate_old_state()
+    migrate_old_state(logger)
 
-    initialize_trade_thresholds()
+    auto_trader = AutoTrader(binance_manager, logger)
+
+    auto_trader.initialize_trade_thresholds()
 
     if db.get_current_coin() is None:
-        starting_coin_symbol = Config.STARTING_COIN
+        starting_coin_symbol = config.STARTING_COIN
         if not starting_coin_symbol:
             starting_coin_symbol = random.choice(supported_coin_list)
 
@@ -302,17 +147,20 @@ def main():
             )
         db.set_current_coin(starting_coin_symbol)
 
-        if Config.STARTING_COIN == "":
+        if config.STARTING_COIN == "":
             current_coin = db.get_current_coin()
             logger.info(f"Purchasing {current_coin} to begin trading")
-            binance_manager.buy_alt(current_coin, Config.BRIDGE)
+            binance_manager.buy_alt(current_coin, config.BRIDGE)
             logger.info("Ready to start trading")
 
+    logger.info("Started")
     schedule = SafeScheduler(logger)
-    schedule.every(5).seconds.do(scout).tag("scouting")
-    schedule.every(1).minutes.do(update_values).tag("updating value history")
+    schedule.every(5).seconds.do(auto_trader.scout).tag("scouting")
+    schedule.every(1).minutes.do(update_values, binance_manager=binance_manager).tag(
+        "updating value history"
+    )
     schedule.every(1).minutes.do(
-        db.prune_scout_history, hours=Config.SCOUT_HISTORY_PRUNE_TIME
+        db.prune_scout_history, hours=config.SCOUT_HISTORY_PRUNE_TIME
     ).tag("pruning scout history")
     schedule.every(1).hours.do(db.prune_value_history).tag("pruning value history")
 
@@ -320,14 +168,6 @@ def main():
         schedule.run_pending()
         time.sleep(1)
 
-
-logger = create_logger()
-
-binance_manager = BinanceApiManager(
-    Config.BINANCE_API_KEY, Config.BINANCE_API_SECRET_KEY, Config.BINANCE_TLD, logger
-)
-
-logger.info("Started")
 
 if __name__ == "__main__":
     main()

@@ -1,5 +1,8 @@
+import json
+import os
 from contextlib import contextmanager
 from datetime import datetime, timedelta
+from logging import Logger
 from typing import List, Union, Optional
 
 from sqlalchemy import create_engine, func
@@ -212,6 +215,37 @@ class TradeLog:
 
 def create_database():
     Base.metadata.create_all(engine)
+
+
+def migrate_old_state(logger: Logger):
+    if os.path.isfile(".current_coin"):
+        with open(".current_coin", "r") as f:
+            coin = f.read().strip()
+            logger.info(f".current_coin file found, loading current coin {coin}")
+            set_current_coin(coin)
+        os.rename(".current_coin", ".current_coin.old")
+        logger.info(
+            ".current_coin renamed to .current_coin.old - You can now delete this file"
+        )
+
+    if os.path.isfile(".current_coin_table"):
+        with open(".current_coin_table", "r") as f:
+            logger.info(".current_coin_table file found, loading into database")
+            table: dict = json.load(f)
+            session: Session
+            with db_session() as session:
+                for from_coin, to_coin_dict in table.items():
+                    for to_coin, ratio in to_coin_dict.items():
+                        if from_coin == to_coin:
+                            continue
+                        pair = session.merge(get_pair(from_coin, to_coin))
+                        pair.ratio = ratio
+                        session.add(pair)
+
+        os.rename(".current_coin_table", ".current_coin_table.old")
+        logger.info(
+            ".current_coin_table renamed to .current_coin_table.old - You can now delete this file"
+        )
 
 
 if __name__ == "__main__":

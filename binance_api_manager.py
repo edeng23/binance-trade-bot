@@ -1,5 +1,6 @@
 import math
 import time
+from logging import Logger
 
 from binance.client import Client
 from binance.exceptions import BinanceAPIException
@@ -9,7 +10,7 @@ from models import Coin
 
 
 class BinanceApiManager:
-    def __init__(self, api_key, api_secret_key, tld, logger):
+    def __init__(self, api_key: str, api_secret_key: str, tld: str, logger: Logger):
         self.client = Client(api_key, api_secret_key, tld=tld)
         self.logger = logger
 
