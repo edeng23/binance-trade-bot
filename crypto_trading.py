@@ -181,7 +181,10 @@ def buy_alt(client: Client, alt: Coin, crypto: Coin):
     ticks = {}
     for filt in client.get_symbol_info(alt_symbol + crypto_symbol)['filters']:
         if filt['filterType'] == 'LOT_SIZE':
-            ticks[alt_symbol] = filt['stepSize'].find('1') - 2
+            if filt['stepSize'].find('1') == 0:
+                ticks[alt_symbol] = 1 - filt['stepSize'].find('.')
+            else:    
+                ticks[alt_symbol] = filt['stepSize'].find('1') - 1
             break
 
     order_quantity = ((math.floor(get_currency_balance(client, crypto_symbol) *
@@ -243,7 +246,10 @@ def sell_alt(client: Client, alt: Coin, crypto: Coin):
     ticks = {}
     for filt in client.get_symbol_info(alt_symbol + crypto_symbol)['filters']:
         if filt['filterType'] == 'LOT_SIZE':
-            ticks[alt_symbol] = filt['stepSize'].find('1') - 2
+            if filt['stepSize'].find('1') == 0:
+                ticks[alt_symbol] = 1 - filt['stepSize'].find('.')
+            else:    
+                ticks[alt_symbol] = filt['stepSize'].find('1') - 1
             break
 
     order_quantity = (math.floor(get_currency_balance(client, alt_symbol) *
@@ -384,6 +390,8 @@ def scout(client: Client, transaction_fee=0.001, multiplier=5):
         logger.info("Skipping scouting... current coin {0} not found".format(current_coin + BRIDGE))
         return
 
+    ratio_dict = {}
+    
     for pair in get_pairs_from(current_coin):
         if not pair.to_coin.enabled:
             continue
@@ -396,12 +404,19 @@ def scout(client: Client, transaction_fee=0.001, multiplier=5):
         # Obtain (current coin)/(optional coin)
         coin_opt_coin_ratio = current_coin_price / optional_coin_price
 
-        if (coin_opt_coin_ratio - transaction_fee * multiplier * coin_opt_coin_ratio) > pair.ratio:
-            logger.info('Will be jumping from {0} to {1}'.format(
-                current_coin, pair.to_coin))
-            transaction_through_tether(
-                client, current_coin, pair.to_coin)
-            break
+        # save ratio so we can pick the best option, not necessarily the first
+        ratio_dict[pair.to_coin] = (coin_opt_coin_ratio - transaction_fee * multiplier * coin_opt_coin_ratio) - pair.ratio
+
+    # keep only ratios bigger than zero
+    ratio_dict = dict(filter(lambda x: x[1] > 0, ratio_dict.items()))
+
+    # if we have any viable options, pick the one with the biggest ratio
+    if ratio_dict:
+      max_optional_coin = max(ratio_dict, key=ratio_dict.get)
+      logger.info('Will be jumping from {0} to {1}'.format(
+            current_coin, max_optional_coin))
+      transaction_through_tether(
+            client, current_coin, max_optional_coin)
 
 
 def migrate_old_state():

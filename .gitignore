@@ -7,5 +7,6 @@ nohup.out
 user.cfg
 .idea/
 .vscode/
+.replit
 venv/
 crypto_trading.db
