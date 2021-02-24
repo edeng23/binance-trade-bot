@@ -21,9 +21,11 @@ class AutoTrader:
         result = self.binance_manager.sell_alt(pair.from_coin, config.BRIDGE)
         if result is None:
             self.logger.info("Selling failed, cancelling transaction")
+            return None
         result = self.binance_manager.buy_alt(pair.to_coin, config.BRIDGE)
         if result is None:
             self.logger.info("Buying failed, cancelling transaction")
+            return None
 
         db.set_current_coin(pair.to_coin)
         self.update_trade_threshold()
