@@ -13,73 +13,40 @@ from typing import List
 import requests
 from sqlalchemy.orm import Session
 
+import database as db
 from binance_api_manager import BinanceApiManager
-from database import (
-    set_coins,
-    set_current_coin,
-    get_current_coin,
-    get_pairs_from,
-    db_session,
-    create_database,
-    get_pair,
-    log_scout,
-    CoinValue,
-    prune_scout_history,
-    prune_value_history,
-)
+from config import Config
 from models import Coin, Pair
 from scheduler import SafeScheduler
 
-# Logger setup
-logger = logging.getLogger("crypto_trader_logger")
-logger.setLevel(logging.DEBUG)
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-fh = logging.FileHandler("crypto_trading.log")
-fh.setLevel(logging.DEBUG)
-fh.setFormatter(formatter)
-logger.addHandler(fh)
 
-# logging to console
-ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
-ch.setFormatter(formatter)
-logger.addHandler(ch)
+def create_logger():
+    _logger = logging.getLogger("crypto_trader_logger")
+    _logger.setLevel(logging.DEBUG)
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    fh = logging.FileHandler("crypto_trading.log")
+    fh.setLevel(logging.DEBUG)
+    fh.setFormatter(formatter)
+    _logger.addHandler(fh)
 
+    # logging to console
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    ch.setFormatter(formatter)
+    _logger.addHandler(ch)
 
-class Config:
-    # Config consts
-    CFG_FL_NAME = "user.cfg"
-    USER_CFG_SECTION = "binance_user_config"
+    # logging to Telegram if token exists
+    if Config.TELEGRAM_TOKEN:
+        que = queue.Queue(-1)  # no limit on size
+        queue_handler = logging.handlers.QueueHandler(que)
+        th = RequestsHandler()
+        listener = logging.handlers.QueueListener(que, th)
+        formatter = LogstashFormatter()
+        th.setFormatter(formatter)
+        _logger.addHandler(queue_handler)
+        listener.start()
 
-    # Init config
-    config = configparser.ConfigParser()
-    if not os.path.exists(CFG_FL_NAME):
-        print("No configuration file (user.cfg) found! See README.")
-        exit()
-    config.read(CFG_FL_NAME)
-
-    # Telegram bot
-    TELEGRAM_CHAT_ID = config.get(USER_CFG_SECTION, "botChatID")
-    TELEGRAM_TOKEN = config.get(USER_CFG_SECTION, "botToken")
-    BRIDGE_SYMBOL = config.get(USER_CFG_SECTION, "bridge")
-    BRIDGE = Coin(BRIDGE_SYMBOL, False)
-
-    # Prune settings
-    SCOUT_HISTORY_PRUNE_TIME = float(
-        config.get(USER_CFG_SECTION, "hourToKeepScoutHistory", fallback="1")
-    )
-
-    # Setup binance
-    api_key = config.get(USER_CFG_SECTION, "api_key")
-    api_secret_key = config.get(USER_CFG_SECTION, "api_secret_key")
-    tld = (
-        config.get(USER_CFG_SECTION, "tld") or "com"
-    )  # Default Top-level domain is 'com'
-
-
-binance_manager = BinanceApiManager(
-    Config.api_key, Config.api_secret_key, Config.tld, logger
-)
+    return _logger
 
 
 class RequestsHandler(Handler):
@@ -116,19 +83,6 @@ class LogstashFormatter(Formatter):
             return f"<i>{t}</i><pre>\n{record.msg}</pre>"
 
 
-# logging to Telegram if token exists
-if Config.TELEGRAM_TOKEN:
-    que = queue.Queue(-1)  # no limit on size
-    queue_handler = logging.handlers.QueueHandler(que)
-    th = RequestsHandler()
-    listener = logging.handlers.QueueListener(que, th)
-    formatter = LogstashFormatter()
-    th.setFormatter(formatter)
-    logger.addHandler(queue_handler)
-    listener.start()
-
-logger.info("Started")
-
 # Get supported coin list from supported_coin_list file
 with open("supported_coin_list") as f:
     supported_coin_list = f.read().upper().splitlines()
@@ -162,7 +116,7 @@ def transaction_through_tether(pair: Pair):
     if result is None:
         logger.info("Buying failed, cancelling transaction")
 
-    set_current_coin(pair.to_coin)
+    db.set_current_coin(pair.to_coin)
     update_trade_threshold()
 
 
@@ -173,7 +127,7 @@ def update_trade_threshold():
 
     all_tickers = binance_manager.get_all_market_tickers()
 
-    current_coin = get_current_coin()
+    current_coin = db.get_current_coin()
 
     current_coin_price = get_market_ticker_price_from_list(
         all_tickers, current_coin + Config.BRIDGE
@@ -186,7 +140,7 @@ def update_trade_threshold():
         return
 
     session: Session
-    with db_session() as session:
+    with db.db_session() as session:
         for pair in session.query(Pair).filter(Pair.to_coin == current_coin):
             from_coin_price = get_market_ticker_price_from_list(
                 all_tickers, pair.from_coin + Config.BRIDGE
@@ -209,7 +163,7 @@ def initialize_trade_thresholds():
     all_tickers = binance_manager.get_all_market_tickers()
 
     session: Session
-    with db_session() as session:
+    with db.db_session() as session:
         for pair in session.query(Pair).filter(Pair.ratio == None).all():
             if not pair.from_coin.enabled or not pair.to_coin.enabled:
                 continue
@@ -243,7 +197,7 @@ def scout(transaction_fee=0.001, multiplier=5):
 
     all_tickers = binance_manager.get_all_market_tickers()
 
-    current_coin = get_current_coin()
+    current_coin = db.get_current_coin()
 
     current_coin_price = get_market_ticker_price_from_list(
         all_tickers, current_coin + Config.BRIDGE
@@ -255,7 +209,7 @@ def scout(transaction_fee=0.001, multiplier=5):
         )
         return
 
-    for pair in get_pairs_from(current_coin):
+    for pair in db.get_pairs_from(current_coin):
         if not pair.to_coin.enabled:
             continue
         optional_coin_price = get_market_ticker_price_from_list(
@@ -268,7 +222,7 @@ def scout(transaction_fee=0.001, multiplier=5):
             )
             continue
 
-        log_scout(pair, pair.ratio, current_coin_price, optional_coin_price)
+        db.log_scout(pair, pair.ratio, current_coin_price, optional_coin_price)
 
         # Obtain (current coin)/(optional coin)
         coin_opt_coin_ratio = current_coin_price / optional_coin_price
@@ -287,7 +241,7 @@ def update_values():
     now = datetime.datetime.now()
 
     session: Session
-    with db_session() as session:
+    with db.db_session() as session:
         coins: List[Coin] = session.query(Coin).all()
         for coin in coins:
             balance = binance_manager.get_currency_balance(coin.symbol)
@@ -299,7 +253,7 @@ def update_values():
             btc_value = get_market_ticker_price_from_list(
                 all_ticker_values, coin + "BTC"
             )
-            session.add(CoinValue(coin, balance, usd_value, btc_value, datetime=now))
+            session.add(db.CoinValue(coin, balance, usd_value, btc_value, datetime=now))
 
 
 def migrate_old_state():
@@ -307,7 +261,7 @@ def migrate_old_state():
         with open(".current_coin", "r") as f:
             coin = f.read().strip()
             logger.info(f".current_coin file found, loading current coin {coin}")
-            set_current_coin(coin)
+            db.set_current_coin(coin)
         os.rename(".current_coin", ".current_coin.old")
         logger.info(
             ".current_coin renamed to .current_coin.old - You can now delete this file"
@@ -318,12 +272,12 @@ def migrate_old_state():
             logger.info(".current_coin_table file found, loading into database")
             table: dict = json.load(f)
             session: Session
-            with db_session() as session:
+            with db.db_session() as session:
                 for from_coin, to_coin_dict in table.items():
                     for to_coin, ratio in to_coin_dict.items():
                         if from_coin == to_coin:
                             continue
-                        pair = session.merge(get_pair(from_coin, to_coin))
+                        pair = session.merge(db.get_pair(from_coin, to_coin))
                         pair.ratio = ratio
                         session.add(pair)
 
@@ -336,15 +290,15 @@ def migrate_old_state():
 def main():
     if not os.path.isfile("data/crypto_trading.db"):
         logger.info("Creating database schema")
-        create_database()
+        db.create_database()
 
-    set_coins(supported_coin_list)
+    db.set_coins(supported_coin_list)
 
     migrate_old_state()
 
     initialize_trade_thresholds()
 
-    if get_current_coin() is None:
+    if db.get_current_coin() is None:
         current_coin_symbol = config.get(Config.USER_CFG_SECTION, "current_coin")
         if not current_coin_symbol:
             current_coin_symbol = random.choice(supported_coin_list)
@@ -355,10 +309,10 @@ def main():
             exit(
                 "***\nERROR!\nSince there is no backup file, a proper coin name must be provided at init\n***"
             )
-        set_current_coin(current_coin_symbol)
+        db.set_current_coin(current_coin_symbol)
 
         if config.get(Config.USER_CFG_SECTION, "current_coin") == "":
-            current_coin = get_current_coin()
+            current_coin = db.get_current_coin()
             logger.info(f"Purchasing {current_coin} to begin trading")
             binance_manager.buy_alt(current_coin, Config.BRIDGE)
             logger.info("Ready to start trading")
@@ -367,14 +321,23 @@ def main():
     schedule.every(5).seconds.do(scout).tag("scouting")
     schedule.every(1).minutes.do(update_values).tag("updating value history")
     schedule.every(1).minutes.do(
-        prune_scout_history, hours=Config.SCOUT_HISTORY_PRUNE_TIME
+        db.prune_scout_history, hours=Config.SCOUT_HISTORY_PRUNE_TIME
     ).tag("pruning scout history")
-    schedule.every(1).hours.do(prune_value_history).tag("pruning value history")
+    schedule.every(1).hours.do(db.prune_value_history).tag("pruning value history")
 
     while True:
         schedule.run_pending()
         time.sleep(1)
 
 
+logger = create_logger()
+
+binance_manager = BinanceApiManager(
+    Config.BINANCE_API_KEY, Config.BINANCE_API_SECRET_KEY, Config.BINANCE_TLD, logger
+)
+
+logger.info("Started")
+
 if __name__ == "__main__":
+
     main()
