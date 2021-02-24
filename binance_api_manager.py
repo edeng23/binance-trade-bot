@@ -42,12 +42,12 @@ class BinanceApiManager:
         attempts = 0
         while attempts < 20:
             try:
-                return func(self, *args, **kwargs)
+                return func(*args, **kwargs)
             except Exception as e:
                 self.logger.info("Failed to Buy/Sell. Trying Again.")
                 if attempts == 0:
                     self.logger.info(e)
-                    attempts += 1
+                attempts += 1
 
     def wait_for_order(self, alt_symbol, crypto_symbol, order):
         while True:
@@ -88,7 +88,7 @@ class BinanceApiManager:
         return ticks
 
     def buy_alt(self, alt: Coin, crypto: Coin):
-        self.retry(self._buy_alt, alt, crypto)
+        return self.retry(self._buy_alt, alt, crypto)
 
     def _buy_alt(self, alt: Coin, crypto: Coin):
         """
@@ -137,7 +137,7 @@ class BinanceApiManager:
         return order
 
     def sell_alt(self, alt: Coin, crypto: Coin):
-        self.retry(self._sell_alt, alt, crypto)
+        return self.retry(self._sell_alt, alt, crypto)
 
     def _sell_alt(self, alt: Coin, crypto: Coin):
         """
@@ -174,9 +174,9 @@ class BinanceApiManager:
 
         stat = self.wait_for_order(alt_symbol, crypto_symbol, order)
 
-        newbal = self.get_currency_balance(alt_symbol)
-        while newbal >= alt_balance:
-            newbal = self.get_currency_balance(alt_symbol)
+        new_balance = self.get_currency_balance(alt_symbol)
+        while new_balance >= alt_balance:
+            new_balance = self.get_currency_balance(alt_symbol)
 
         self.logger.info("Sold {0}".format(alt_symbol))
 

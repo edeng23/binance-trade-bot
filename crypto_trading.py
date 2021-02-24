@@ -30,17 +30,6 @@ from database import (
 from models import Coin, Pair
 from scheduler import SafeScheduler
 
-# Config consts
-CFG_FL_NAME = "user.cfg"
-USER_CFG_SECTION = "binance_user_config"
-
-# Init config
-config = configparser.ConfigParser()
-if not os.path.exists(CFG_FL_NAME):
-    print("No configuration file (user.cfg) found! See README.")
-    exit()
-config.read(CFG_FL_NAME)
-
 # Logger setup
 logger = logging.getLogger("crypto_trader_logger")
 logger.setLevel(logging.DEBUG)
@@ -56,32 +45,46 @@ ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
-# Telegram bot
-TELEGRAM_CHAT_ID = config.get(USER_CFG_SECTION, "botChatID")
-TELEGRAM_TOKEN = config.get(USER_CFG_SECTION, "botToken")
-BRIDGE_SYMBOL = config.get(USER_CFG_SECTION, "bridge")
-BRIDGE = Coin(BRIDGE_SYMBOL, False)
 
-# Prune settings
-SCOUT_HISTORY_PRUNE_TIME = float(
-    config.get(USER_CFG_SECTION, "hourToKeepScoutHistory", fallback="1")
-)
+class Config:
+    # Config consts
+    CFG_FL_NAME = "user.cfg"
+    USER_CFG_SECTION = "binance_user_config"
 
-# Setup binance
-api_key = config.get(USER_CFG_SECTION, "api_key")
-api_secret_key = config.get(USER_CFG_SECTION, "api_secret_key")
-tld = config.get(USER_CFG_SECTION, "tld") or "com"  # Default Top-level domain is 'com'
+    # Init config
+    config = configparser.ConfigParser()
+    if not os.path.exists(CFG_FL_NAME):
+        print("No configuration file (user.cfg) found! See README.")
+        exit()
+    config.read(CFG_FL_NAME)
 
-binance_manager = BinanceApiManager(api_key, api_secret_key, tld, logger)
+    # Telegram bot
+    TELEGRAM_CHAT_ID = config.get(USER_CFG_SECTION, "botChatID")
+    TELEGRAM_TOKEN = config.get(USER_CFG_SECTION, "botToken")
+    BRIDGE_SYMBOL = config.get(USER_CFG_SECTION, "bridge")
+    BRIDGE = Coin(BRIDGE_SYMBOL, False)
+
+    # Prune settings
+    SCOUT_HISTORY_PRUNE_TIME = float(
+        config.get(USER_CFG_SECTION, "hourToKeepScoutHistory", fallback="1")
+    )
+
+    # Setup binance
+    api_key = config.get(USER_CFG_SECTION, "api_key")
+    api_secret_key = config.get(USER_CFG_SECTION, "api_secret_key")
+    tld = config.get(USER_CFG_SECTION, "tld") or "com"  # Default Top-level domain is 'com'
+
+
+binance_manager = BinanceApiManager(Config.api_key, Config.api_secret_key, Config.tld, logger)
 
 
 class RequestsHandler(Handler):
     def emit(self, record):
         log_entry = self.format(record)
-        payload = {"chat_id": TELEGRAM_CHAT_ID, "text": log_entry, "parse_mode": "HTML"}
+        payload = {"chat_id": Config.TELEGRAM_CHAT_ID, "text": log_entry, "parse_mode": "HTML"}
         return requests.post(
             "https://api.telegram.org/bot{token}/sendMessage".format(
-                token=TELEGRAM_TOKEN
+                token=Config.TELEGRAM_TOKEN
             ),
             data=payload,
         ).content
@@ -112,7 +115,7 @@ class LogstashFormatter(Formatter):
 
 
 # logging to Telegram if token exists
-if TELEGRAM_TOKEN:
+if Config.TELEGRAM_TOKEN:
     que = queue.Queue(-1)  # no limit on size
     queue_handler = logging.handlers.QueueHandler(que)
     th = RequestsHandler()
@@ -130,10 +133,10 @@ with open("supported_coin_list") as f:
 
 # Init config
 config = configparser.ConfigParser()
-if not os.path.exists(CFG_FL_NAME):
+if not os.path.exists(Config.CFG_FL_NAME):
     print("No configuration file (user.cfg) found! See README.")
     exit()
-config.read(CFG_FL_NAME)
+config.read(Config.CFG_FL_NAME)
 
 
 def get_market_ticker_price_from_list(all_tickers, ticker_symbol):
@@ -148,12 +151,12 @@ def transaction_through_tether(pair: Pair):
     """
     Jump from the source coin to the destination coin through tether
     """
-    result = None
-    while result is None:
-        result = binance_manager.sell_alt(pair.from_coin, BRIDGE)
-    result = None
-    while result is None:
-        result = binance_manager.buy_alt(pair.to_coin, BRIDGE)
+    result = binance_manager.sell_alt(pair.from_coin, Config.BRIDGE)
+    if result is None:
+        logger.info("Selling failed, cancelling transaction")
+    result = binance_manager.buy_alt(pair.to_coin, Config.BRIDGE)
+    if result is None:
+        logger.info("Buying failed, cancelling transaction")
 
     set_current_coin(pair.to_coin)
     update_trade_threshold()
@@ -169,13 +172,13 @@ def update_trade_threshold():
     current_coin = get_current_coin()
 
     current_coin_price = get_market_ticker_price_from_list(
-        all_tickers, current_coin + BRIDGE
+        all_tickers, current_coin + Config.BRIDGE
     )
 
     if current_coin_price is None:
         logger.info(
             "Skipping update... current coin {0} not found".format(
-                current_coin + BRIDGE
+                current_coin + Config.BRIDGE
             )
         )
         return
@@ -184,13 +187,13 @@ def update_trade_threshold():
     with db_session() as session:
         for pair in session.query(Pair).filter(Pair.to_coin == current_coin):
             from_coin_price = get_market_ticker_price_from_list(
-                all_tickers, pair.from_coin + BRIDGE
+                all_tickers, pair.from_coin + Config.BRIDGE
             )
 
             if from_coin_price is None:
                 logger.info(
                     "Skipping update for coin {0} not found".format(
-                        pair.from_coin + BRIDGE
+                        pair.from_coin + Config.BRIDGE
                     )
                 )
                 continue
@@ -213,23 +216,23 @@ def initialize_trade_thresholds():
             logger.info("Initializing {0} vs {1}".format(pair.from_coin, pair.to_coin))
 
             from_coin_price = get_market_ticker_price_from_list(
-                all_tickers, pair.from_coin + BRIDGE
+                all_tickers, pair.from_coin + Config.BRIDGE
             )
             if from_coin_price is None:
                 logger.info(
                     "Skipping initializing {0}, symbol not found".format(
-                        pair.from_coin + BRIDGE
+                        pair.from_coin + Config.BRIDGE
                     )
                 )
                 continue
 
             to_coin_price = get_market_ticker_price_from_list(
-                all_tickers, pair.to_coin + BRIDGE
+                all_tickers, pair.to_coin + Config.BRIDGE
             )
             if to_coin_price is None:
                 logger.info(
                     "Skipping initializing {0}, symbol not found".format(
-                        pair.to_coin + BRIDGE
+                        pair.to_coin + Config.BRIDGE
                     )
                 )
                 continue
@@ -247,13 +250,13 @@ def scout(transaction_fee=0.001, multiplier=5):
     current_coin = get_current_coin()
 
     current_coin_price = get_market_ticker_price_from_list(
-        all_tickers, current_coin + BRIDGE
+        all_tickers, current_coin + Config.BRIDGE
     )
 
     if current_coin_price is None:
         logger.info(
             "Skipping scouting... current coin {0} not found".format(
-                current_coin + BRIDGE
+                current_coin + Config.BRIDGE
             )
         )
         return
@@ -262,13 +265,13 @@ def scout(transaction_fee=0.001, multiplier=5):
         if not pair.to_coin.enabled:
             continue
         optional_coin_price = get_market_ticker_price_from_list(
-            all_tickers, pair.to_coin + BRIDGE
+            all_tickers, pair.to_coin + Config.BRIDGE
         )
 
         if optional_coin_price is None:
             logger.info(
                 "Skipping scouting... optional coin {0} not found".format(
-                    pair.to_coin + BRIDGE
+                    pair.to_coin + Config.BRIDGE
                 )
             )
             continue
@@ -352,7 +355,7 @@ def main():
     initialize_trade_thresholds()
 
     if get_current_coin() is None:
-        current_coin_symbol = config.get(USER_CFG_SECTION, "current_coin")
+        current_coin_symbol = config.get(Config.USER_CFG_SECTION, "current_coin")
         if not current_coin_symbol:
             current_coin_symbol = random.choice(supported_coin_list)
 
@@ -364,17 +367,17 @@ def main():
             )
         set_current_coin(current_coin_symbol)
 
-        if config.get(USER_CFG_SECTION, "current_coin") == "":
+        if config.get(Config.USER_CFG_SECTION, "current_coin") == "":
             current_coin = get_current_coin()
             logger.info("Purchasing {0} to begin trading".format(current_coin))
-            binance_manager.buy_alt(current_coin, BRIDGE)
+            binance_manager.buy_alt(current_coin, Config.BRIDGE)
             logger.info("Ready to start trading")
 
     schedule = SafeScheduler(logger)
     schedule.every(5).seconds.do(scout).tag("scouting")
     schedule.every(1).minutes.do(update_values).tag("updating value history")
     schedule.every(1).minutes.do(
-        prune_scout_history, hours=SCOUT_HISTORY_PRUNE_TIME
+        prune_scout_history, hours=Config.SCOUT_HISTORY_PRUNE_TIME
     ).tag("pruning scout history")
     schedule.every(1).hours.do(prune_value_history).tag("pruning value history")
 
