@@ -18,4 +18,4 @@ COPY . /app
 
 WORKDIR /app
 
-CMD ["python", "crypto_trading.py"]
+CMD ["python",  "-m", "binance_trade_bot"]

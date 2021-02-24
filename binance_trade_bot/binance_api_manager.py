@@ -5,8 +5,8 @@ from logging import Logger
 from binance.client import Client
 from binance.exceptions import BinanceAPIException
 
-from database import TradeLog
-from models import Coin
+from .database import TradeLog
+from .models import Coin
 
 
 class BinanceApiManager:

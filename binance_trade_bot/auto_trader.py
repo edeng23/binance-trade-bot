@@ -2,11 +2,11 @@ from logging import Logger
 
 from sqlalchemy.orm import Session
 
-import config
-import database as db
-from binance_api_manager import BinanceApiManager
-from models import Pair
-from utils import get_market_ticker_price_from_list
+from . import config
+from . import database as db
+from .binance_api_manager import BinanceApiManager
+from .models import Pair
+from .utils import get_market_ticker_price_from_list
 
 
 class AutoTrader:

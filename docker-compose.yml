@@ -6,6 +6,7 @@ services:
     container_name: binance_trader
     volumes:
     - ./user.cfg:/app/user.cfg
+    - ./supported_coin_list:/app/supported_coin_list
     - ./data:/app/data
 
   sqlitebrowser:

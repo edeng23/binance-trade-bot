@@ -11,14 +11,13 @@ from typing import List
 import requests
 from sqlalchemy.orm import Session
 
-import config
-import database as db
-from auto_trader import AutoTrader
-from binance_api_manager import BinanceApiManager
-from database import migrate_old_state
-from models import Coin
-from scheduler import SafeScheduler
-from utils import get_market_ticker_price_from_list
+from . import config
+from . import database as db
+from .auto_trader import AutoTrader
+from .binance_api_manager import BinanceApiManager
+from .models import Coin
+from .scheduler import SafeScheduler
+from .utils import get_market_ticker_price_from_list
 
 
 def create_logger():
@@ -128,7 +127,7 @@ def main():
 
     db.set_coins(supported_coin_list)
 
-    migrate_old_state(logger)
+    db.migrate_old_state(logger)
 
     auto_trader = AutoTrader(binance_manager, logger)
 

@@ -1,7 +1,7 @@
 import configparser
 import os
 
-from models import Coin
+from .models import Coin
 
 # Config consts
 CFG_FL_NAME = "user.cfg"
