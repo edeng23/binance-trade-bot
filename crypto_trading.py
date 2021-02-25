@@ -412,11 +412,11 @@ def scout(client: Client, transaction_fee=0.001, multiplier=5):
 
     # if we have any viable options, pick the one with the biggest ratio
     if ratio_dict:
-      max_optional_coin = max(ratio_dict, key=ratio_dict.get)
-      logger.info('Will be jumping from {0} to {1}'.format(
-            current_coin, max_optional_coin))
-      transaction_through_tether(
-            client, current_coin, max_optional_coin)
+        max_optional_coin = max(ratio_dict, key=ratio_dict.get)
+        logger.info('Will be jumping from {0} to {1}'.format(
+                current_coin, max_optional_coin))
+        transaction_through_tether(
+                client, current_coin, max_optional_coin)
 
 
 def migrate_old_state():
