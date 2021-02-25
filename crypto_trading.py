@@ -126,7 +126,8 @@ def retry(howmany):
                     print("Failed to Buy/Sell. Trying Again.")
                     if attempts == 0:
                         logger.info(e)
-                        attempts += 1
+                    attempts += 1
+            return None
 
         return f
 
@@ -328,9 +329,10 @@ def transaction_through_tether(client: Client, pair: Pair):
     '''
     Jump from the source coin to the destination coin through tether
     '''
-    result = None
-    while result is None:
-        result = sell_alt(client, pair.from_coin, BRIDGE)
+    if sell_alt(client, pair.from_coin, BRIDGE) is None:
+        logger.info("Couldn't sell, going back to scouting mode...")
+        return None
+    # This isn't pretty, but at the moment we don't have implemented logic to escape from a bridge coin... This'll do for now
     result = None
     while result is None:
         result = buy_alt(client, pair.to_coin, BRIDGE)
@@ -490,9 +492,8 @@ def main():
 
     client = Client(api_key, api_secret_key, tld=tld)
 
-    if not os.path.isfile('data/crypto_trading.db'):
-        logger.info("Creating database schema")
-        create_database()
+    logger.info("Creating database schema if it doesn't already exist")
+    create_database()
 
     set_coins(supported_coin_list)
 
