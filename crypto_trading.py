@@ -492,9 +492,8 @@ def main():
 
     client = Client(api_key, api_secret_key, tld=tld)
 
-    if not os.path.isfile('data/crypto_trading.db'):
-        logger.info("Creating database schema")
-        create_database()
+    logger.info("Creating database schema if it doesn't already exist")
+    create_database()
 
     set_coins(supported_coin_list)
 
