@@ -5,7 +5,7 @@ from typing import List, Union, Optional
 from sqlalchemy import create_engine, func
 from sqlalchemy.orm import sessionmaker, scoped_session, Session
 
-from models import *
+from .models import *
 
 engine = create_engine("sqlite:///data/crypto_trading.db")
 

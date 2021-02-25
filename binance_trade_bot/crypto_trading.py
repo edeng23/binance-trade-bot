@@ -7,14 +7,14 @@ import random
 import time
 from typing import List, Dict
 
-from binance_api_manager import BinanceAPIManager
 from sqlalchemy.orm import Session
 
-from database import set_coins, set_current_coin, get_current_coin, get_pairs_from, \
+from .binance_api_manager import BinanceAPIManager
+from .database import set_coins, set_current_coin, get_current_coin, get_pairs_from, \
     db_session, create_database, get_pair, log_scout, CoinValue, prune_scout_history, prune_value_history
-from models import Coin, Pair
-from scheduler import SafeScheduler
-from logger import Logger
+from .logger import Logger
+from .models import Coin, Pair
+from .scheduler import SafeScheduler
 
 # Config consts
 CFG_FL_NAME = 'user.cfg'

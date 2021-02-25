@@ -56,7 +56,7 @@ If you are interedted in running a Telegram bot, more information can be found a
 
 ### Run
 
-`./crypto_trading.py`
+`python -m binance_trade_bot`
 
 ### Docker
 

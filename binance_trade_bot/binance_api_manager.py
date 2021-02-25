@@ -1,9 +1,12 @@
+import math
+import time
+
 from binance.client import Client
 from binance.exceptions import BinanceAPIException
-from database import TradeLog
-from models import Coin
-from logger import Logger
-import math, requests, time
+
+from .database import TradeLog
+from .logger import Logger
+from .models import Coin
 
 
 class BinanceAPIManager:
