@@ -27,6 +27,12 @@ USER_CFG_SECTION = 'binance_user_config'
 
 # Init config
 config = configparser.ConfigParser()
+config['DEFAULT'] = {
+    'scout_transaction_fee': '0.001',
+    'scout_multiplier': '5',
+    'scout_sleep_time': '5'
+}
+
 if not os.path.exists(CFG_FL_NAME):
     print('No configuration file (user.cfg) found! See README.')
     exit()
@@ -56,6 +62,10 @@ BRIDGE = Coin(BRIDGE_SYMBOL, False)
 # Prune settings
 SCOUT_HISTORY_PRUNE_TIME = float(config.get(USER_CFG_SECTION, 'hourToKeepScoutHistory', fallback="1"))
 
+# Get config for scout
+SCOUT_TRANSACTION_FEE = float(config.get(USER_CFG_SECTION, 'scout_transaction_fee'))
+SCOUT_MULTIPLIER = float(config.get(USER_CFG_SECTION, 'scout_multiplier'))
+SCOUT_SLEEP_TIME = int(config.get(USER_CFG_SECTION, 'scout_sleep_time'))
 
 class RequestsHandler(Handler):
     def emit(self, record):
@@ -519,7 +529,10 @@ def main():
             logger.info("Ready to start trading")
 
     schedule = SafeScheduler(logger)
-    schedule.every(5).seconds.do(scout, client=client).tag("scouting")
+    schedule.every(SCOUT_SLEEP_TIME).seconds.do(scout,
+                                                client=client,
+                                                transaction_fee=SCOUT_TRANSACTION_FEE,
+                                                multiplier=SCOUT_MULTIPLIER).tag("scouting")
     schedule.every(1).minutes.do(update_values, client=client).tag("updating value history")
     schedule.every(1).minutes.do(prune_scout_history, hours=SCOUT_HISTORY_PRUNE_TIME).tag("pruning scout history")
     schedule.every(1).hours.do(prune_value_history).tag("pruning value history")

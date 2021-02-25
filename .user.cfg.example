@@ -7,3 +7,6 @@ botChatID=
 botToken=
 tld=com
 hourToKeepScoutHistory=1
+scout_transaction_fee=0.001
+scout_multiplier=5
+scout_sleep_time=5
