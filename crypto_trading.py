@@ -2,13 +2,10 @@
 import configparser
 import datetime
 import json
-import logging.handlers
 import math
 import os
-import queue
 import random
 import time
-from logging import Handler, Formatter
 from typing import List, Dict
 
 import requests
@@ -20,6 +17,7 @@ from database import set_coins, set_current_coin, get_current_coin, get_pairs_fr
     db_session, create_database, get_pair, log_scout, TradeLog, CoinValue, prune_scout_history, prune_value_history
 from models import Coin, Pair
 from scheduler import SafeScheduler
+from logger import Logger
 
 # Config consts
 CFG_FL_NAME = 'user.cfg'
@@ -38,24 +36,6 @@ if not os.path.exists(CFG_FL_NAME):
     exit()
 config.read(CFG_FL_NAME)
 
-# Logger setup
-logger = logging.getLogger('crypto_trader_logger')
-logger.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-fh = logging.FileHandler('crypto_trading.log')
-fh.setLevel(logging.DEBUG)
-fh.setFormatter(formatter)
-logger.addHandler(fh)
-
-# logging to console
-ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
-ch.setFormatter(formatter)
-logger.addHandler(ch)
-
-# Telegram bot
-TELEGRAM_CHAT_ID = config.get(USER_CFG_SECTION, 'botChatID')
-TELEGRAM_TOKEN = config.get(USER_CFG_SECTION, 'botToken')
 BRIDGE_SYMBOL = config.get(USER_CFG_SECTION, 'bridge')
 BRIDGE = Coin(BRIDGE_SYMBOL, False)
 
@@ -67,47 +47,7 @@ SCOUT_TRANSACTION_FEE = float(config.get(USER_CFG_SECTION, 'scout_transaction_fe
 SCOUT_MULTIPLIER = float(config.get(USER_CFG_SECTION, 'scout_multiplier'))
 SCOUT_SLEEP_TIME = int(config.get(USER_CFG_SECTION, 'scout_sleep_time'))
 
-class RequestsHandler(Handler):
-    def emit(self, record):
-        log_entry = self.format(record)
-        payload = {
-            'chat_id': TELEGRAM_CHAT_ID,
-            'text': log_entry,
-            'parse_mode': 'HTML'
-        }
-        return requests.post("https://api.telegram.org/bot{token}/sendMessage".format(token=TELEGRAM_TOKEN),
-                             data=payload).content
-
-
-class LogstashFormatter(Formatter):
-    def __init__(self):
-        super(LogstashFormatter, self).__init__()
-
-    def format(self, record):
-        t = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
-
-        if isinstance(record.msg, dict):
-            message = "<i>{datetime}</i>".format(datetime=t)
-
-            for key in record.msg:
-                message = message + (
-                    "<pre>\n{title}: <strong>{value}</strong></pre>".format(title=key, value=record.msg[key]))
-
-            return message
-        else:
-            return "<i>{datetime}</i><pre>\n{message}</pre>".format(message=record.msg, datetime=t)
-
-# logging to Telegram if token exists
-if TELEGRAM_TOKEN:
-    que = queue.Queue(-1)  # no limit on size
-    queue_handler = logging.handlers.QueueHandler(que)
-    th = RequestsHandler()
-    listener = logging.handlers.QueueListener(que, th)
-    formatter = LogstashFormatter()
-    th.setFormatter(formatter)
-    logger.addHandler(queue_handler)
-    listener.start()
-
+logger = Logger()
 logger.info('Started')
 
 supported_coin_list = []
@@ -115,14 +55,6 @@ supported_coin_list = []
 # Get supported coin list from supported_coin_list file
 with open('supported_coin_list') as f:
     supported_coin_list = f.read().upper().splitlines()
-
-# Init config
-config = configparser.ConfigParser()
-if not os.path.exists(CFG_FL_NAME):
-    print('No configuration file (user.cfg) found! See README.')
-    exit()
-config.read(CFG_FL_NAME)
-
 
 def retry(howmany):
     def tryIt(func):
