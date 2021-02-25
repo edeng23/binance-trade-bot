@@ -380,7 +380,10 @@ def scout(client: Client, transaction_fee=0.001, multiplier=5):
     Scout for potential jumps from the current coin to another coin
     '''
 
-    all_tickers = get_all_market_tickers(client)
+    try:
+        all_tickers = get_all_market_tickers(client)
+    except requests.exceptions.RequestException:
+        return False
 
     current_coin = get_current_coin()
 
