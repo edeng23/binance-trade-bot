@@ -51,7 +51,8 @@ supported_coin_list = []
 
 # Get supported coin list from supported_coin_list file
 with open('supported_coin_list') as f:
-    supported_coin_list = f.read().upper().splitlines()
+    supported_coin_list = f.read().upper().strip().splitlines()
+    supported_coin_list = list(filter(None, supported_coin_list))
 
 def first(iterable, condition=lambda x: True):
     try:
