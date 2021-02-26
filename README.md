@@ -52,6 +52,8 @@ To set this up you need to create a apprise.yml file in the config directory.
 
 There is an example version of this file to get you started.
 
+If you are interedted in running a Telegram bot, more information can be found at [Telegram's official documentation](https://core.telegram.org/bots).
+
 ### Run
 
 `./crypto_trading.py`
