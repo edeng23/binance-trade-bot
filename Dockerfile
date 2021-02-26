@@ -12,10 +12,13 @@ RUN pip install --prefix=/install -r /requirements.txt
 
 FROM base
 
-COPY --from=builder /install /usr/local
-
-COPY . /app
-
 WORKDIR /app
 
+COPY --from=builder /install /usr/local\
+COPY . /app
+
+RUN chmod +x entrypoint.sh
+
+
+ENTRYPOINT [ "entrypoint.sh" ]
 CMD ["python", "crypto_trading.py"]
