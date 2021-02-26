@@ -238,6 +238,9 @@ def buy_alt(client: Client, alt: Coin, crypto: Coin):
             order_recorded = True
         except BinanceAPIException as e:
             logger.info(e)
+            if e.code == -1013:
+                logger.info(f"Can't execute transaction: {order_quantity} is an invalid amount")
+                return None
             time.sleep(10)
         except Exception as e:
             logger.info("Unexpected Error: {0}".format(e))
@@ -285,10 +288,16 @@ def sell_alt(client: Client, alt: Coin, crypto: Coin):
     logger.info('Balance is {0}'.format(alt_balance))
     order = None
     while order is None:
-        order = client.order_market_sell(
-            symbol=alt_symbol + crypto_symbol,
-            quantity=(order_quantity)
-        )
+        try:
+            order = client.order_market_sell(
+                symbol=alt_symbol + crypto_symbol,
+                quantity=order_quantity
+            )
+        except BinanceAPIException as e:
+            logger.info(e)
+            if e.code == -1013:
+                logger.info(f"Can't execute transaction: {order_quantity} is an invalid amount")
+                return None
 
     logger.info('order')
     logger.info(order)
