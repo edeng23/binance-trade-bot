@@ -1,10 +1,23 @@
 #!/bin/bash
 set -e
 
-# Create the config file if it doesn't exist
 CONFIG=/app/user.cfg
-if [ ! -f "${CONFIG}" ]; then
-    cp /app/.user.cfg.example /app/user.cfg
+COIN_LIST=/app/supported_coin_list
+
+# Create the config file if it doesn't exist
+if [ ! -f "$CONFIG" ]; then
+  cp /app/.user.cfg.example /app/user.cfg
+fi
+
+# Override the supported coin list using set environment variable
+if [ -n "$SUPPORTED_COINS" ]; then
+# Clear current list of supported coins
+  cat /dev/null > $COIN_LIST
+
+  # Iterate over SUPPORTED_COINS env var and append them to the list
+  for coin in ${SUPPORTED_COINS}; do
+    echo $coin >> $COIN_LIST
+  done
 fi
 
 # Substitute config with environment variables (keep in sync with .user.cfg.example)
