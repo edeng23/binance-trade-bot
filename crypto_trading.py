@@ -40,10 +40,12 @@ BRIDGE_SYMBOL = config.get(USER_CFG_SECTION, 'bridge')
 BRIDGE = Coin(BRIDGE_SYMBOL, False)
 
 # Prune settings
-SCOUT_HISTORY_PRUNE_TIME = float(config.get(USER_CFG_SECTION, 'hourToKeepScoutHistory', fallback="1"))
+SCOUT_HISTORY_PRUNE_TIME = float(config.get(
+    USER_CFG_SECTION, 'hourToKeepScoutHistory', fallback="1"))
 
 # Get config for scout
-SCOUT_TRANSACTION_FEE = float(config.get(USER_CFG_SECTION, 'scout_transaction_fee'))
+SCOUT_TRANSACTION_FEE = float(config.get(
+    USER_CFG_SECTION, 'scout_transaction_fee'))
 SCOUT_MULTIPLIER = float(config.get(USER_CFG_SECTION, 'scout_multiplier'))
 SCOUT_SLEEP_TIME = int(config.get(USER_CFG_SECTION, 'scout_sleep_time'))
 
@@ -55,6 +57,7 @@ supported_coin_list = []
 # Get supported coin list from supported_coin_list file
 with open('supported_coin_list') as f:
     supported_coin_list = f.read().upper().splitlines()
+
 
 def retry(howmany):
     def tryIt(func):
@@ -104,7 +107,8 @@ def get_market_ticker_price_from_list(all_tickers, ticker_symbol):
     '''
     Get ticker price of a specific coin
     '''
-    ticker = first(all_tickers, condition=lambda x: x[u'symbol'] == ticker_symbol)
+    ticker = first(
+        all_tickers, condition=lambda x: x[u'symbol'] == ticker_symbol)
     return float(ticker[u'price']) if ticker else None
 
 
@@ -151,7 +155,8 @@ def buy_alt(client: Client, alt: Coin, crypto: Coin):
             order = client.order_limit_buy(
                 symbol=alt_symbol + crypto_symbol,
                 quantity=order_quantity,
-                price=get_market_ticker_price(client, alt_symbol + crypto_symbol)
+                price=get_market_ticker_price(
+                    client, alt_symbol + crypto_symbol)
             )
             logger.info(order)
         except BinanceAPIException as e:
@@ -166,7 +171,8 @@ def buy_alt(client: Client, alt: Coin, crypto: Coin):
     while not order_recorded:
         try:
             time.sleep(3)
-            stat = client.get_order(symbol=alt_symbol + crypto_symbol, orderId=order[u'orderId'])
+            stat = client.get_order(
+                symbol=alt_symbol + crypto_symbol, orderId=order[u'orderId'])
             order_recorded = True
         except BinanceAPIException as e:
             logger.info(e)
@@ -235,7 +241,8 @@ def sell_alt(client: Client, alt: Coin, crypto: Coin):
     while not order_recorded:
         try:
             time.sleep(3)
-            stat = client.get_order(symbol=alt_symbol + crypto_symbol, orderId=order[u'orderId'])
+            stat = client.get_order(
+                symbol=alt_symbol + crypto_symbol, orderId=order[u'orderId'])
             order_recorded = True
         except BinanceAPIException as e:
             logger.info(e)
@@ -292,19 +299,23 @@ def update_trade_threshold(client: Client):
 
     current_coin = get_current_coin()
 
-    current_coin_price = get_market_ticker_price_from_list(all_tickers, current_coin + BRIDGE)
+    current_coin_price = get_market_ticker_price_from_list(
+        all_tickers, current_coin + BRIDGE)
 
     if current_coin_price is None:
-        logger.info("Skipping update... current coin {0} not found".format(current_coin + BRIDGE))
+        logger.info("Skipping update... current coin {0} not found".format(
+            current_coin + BRIDGE))
         return
 
     session: Session
     with db_session() as session:
         for pair in session.query(Pair).filter(Pair.to_coin == current_coin):
-            from_coin_price = get_market_ticker_price_from_list(all_tickers, pair.from_coin + BRIDGE)
+            from_coin_price = get_market_ticker_price_from_list(
+                all_tickers, pair.from_coin + BRIDGE)
 
             if from_coin_price is None:
-                logger.info("Skipping update for coin {0} not found".format(pair.from_coin + BRIDGE))
+                logger.info("Skipping update for coin {0} not found".format(
+                    pair.from_coin + BRIDGE))
                 continue
 
             pair.ratio = from_coin_price / current_coin_price
@@ -322,16 +333,21 @@ def initialize_trade_thresholds(client: Client):
         for pair in session.query(Pair).filter(Pair.ratio == None).all():
             if not pair.from_coin.enabled or not pair.to_coin.enabled:
                 continue
-            logger.info("Initializing {0} vs {1}".format(pair.from_coin, pair.to_coin))
+            logger.info("Initializing {0} vs {1}".format(
+                pair.from_coin, pair.to_coin))
 
-            from_coin_price = get_market_ticker_price_from_list(all_tickers, pair.from_coin + BRIDGE)
+            from_coin_price = get_market_ticker_price_from_list(
+                all_tickers, pair.from_coin + BRIDGE)
             if from_coin_price is None:
-                logger.info("Skipping initializing {0}, symbol not found".format(pair.from_coin + BRIDGE))
+                logger.info("Skipping initializing {0}, symbol not found".format(
+                    pair.from_coin + BRIDGE))
                 continue
 
-            to_coin_price = get_market_ticker_price_from_list(all_tickers, pair.to_coin + BRIDGE)
+            to_coin_price = get_market_ticker_price_from_list(
+                all_tickers, pair.to_coin + BRIDGE)
             if to_coin_price is None:
-                logger.info("Skipping initializing {0}, symbol not found".format(pair.to_coin + BRIDGE))
+                logger.info("Skipping initializing {0}, symbol not found".format(
+                    pair.to_coin + BRIDGE))
                 continue
 
             pair.ratio = from_coin_price / to_coin_price
@@ -346,10 +362,12 @@ def scout(client: Client, transaction_fee=0.001, multiplier=5):
 
     current_coin = get_current_coin()
 
-    current_coin_price = get_market_ticker_price_from_list(all_tickers, current_coin + BRIDGE)
+    current_coin_price = get_market_ticker_price_from_list(
+        all_tickers, current_coin + BRIDGE)
 
     if current_coin_price is None:
-        logger.info("Skipping scouting... current coin {0} not found".format(current_coin + BRIDGE))
+        logger.info("Skipping scouting... current coin {0} not found".format(
+            current_coin + BRIDGE))
         return
 
     ratio_dict: Dict[Pair, float] = {}
@@ -357,10 +375,12 @@ def scout(client: Client, transaction_fee=0.001, multiplier=5):
     for pair in get_pairs_from(current_coin):
         if not pair.to_coin.enabled:
             continue
-        optional_coin_price = get_market_ticker_price_from_list(all_tickers, pair.to_coin + BRIDGE)
+        optional_coin_price = get_market_ticker_price_from_list(
+            all_tickers, pair.to_coin + BRIDGE)
 
         if optional_coin_price is None:
-            logger.info("Skipping scouting... optional coin {0} not found".format(pair.to_coin + BRIDGE))
+            logger.info("Skipping scouting... optional coin {0} not found".format(
+                pair.to_coin + BRIDGE))
             continue
 
         log_scout(pair, pair.ratio, current_coin_price, optional_coin_price)
@@ -369,7 +389,8 @@ def scout(client: Client, transaction_fee=0.001, multiplier=5):
         coin_opt_coin_ratio = current_coin_price / optional_coin_price
 
         # save ratio so we can pick the best option, not necessarily the first
-        ratio_dict[pair] = (coin_opt_coin_ratio - transaction_fee * multiplier * coin_opt_coin_ratio) - pair.ratio
+        ratio_dict[pair] = (coin_opt_coin_ratio - transaction_fee *
+                            multiplier * coin_opt_coin_ratio) - pair.ratio
 
     # keep only ratios bigger than zero
     ratio_dict = {k: v for k, v in ratio_dict.items() if v > 0}
@@ -395,23 +416,29 @@ def update_values(client: Client):
             balance = get_currency_balance(client, coin.symbol)
             if balance == 0:
                 continue
-            usd_value = get_market_ticker_price_from_list(all_ticker_values, coin + "USDT")
-            btc_value = get_market_ticker_price_from_list(all_ticker_values, coin + "BTC")
-            session.add(CoinValue(coin, balance, usd_value, btc_value, datetime=now))
+            usd_value = get_market_ticker_price_from_list(
+                all_ticker_values, coin + "USDT")
+            btc_value = get_market_ticker_price_from_list(
+                all_ticker_values, coin + "BTC")
+            session.add(CoinValue(coin, balance, usd_value,
+                                  btc_value, datetime=now))
 
 
 def migrate_old_state():
     if os.path.isfile('.current_coin'):
         with open('.current_coin', 'r') as f:
             coin = f.read().strip()
-            logger.info(f".current_coin file found, loading current coin {coin}")
+            logger.info(
+                f".current_coin file found, loading current coin {coin}")
             set_current_coin(coin)
         os.rename('.current_coin', '.current_coin.old')
-        logger.info(f".current_coin renamed to .current_coin.old - You can now delete this file")
+        logger.info(
+            f".current_coin renamed to .current_coin.old - You can now delete this file")
 
     if os.path.isfile('.current_coin_table'):
         with open('.current_coin_table', 'r') as f:
-            logger.info(f".current_coin_table file found, loading into database")
+            logger.info(
+                f".current_coin_table file found, loading into database")
             table: dict = json.load(f)
             session: Session
             with db_session() as session:
@@ -424,13 +451,15 @@ def migrate_old_state():
                         session.add(pair)
 
         os.rename('.current_coin_table', '.current_coin_table.old')
-        logger.info(f".current_coin_table renamed to .current_coin_table.old - You can now delete this file")
+        logger.info(
+            f".current_coin_table renamed to .current_coin_table.old - You can now delete this file")
 
 
 def main():
     api_key = config.get(USER_CFG_SECTION, 'api_key')
     api_secret_key = config.get(USER_CFG_SECTION, 'api_secret_key')
-    tld = config.get(USER_CFG_SECTION, 'tld') or 'com' # Default Top-level domain is 'com'
+    # Default Top-level domain is 'com'
+    tld = config.get(USER_CFG_SECTION, 'tld') or 'com'
 
     client = Client(api_key, api_secret_key, tld=tld)
 
@@ -465,9 +494,12 @@ def main():
                                                 client=client,
                                                 transaction_fee=SCOUT_TRANSACTION_FEE,
                                                 multiplier=SCOUT_MULTIPLIER).tag("scouting")
-    schedule.every(1).minutes.do(update_values, client=client).tag("updating value history")
-    schedule.every(1).minutes.do(prune_scout_history, hours=SCOUT_HISTORY_PRUNE_TIME).tag("pruning scout history")
-    schedule.every(1).hours.do(prune_value_history).tag("pruning value history")
+    schedule.every(1).minutes.do(
+        update_values, client=client).tag("updating value history")
+    schedule.every(1).minutes.do(prune_scout_history,
+                                 hours=SCOUT_HISTORY_PRUNE_TIME).tag("pruning scout history")
+    schedule.every(1).hours.do(prune_value_history).tag(
+        "pruning value history")
 
     while True:
         schedule.run_pending()
