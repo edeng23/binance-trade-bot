@@ -16,5 +16,5 @@ COPY . .
 
 RUN chmod +x entrypoint.sh
 
-ENTRYPOINT [ "entrypoint.sh" ]
-CMD ["python", "crypto_trading.py"]
+ENTRYPOINT [ "/app/entrypoint.sh" ]
+CMD ["python", "/app/crypto_trading.py"]
