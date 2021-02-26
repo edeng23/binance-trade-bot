@@ -2,19 +2,16 @@
 import configparser
 import datetime
 import json
-import math
 import os
 import random
 import time
 from typing import List, Dict
 
-import requests
-from binance.client import Client
-from binance.exceptions import BinanceAPIException
+from binance_api_manager import BinanceAPIManager
 from sqlalchemy.orm import Session
 
 from database import set_coins, set_current_coin, get_current_coin, get_pairs_from, \
-    db_session, create_database, get_pair, log_scout, TradeLog, CoinValue, prune_scout_history, prune_value_history
+    db_session, create_database, get_pair, log_scout, CoinValue, prune_scout_history, prune_value_history
 from models import Coin, Pair
 from scheduler import SafeScheduler
 from logger import Logger
@@ -56,49 +53,11 @@ supported_coin_list = []
 with open('supported_coin_list') as f:
     supported_coin_list = f.read().upper().splitlines()
 
-def retry(howmany):
-    def tryIt(func):
-        def f(*args, **kwargs):
-            time.sleep(1)
-            attempts = 0
-            while attempts < howmany:
-                try:
-                    return func(*args, **kwargs)
-                except Exception as e:
-                    print("Failed to Buy/Sell. Trying Again.")
-                    if attempts == 0:
-                        logger.info(e)
-                    attempts += 1
-            return None
-
-        return f
-
-    return tryIt
-
-
 def first(iterable, condition=lambda x: True):
     try:
         return next(x for x in iterable if condition(x))
     except StopIteration:
         return None
-
-
-def get_all_market_tickers(client):
-    '''
-    Get ticker price of all coins
-    '''
-    return client.get_all_tickers()
-
-
-def get_market_ticker_price(client, ticker_symbol):
-    '''
-    Get ticker price of a specific coin
-    '''
-    for ticker in client.get_symbol_ticker():
-        if ticker[u'symbol'] == ticker_symbol:
-            return float(ticker[u'price'])
-    return None
-
 
 def get_market_ticker_price_from_list(all_tickers, ticker_symbol):
     '''
@@ -107,188 +66,28 @@ def get_market_ticker_price_from_list(all_tickers, ticker_symbol):
     ticker = first(all_tickers, condition=lambda x: x[u'symbol'] == ticker_symbol)
     return float(ticker[u'price']) if ticker else None
 
-
-def get_currency_balance(client: Client, currency_symbol: str):
-    '''
-    Get balance of a specific coin
-    '''
-    for currency_balance in client.get_account()[u'balances']:
-        if currency_balance[u'asset'] == currency_symbol:
-            return float(currency_balance[u'free'])
-    return None
-
-
-@retry(20)
-def buy_alt(client: Client, alt: Coin, crypto: Coin):
-    '''
-    Buy altcoin
-    '''
-    trade_log = TradeLog(alt, crypto, False)
-    alt_symbol = alt.symbol
-    crypto_symbol = crypto.symbol
-    ticks = {}
-    for filt in client.get_symbol_info(alt_symbol + crypto_symbol)['filters']:
-        if filt['filterType'] == 'LOT_SIZE':
-            if filt['stepSize'].find('1') == 0:
-                ticks[alt_symbol] = 1 - filt['stepSize'].find('.')
-            else:
-                ticks[alt_symbol] = filt['stepSize'].find('1') - 1
-            break
-
-    alt_balance = get_currency_balance(client, alt_symbol)
-    crypto_balance = get_currency_balance(client, crypto_symbol)
-
-    order_quantity = ((math.floor(crypto_balance *
-                                  10 ** ticks[alt_symbol] / get_market_ticker_price(client,
-                                                                                    alt_symbol + crypto_symbol)) / float(
-        10 ** ticks[alt_symbol])))
-    logger.info('BUY QTY {0}'.format(order_quantity))
-
-    # Try to buy until successful
-    order = None
-    while order is None:
-        try:
-            order = client.order_limit_buy(
-                symbol=alt_symbol + crypto_symbol,
-                quantity=order_quantity,
-                price=get_market_ticker_price(client, alt_symbol + crypto_symbol)
-            )
-            logger.info(order)
-        except BinanceAPIException as e:
-            logger.info(e)
-            time.sleep(1)
-        except Exception as e:
-            logger.info("Unexpected Error: {0}".format(e))
-
-    trade_log.set_ordered(alt_balance, crypto_balance, order_quantity)
-
-    order_recorded = False
-    while not order_recorded:
-        try:
-            time.sleep(3)
-            stat = client.get_order(symbol=alt_symbol + crypto_symbol, orderId=order[u'orderId'])
-            order_recorded = True
-        except BinanceAPIException as e:
-            logger.info(e)
-            time.sleep(10)
-        except Exception as e:
-            logger.info("Unexpected Error: {0}".format(e))
-    while stat[u'status'] != 'FILLED':
-        try:
-            stat = client.get_order(
-                symbol=alt_symbol + crypto_symbol, orderId=order[u'orderId'])
-            time.sleep(1)
-        except BinanceAPIException as e:
-            logger.info(e)
-            time.sleep(2)
-        except Exception as e:
-            logger.info("Unexpected Error: {0}".format(e))
-
-    logger.info('Bought {0}'.format(alt_symbol))
-
-    trade_log.set_complete(stat['cummulativeQuoteQty'])
-
-    return order
-
-
-@retry(20)
-def sell_alt(client: Client, alt: Coin, crypto: Coin):
-    '''
-    Sell altcoin
-    '''
-    trade_log = TradeLog(alt, crypto, True)
-    alt_symbol = alt.symbol
-    crypto_symbol = crypto.symbol
-    ticks = {}
-    for filt in client.get_symbol_info(alt_symbol + crypto_symbol)['filters']:
-        if filt['filterType'] == 'LOT_SIZE':
-            if filt['stepSize'].find('1') == 0:
-                ticks[alt_symbol] = 1 - filt['stepSize'].find('.')
-            else:
-                ticks[alt_symbol] = filt['stepSize'].find('1') - 1
-            break
-
-    order_quantity = (math.floor(get_currency_balance(client, alt_symbol) *
-                                 10 ** ticks[alt_symbol]) / float(10 ** ticks[alt_symbol]))
-    logger.info('Selling {0} of {1}'.format(order_quantity, alt_symbol))
-
-    alt_balance = get_currency_balance(client, alt_symbol)
-    crypto_balance = get_currency_balance(client, crypto_symbol)
-    logger.info('Balance is {0}'.format(alt_balance))
-    order = None
-    while order is None:
-        order = client.order_market_sell(
-            symbol=alt_symbol + crypto_symbol,
-            quantity=(order_quantity)
-        )
-
-    logger.info('order')
-    logger.info(order)
-
-    trade_log.set_ordered(alt_balance, crypto_balance, order_quantity)
-
-    # Binance server can take some time to save the order
-    logger.info("Waiting for Binance")
-    time.sleep(5)
-    order_recorded = False
-    stat = None
-    while not order_recorded:
-        try:
-            time.sleep(3)
-            stat = client.get_order(symbol=alt_symbol + crypto_symbol, orderId=order[u'orderId'])
-            order_recorded = True
-        except BinanceAPIException as e:
-            logger.info(e)
-            time.sleep(10)
-        except Exception as e:
-            logger.info("Unexpected Error: {0}".format(e))
-
-    logger.info(stat)
-    while stat[u'status'] != 'FILLED':
-        logger.info(stat)
-        try:
-            stat = client.get_order(
-                symbol=alt_symbol + crypto_symbol, orderId=order[u'orderId'])
-            time.sleep(1)
-        except BinanceAPIException as e:
-            logger.info(e)
-            time.sleep(2)
-        except Exception as e:
-            logger.info("Unexpected Error: {0}".format(e))
-
-    newbal = get_currency_balance(client, alt_symbol)
-    while (newbal >= alt_balance):
-        newbal = get_currency_balance(client, alt_symbol)
-
-    logger.info('Sold {0}'.format(alt_symbol))
-
-    trade_log.set_complete(stat['cummulativeQuoteQty'])
-
-    return order
-
-
-def transaction_through_tether(client: Client, pair: Pair):
+def transaction_through_tether(client: BinanceAPIManager, pair: Pair):
     '''
     Jump from the source coin to the destination coin through tether
     '''
-    if sell_alt(client, pair.from_coin, BRIDGE) is None:
+    if client.sell_alt(pair.from_coin, BRIDGE) is None:
         logger.info("Couldn't sell, going back to scouting mode...")
         return None
     # This isn't pretty, but at the moment we don't have implemented logic to escape from a bridge coin... This'll do for now
     result = None
     while result is None:
-        result = buy_alt(client, pair.to_coin, BRIDGE)
+        result = client.buy_alt(pair.to_coin, BRIDGE)
 
     set_current_coin(pair.to_coin)
     update_trade_threshold(client)
 
 
-def update_trade_threshold(client: Client):
+def update_trade_threshold(client: BinanceAPIManager):
     '''
     Update all the coins with the threshold of buying the current held coin
     '''
 
-    all_tickers = get_all_market_tickers(client)
+    all_tickers = client.get_all_market_tickers()
 
     current_coin = get_current_coin()
 
@@ -310,12 +109,12 @@ def update_trade_threshold(client: Client):
             pair.ratio = from_coin_price / current_coin_price
 
 
-def initialize_trade_thresholds(client: Client):
+def initialize_trade_thresholds(client: BinanceAPIManager):
     '''
     Initialize the buying threshold of all the coins for trading between them
     '''
 
-    all_tickers = get_all_market_tickers(client)
+    all_tickers = client.get_all_market_tickers()
 
     session: Session
     with db_session() as session:
@@ -337,12 +136,12 @@ def initialize_trade_thresholds(client: Client):
             pair.ratio = from_coin_price / to_coin_price
 
 
-def scout(client: Client, transaction_fee=0.001, multiplier=5):
+def scout(client: BinanceAPIManager, transaction_fee=0.001, multiplier=5):
     '''
     Scout for potential jumps from the current coin to another coin
     '''
 
-    all_tickers = get_all_market_tickers(client)
+    all_tickers = client.get_all_market_tickers()
 
     current_coin = get_current_coin()
 
@@ -383,8 +182,8 @@ def scout(client: Client, transaction_fee=0.001, multiplier=5):
             client, best_pair)
 
 
-def update_values(client: Client):
-    all_ticker_values = get_all_market_tickers(client)
+def update_values(client: BinanceAPIManager):
+    all_ticker_values = client.get_all_market_tickers()
 
     now = datetime.datetime.now()
 
@@ -392,7 +191,7 @@ def update_values(client: Client):
     with db_session() as session:
         coins: List[Coin] = session.query(Coin).all()
         for coin in coins:
-            balance = get_currency_balance(client, coin.symbol)
+            balance = client.get_currency_balance(coin.symbol)
             if balance == 0:
                 continue
             usd_value = get_market_ticker_price_from_list(all_ticker_values, coin + "USDT")
@@ -432,7 +231,7 @@ def main():
     api_secret_key = config.get(USER_CFG_SECTION, 'api_secret_key')
     tld = config.get(USER_CFG_SECTION, 'tld') or 'com' # Default Top-level domain is 'com'
 
-    client = Client(api_key, api_secret_key, tld=tld)
+    client = BinanceAPIManager(api_key, api_secret_key, tld, logger)
 
     logger.info("Creating database schema if it doesn't already exist")
     create_database()
@@ -457,7 +256,7 @@ def main():
         if config.get(USER_CFG_SECTION, 'current_coin') == '':
             current_coin = get_current_coin()
             logger.info("Purchasing {0} to begin trading".format(current_coin))
-            buy_alt(client, current_coin, BRIDGE)
+            client.buy_alt(current_coin, BRIDGE)
             logger.info("Ready to start trading")
 
     schedule = SafeScheduler(logger)
