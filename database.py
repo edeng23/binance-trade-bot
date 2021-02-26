@@ -47,7 +47,7 @@ def set_coins(symbols: List[str]):
 
     # For all the combinations of coins in the database, add a pair to the database
     with db_session() as session:
-        coins: List[Coin] = session.query(Coin).all()
+        coins: List[Coin] = session.query(Coin).filter(Coin.enabled).all()
         for from_coin in coins:
             for to_coin in coins:
                 if from_coin != to_coin:
