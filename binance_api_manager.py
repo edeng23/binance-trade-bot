@@ -1,9 +1,12 @@
+import math
+import time
+
 from binance.client import Client
 from binance.exceptions import BinanceAPIException
+
 from database import TradeLog
-from models import Coin
 from logger import Logger
-import math, requests, time
+from models import Coin
 
 
 class BinanceAPIManager:
@@ -61,6 +64,17 @@ class BinanceAPIManager:
                 attempts += 1
         return None
 
+    def get_ticks(self, alt_symbol: str, crypto_symbol: str):
+        ticks = {}
+        for filt in self.BinanceClient.get_symbol_info(alt_symbol + crypto_symbol)['filters']:
+            if filt['filterType'] == 'LOT_SIZE':
+                if filt['stepSize'].find('1') == 0:
+                    ticks[alt_symbol] = 1 - filt['stepSize'].find('.')
+                else:
+                    ticks[alt_symbol] = filt['stepSize'].find('1') - 1
+                break
+        return ticks
+
     def buy_alt(self, alt: Coin, crypto: Coin, all_tickers):
         return self.retry(self._buy_alt, alt, crypto, all_tickers)
 
@@ -71,16 +85,8 @@ class BinanceAPIManager:
         trade_log = TradeLog(alt, crypto, False)
         alt_symbol = alt.symbol
         crypto_symbol = crypto.symbol
-        ticks = {}
-        for filt in self.BinanceClient.get_symbol_info(alt_symbol + crypto_symbol)[
-            "filters"
-        ]:
-            if filt["filterType"] == "LOT_SIZE":
-                if filt["stepSize"].find("1") == 0:
-                    ticks[alt_symbol] = 1 - filt["stepSize"].find(".")
-                else:
-                    ticks[alt_symbol] = filt["stepSize"].find("1") - 1
-                break
+
+        ticks = self.get_ticks(alt_symbol, crypto_symbol)
 
         alt_balance = self.get_currency_balance(alt_symbol)
         crypto_balance = self.get_currency_balance(crypto_symbol)
@@ -152,16 +158,8 @@ class BinanceAPIManager:
         trade_log = TradeLog(alt, crypto, True)
         alt_symbol = alt.symbol
         crypto_symbol = crypto.symbol
-        ticks = {}
-        for filt in self.BinanceClient.get_symbol_info(alt_symbol + crypto_symbol)[
-            "filters"
-        ]:
-            if filt["filterType"] == "LOT_SIZE":
-                if filt["stepSize"].find("1") == 0:
-                    ticks[alt_symbol] = 1 - filt["stepSize"].find(".")
-                else:
-                    ticks[alt_symbol] = filt["stepSize"].find("1") - 1
-                break
+
+        ticks = self.get_ticks(alt_symbol, crypto_symbol)
 
         order_quantity = math.floor(
             self.get_currency_balance(alt_symbol) * 10 ** ticks[alt_symbol]
