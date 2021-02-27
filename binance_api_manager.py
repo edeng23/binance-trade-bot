@@ -48,10 +48,10 @@ class BinanceAPIManager:
                 attempts += 1
         return None
 
-    def buy_alt(self, alt: Coin, crypto: Coin):
-        return self.retry(self._buy_alt, alt, crypto)
+    def buy_alt(self, alt: Coin, crypto: Coin, all_tickers):
+        return self.retry(self._buy_alt, alt, crypto, all_tickers)
 
-    def _buy_alt(self, alt: Coin, crypto: Coin):
+    def _buy_alt(self, alt: Coin, crypto: Coin, all_tickers):
         """
         Buy altcoin
         """
@@ -71,11 +71,12 @@ class BinanceAPIManager:
 
         alt_balance = self.get_currency_balance(alt_symbol)
         crypto_balance = self.get_currency_balance(crypto_symbol)
+        from_coin_price = get_market_ticker_price_from_list(all_tickers, alt_symbol + crypto_symbol)
 
         order_quantity = math.floor(
             crypto_balance
             * 10 ** ticks[alt_symbol]
-            / self.get_market_ticker_price(alt_symbol + crypto_symbol)
+            / from_coin_price
         ) / float(10 ** ticks[alt_symbol])
         self.logger.info("BUY QTY {0}".format(order_quantity))
 
@@ -86,7 +87,7 @@ class BinanceAPIManager:
                 order = self.BinanceClient.order_limit_buy(
                     symbol=alt_symbol + crypto_symbol,
                     quantity=order_quantity,
-                    price=self.get_market_ticker_price(alt_symbol + crypto_symbol),
+                    price=self.from_coin_price,
                 )
                 self.logger.info(order)
             except BinanceAPIException as e:
