@@ -51,14 +51,27 @@ class BinanceAPIManager:
                 attempts += 1
         return None
 
+    def get_symbol_filter(self, alt_symbol: str, crypto_symbol: str, filter_type: str):
+        return next(_filter for _filter in self.BinanceClient.get_symbol_info(alt_symbol + crypto_symbol)['filters']
+                    if _filter['filterType'] == filter_type)
+
     def get_alt_tick(self, alt_symbol: str, crypto_symbol: str):
-        step_size = next(
-            _filter['stepSize'] for _filter in self.BinanceClient.get_symbol_info(alt_symbol + crypto_symbol)['filters']
-            if _filter['filterType'] == 'LOT_SIZE')
+        step_size = self.get_symbol_filter(alt_symbol, crypto_symbol, 'LOT_SIZE')['stepSize']
         if step_size.find('1') == 0:
             return 1 - step_size.find('.')
         else:
             return step_size.find('1') - 1
+
+    def get_min_notional(self, alt_symbol: str, crypto_symbol: str):
+        return float(self.get_symbol_filter(alt_symbol, crypto_symbol, 'MIN_NOTIONAL')['minNotional'])
+
+    def sell_quantity(self, alt_symbol: str, crypto_symbol: str, alt_balance: float):
+        alt_tick = self.get_alt_tick(alt_symbol, crypto_symbol)
+        return math.floor(alt_balance * 10 ** alt_tick) / float(10 ** alt_tick)
+
+    def buy_quantity(self, alt_symbol, crypto_symbol, crypto_balance, ticker_price):
+        alt_tick = self.get_alt_tick(alt_symbol, crypto_symbol)
+        return math.floor(crypto_balance * 10 ** alt_tick / ticker_price) / float(10 ** alt_tick)
 
     def wait_for_order(self, alt_symbol, crypto_symbol, order_id):
         while True:
@@ -98,16 +111,11 @@ class BinanceAPIManager:
         alt_symbol = alt.symbol
         crypto_symbol = crypto.symbol
 
-        alt_tick = self.get_alt_tick(alt_symbol, crypto_symbol)
-
         alt_balance = self.get_currency_balance(alt_symbol)
         crypto_balance = self.get_currency_balance(crypto_symbol)
 
-        order_quantity = math.floor(
-            crypto_balance
-            * 10 ** alt_tick
-            / self.get_market_ticker_price(alt_symbol + crypto_symbol)
-        ) / float(10 ** alt_tick)
+        order_quantity = self.buy_quantity(alt_symbol, crypto_symbol, crypto_balance,
+                                           self.get_market_ticker_price(alt_symbol + crypto_symbol))
         self.logger.info("BUY QTY {0}".format(order_quantity))
 
         # Try to buy until successful
@@ -147,15 +155,12 @@ class BinanceAPIManager:
         alt_symbol = alt.symbol
         crypto_symbol = crypto.symbol
 
-        alt_tick = self.get_alt_tick(alt_symbol, crypto_symbol)
-
-        order_quantity = math.floor(
-            self.get_currency_balance(alt_symbol) * 10 ** alt_tick
-        ) / float(10 ** alt_tick)
-        self.logger.info("Selling {0} of {1}".format(order_quantity, alt_symbol))
-
         alt_balance = self.get_currency_balance(alt_symbol)
         crypto_balance = self.get_currency_balance(crypto_symbol)
+
+        order_quantity = self.sell_quantity(alt_symbol, crypto_symbol, alt_balance)
+        self.logger.info("Selling {0} of {1}".format(order_quantity, alt_symbol))
+
         self.logger.info("Balance is {0}".format(alt_balance))
         order = None
         while order is None:
