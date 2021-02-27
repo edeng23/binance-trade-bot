@@ -120,7 +120,7 @@ def get_pairs_from(from_coin: Union[Coin, str]):
     from_coin = get_coin(from_coin)
     session: Session
     with db_session() as session:
-        pairs: List[pair] = session.query(Pair).filter(Pair.from_coin == from_coin)
+        pairs: List[Pair] = session.query(Pair).filter(Pair.from_coin == from_coin)
         return pairs
 
 

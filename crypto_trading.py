@@ -162,7 +162,6 @@ def scout(client: BinanceAPIManager, transaction_fee=0.001, multiplier=5):
     '''
     Scout for potential jumps from the current coin to another coin
     '''
-
     all_tickers = client.get_all_market_tickers()
 
     current_coin = get_current_coin()
