@@ -134,6 +134,30 @@ def initialize_trade_thresholds(client: BinanceAPIManager):
             pair.ratio = from_coin_price / to_coin_price
 
 
+def initialize_current_coint(client: BinanceAPIManager):
+    '''
+    Decide what is the current coin, and set it up in the DB.
+    '''
+    if get_current_coin() is None:
+        current_coin_symbol = config.get(USER_CFG_SECTION, 'current_coin')
+        if not current_coin_symbol:
+            current_coin_symbol = random.choice(supported_coin_list)
+
+        logger.info("Setting initial coin to {0}".format(current_coin_symbol))
+
+        if current_coin_symbol not in supported_coin_list:
+            exit("***\nERROR!\nSince there is no backup file, a proper coin name must be provided at init\n***")
+        set_current_coin(current_coin_symbol)
+
+        # if we don't have a configuration, we selected a coin at random... Buy it so we can start trading.
+        if config.get(USER_CFG_SECTION, 'current_coin') == '':
+            current_coin = get_current_coin()
+            logger.info("Purchasing {0} to begin trading".format(current_coin))
+            all_tickers = client.get_all_market_tickers()
+            client.buy_alt(current_coin, BRIDGE, all_tickers)
+            logger.info("Ready to start trading")
+
+
 def scout(client: BinanceAPIManager, transaction_fee=0.001, multiplier=5):
     '''
     Scout for potential jumps from the current coin to another coin
@@ -244,24 +268,8 @@ def main():
 
     initialize_trade_thresholds(client)
 
-    if get_current_coin() is None:
-        current_coin_symbol = config.get(USER_CFG_SECTION, 'current_coin')
-        if not current_coin_symbol:
-            current_coin_symbol = random.choice(supported_coin_list)
-
-        logger.info("Setting initial coin to {0}".format(current_coin_symbol))
-
-        if current_coin_symbol not in supported_coin_list:
-            exit("***\nERROR!\nSince there is no backup file, a proper coin name must be provided at init\n***")
-        set_current_coin(current_coin_symbol)
-
-        if config.get(USER_CFG_SECTION, 'current_coin') == '':
-            current_coin = get_current_coin()
-            logger.info("Purchasing {0} to begin trading".format(current_coin))
-            all_tickers = client.get_all_market_tickers()
-            client.buy_alt(current_coin, BRIDGE, all_tickers)
-            logger.info("Ready to start trading")
-
+    initialize_current_coint(client)
+    
     schedule = SafeScheduler(logger)
     schedule.every(SCOUT_SLEEP_TIME).seconds.do(scout,
                                                 client=client,
