@@ -141,6 +141,24 @@ class BinanceAPIManager:
                 self.logger.info("Unexpected Error: {0}".format(e))
 
         trade_log.set_ordered(origin_balance, target_balance, order_quantity)
+<<<<<<< HEAD
+=======
+
+        # It could take a while for Binance server to save the order
+        order_recorded = False
+        while not order_recorded:
+            try:
+                time.sleep(3)
+                stat = self.BinanceClient.get_order(
+                    symbol=origin_symbol + target_symbol, orderId=order[u"orderId"]
+                )
+                order_recorded = True
+            except BinanceAPIException as e:
+                self.logger.info(e)
+                time.sleep(10)
+            except Exception as e:
+                self.logger.info("Unexpected Error: {0}".format(e))
+>>>>>>> Fixed wrong variables usage in buy_alt->trade_log
 
         stat = self.wait_for_order(origin_symbol, target_symbol, order[u'orderId'])
 
