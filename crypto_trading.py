@@ -68,9 +68,9 @@ def get_market_ticker_price_from_list(all_tickers, ticker_symbol):
     ticker = first(all_tickers, condition=lambda x: x[u'symbol'] == ticker_symbol)
     return float(ticker[u'price']) if ticker else None
 
-def transaction_through_tether(client: BinanceAPIManager, pair: Pair, all_tickers):
+def transaction_through_bridge(client: BinanceAPIManager, pair: Pair, all_tickers):
     '''
-    Jump from the source coin to the destination coin through tether
+    Jump from the source coin to the destination coin through bridge coin
     '''
     if client.sell_alt(pair.from_coin, BRIDGE) is None:
         logger.info("Couldn't sell, going back to scouting mode...")
@@ -178,7 +178,7 @@ def scout(client: BinanceAPIManager, transaction_fee=0.001, multiplier=5):
         best_pair = max(ratio_dict, key=ratio_dict.get)
         logger.info('Will be jumping from {0} to {1}'.format(
             current_coin, best_pair.to_coin_id))
-        transaction_through_tether(
+        transaction_through_bridge(
             client, best_pair, all_tickers)
 
 
