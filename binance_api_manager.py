@@ -77,7 +77,7 @@ class BinanceAPIManager:
         while True:
             try:
                 time.sleep(3)
-                stat = self.BinanceClient.get_order(symbol=origin_symbol + target_symbol, orderId=order_id)
+                order_status = self.BinanceClient.get_order(symbol=origin_symbol + target_symbol, orderId=order_id)
                 break
             except BinanceAPIException as e:
                 self.logger.info(e)
@@ -85,11 +85,11 @@ class BinanceAPIManager:
             except Exception as e:
                 self.logger.info("Unexpected Error: {0}".format(e))
 
-        self.logger.info(stat)
+        self.logger.info(order_status)
 
-        while stat[u'status'] != 'FILLED':
+        while order_status[u'status'] != 'FILLED':
             try:
-                stat = self.BinanceClient.get_order(
+                order_status = self.BinanceClient.get_order(
                     symbol=origin_symbol + target_symbol, orderId=order_id)
                 time.sleep(1)
             except BinanceAPIException as e:
@@ -98,7 +98,7 @@ class BinanceAPIManager:
             except Exception as e:
                 self.logger.info("Unexpected Error: {0}".format(e))
 
-        return stat
+        return order_status
 
     def buy_alt(self, origin_coin: Coin, target_coin: Coin, all_tickers):
         return self.retry(self._buy_alt, origin_coin, target_coin, all_tickers)
