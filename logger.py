@@ -50,10 +50,10 @@ class Logger:
         self.log(message, "info")
 
     def warning(self, message):
-        self.warning(message, "warning")
+        self.log(message, "warning")
 
     def error(self, message):
-        self.error(message, "error")
+        self.log(message, "error")
 
     def debug(self, message):
-        self.debug(message, "debug")
+        self.log(message, "debug")

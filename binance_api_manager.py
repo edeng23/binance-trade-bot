@@ -124,6 +124,8 @@ class BinanceAPIManager:
 
         self.logger.info("Bought {0}".format(alt_symbol))
 
+        trade_log.set_complete(stat["cummulativeQuoteQty"])
+
         return order
 
     def sell_alt(self, alt: Coin, crypto: Coin):
