@@ -1,0 +1,11 @@
+# Define version
+version: 1
+
+# Define your URLs (Mandatory!)
+# URLs should start with - (remove the comment symbol #)
+# Replace the values in the {} with your tokens/ids
+urls:
+  # - tgram://{TOKEN}/{CHAT_ID}
+  # - discord://{WebhookID}/{WebhookToken}/
+  # - slack://{tokenA}/{tokenB}/{tokenC}
+  # More options here: https://github.com/caronc/apprise
