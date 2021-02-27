@@ -35,6 +35,14 @@ class BinanceAPIManager:
                 return float(currency_balance[u"free"])
         return None
 
+
+    def get_market_ticker_price_from_list(all_tickers, ticker_symbol):
+        '''
+        Get ticker price of a specific coin
+        '''
+        ticker = first(all_tickers, condition=lambda x: x[u'symbol'] == ticker_symbol)
+        return float(ticker[u'price']) if ticker else None
+
     def retry(self, func, *args, **kwargs):
         time.sleep(1)
         attempts = 0
@@ -71,7 +79,7 @@ class BinanceAPIManager:
 
         alt_balance = self.get_currency_balance(alt_symbol)
         crypto_balance = self.get_currency_balance(crypto_symbol)
-        from_coin_price = get_market_ticker_price_from_list(all_tickers, alt_symbol + crypto_symbol)
+        from_coin_price = self.get_market_ticker_price_from_list(all_tickers, alt_symbol + crypto_symbol)
 
         order_quantity = math.floor(
             crypto_balance
