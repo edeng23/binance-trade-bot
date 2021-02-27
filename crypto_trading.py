@@ -25,7 +25,8 @@ config = configparser.ConfigParser()
 config['DEFAULT'] = {
     'scout_transaction_fee': '0.001',
     'scout_multiplier': '5',
-    'scout_sleep_time': '5'
+    'scout_sleep_time': '5',
+    'tld': 'com'
 }
 
 if not os.path.exists(CFG_FL_NAME):
@@ -230,7 +231,7 @@ def migrate_old_state():
 def main():
     api_key = config.get(USER_CFG_SECTION, 'api_key')
     api_secret_key = config.get(USER_CFG_SECTION, 'api_secret_key')
-    tld = config.get(USER_CFG_SECTION, 'tld') or 'com' # Default Top-level domain is 'com'
+    tld = config.get(USER_CFG_SECTION, 'tld')
 
     client = BinanceAPIManager(api_key, api_secret_key, tld, logger)
 
