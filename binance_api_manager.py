@@ -64,16 +64,14 @@ class BinanceAPIManager:
                 attempts += 1
         return None
 
-    def get_ticks(self, alt_symbol: str, crypto_symbol: str):
-        ticks = {}
-        for filt in self.BinanceClient.get_symbol_info(alt_symbol + crypto_symbol)['filters']:
-            if filt['filterType'] == 'LOT_SIZE':
-                if filt['stepSize'].find('1') == 0:
-                    ticks[alt_symbol] = 1 - filt['stepSize'].find('.')
-                else:
-                    ticks[alt_symbol] = filt['stepSize'].find('1') - 1
-                break
-        return ticks
+    def get_alt_tick(self, alt_symbol: str, crypto_symbol: str):
+        step_size = next(
+            _filter['stepSize'] for _filter in self.BinanceClient.get_symbol_info(alt_symbol + crypto_symbol)['filters']
+            if _filter['filterType'] == 'LOT_SIZE')
+        if step_size.find('1') == 0:
+            return 1 - step_size.find('.')
+        else:
+            return step_size.find('1') - 1
 
     def wait_for_order(self, alt_symbol, crypto_symbol, order_id):
         while True:
@@ -113,7 +111,7 @@ class BinanceAPIManager:
         alt_symbol = alt.symbol
         crypto_symbol = crypto.symbol
 
-        ticks = self.get_ticks(alt_symbol, crypto_symbol)
+        alt_tick = self.get_alt_tick(alt_symbol, crypto_symbol)
 
         alt_balance = self.get_currency_balance(alt_symbol)
         crypto_balance = self.get_currency_balance(crypto_symbol)
@@ -121,9 +119,9 @@ class BinanceAPIManager:
 
         order_quantity = math.floor(
             crypto_balance
-            * 10 ** ticks[alt_symbol]
+            * 10 ** alt_tick
             / from_coin_price
-        ) / float(10 ** ticks[alt_symbol])
+        ) / float(10 ** alt_tick)
         self.logger.info("BUY QTY {0}".format(order_quantity))
 
         # Try to buy until successful
@@ -163,11 +161,11 @@ class BinanceAPIManager:
         alt_symbol = alt.symbol
         crypto_symbol = crypto.symbol
 
-        ticks = self.get_ticks(alt_symbol, crypto_symbol)
+        alt_tick = self.get_alt_tick(alt_symbol, crypto_symbol)
 
         order_quantity = math.floor(
-            self.get_currency_balance(alt_symbol) * 10 ** ticks[alt_symbol]
-        ) / float(10 ** ticks[alt_symbol])
+            self.get_currency_balance(alt_symbol) * 10 ** alt_tick
+        ) / float(10 ** alt_tick)
         self.logger.info("Selling {0} of {1}".format(order_quantity, alt_symbol))
 
         alt_balance = self.get_currency_balance(alt_symbol)
