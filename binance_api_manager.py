@@ -95,7 +95,7 @@ class BinanceAPIManager:
                 order = self.BinanceClient.order_limit_buy(
                     symbol=alt_symbol + crypto_symbol,
                     quantity=order_quantity,
-                    price=self.from_coin_price,
+                    price=from_coin_price,
                 )
                 self.logger.info(order)
             except BinanceAPIException as e:
