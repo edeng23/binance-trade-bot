@@ -54,6 +54,21 @@ Create a .cfg file named `user.cfg` based off `.user.cfg.example`, then add your
 - **scout_transaction_fee** - The transaction fee percentage. This value should be changed, for example, if you are [using BNB to pay for fees](https://www.binance.com/en/support/faq/115000583311-Using-BNB-to-Pay-for-Fees). 
 - **scout_multiplier** - Controls the value by which the difference between the current state of coin ratios and previous state of ratios is multiplied. For bigger values, the bot will wait for bigger margins to arrive before making a trade. 
 
+#### Environment Variables
+
+Most of the options provided in `user.cfg` can also be configured using environment variables.
+
+```
+SUPPORTED_COIN_LIST: "XLM TRX ICX EOS IOTA ONT QTUM ETC ADA XMR DASH NEO ATOM DOGE VET BAT OMG BTT"
+BRIDGE_SYMBOL: USDT
+CURRENT_COIN_SYMBOL:
+API_KEY:
+API_SECRET_KEY:
+SCOUT_TRANSACTION_FEE:
+SCOUT_MULTIPLIER:
+SCOUT_SLEEP_TIME:
+```
+
 ### Notifications with Apprise
 
 Apprise allows the bot to send notifications to all of the most popular notification services available such as: Telegram, Discord, Slack, Amazon SNS, Gotify, etc.
