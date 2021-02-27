@@ -35,13 +35,13 @@ class BinanceAPIManager:
                 return float(currency_balance[u"free"])
         return None
 
-    def first(iterable, condition=lambda x: True):
+    def first(self, iterable, condition=lambda x: True):
         try:
             return next(x for x in iterable if condition(x))
         except StopIteration:
             return None
 
-    def get_market_ticker_price_from_list(all_tickers, ticker_symbol):
+    def get_market_ticker_price_from_list(self, all_tickers, ticker_symbol):
         '''
         Get ticker price of a specific coin
         '''
