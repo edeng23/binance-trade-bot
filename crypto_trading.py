@@ -207,6 +207,9 @@ def scout(client: BinanceAPIManager, transaction_fee=0.001, multiplier=5):
 
 
 def update_values(client: BinanceAPIManager):
+    '''
+    Log current value state of all altcoin balances against BTC and USDT in DB.
+    '''
     all_ticker_values = client.get_all_market_tickers()
 
     now = datetime.datetime.now()
