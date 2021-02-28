@@ -23,6 +23,7 @@ class Config:
 
         if not os.path.exists(CFG_FL_NAME):
             print('No configuration file (user.cfg) found! See README. Assuming default config...')
+            config[USER_CFG_SECTION] = {}
         config.read(CFG_FL_NAME)
 
         self.BRIDGE_SYMBOL = os.environ.get('BRIDGE_SYMBOL') or config.get(
