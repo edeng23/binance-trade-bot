@@ -13,9 +13,11 @@ class Config:
         # Init config
         config = configparser.ConfigParser()
         config['DEFAULT'] = {
+            'bridge': 'USDT',
             'scout_transaction_fee': '0.001',
             'scout_multiplier': '5',
             'scout_sleep_time': '5',
+            'hourToKeepScoutHistory': '1',
             'tld': 'com'
         }
 
@@ -30,7 +32,7 @@ class Config:
 
         # Prune settings
         self.SCOUT_HISTORY_PRUNE_TIME = float(os.environ.get('HOURS_TO_KEEP_SCOUTING_HISTORY') or config.get(
-            USER_CFG_SECTION, 'hourToKeepScoutHistory', fallback="1"))
+            USER_CFG_SECTION, 'hourToKeepScoutHistory'))
 
         # Get config for scout
         self.SCOUT_TRANSACTION_FEE = float(os.environ.get('SCOUT_TRANSACTION_FEE') or config.get(
@@ -45,7 +47,7 @@ class Config:
             USER_CFG_SECTION, 'api_key')
         self.BINANCE_API_SECRET_KEY = os.environ.get('API_SECRET_KEY') or config.get(
             USER_CFG_SECTION, 'api_secret_key')
-        self.BINANCE_TLD = os.environ.get('TLD') or config.get(USER_CFG_SECTION, 'tld') or 'com'
+        self.BINANCE_TLD = os.environ.get('TLD') or config.get(USER_CFG_SECTION, 'tld')
 
         self.SUPPORTED_COIN_LIST = os.environ.get('SUPPORTED_COIN_LIST').split() or []
 
