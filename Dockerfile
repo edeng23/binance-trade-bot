@@ -17,5 +17,3 @@ COPY --from=builder /install /usr/local
 COPY . /app
 
 WORKDIR /app
-
-CMD ["python", "crypto_trading.py"]

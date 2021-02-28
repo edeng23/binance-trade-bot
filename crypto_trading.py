@@ -11,7 +11,7 @@ from binance_api_manager import BinanceAPIManager
 from sqlalchemy.orm import Session
 
 from database import set_coins, set_current_coin, get_current_coin, get_pairs_from, \
-    db_session, create_database, get_pair, log_scout, CoinValue, prune_scout_history, prune_value_history
+    db_session, create_database, get_pair, log_scout, CoinValue, prune_scout_history, prune_value_history, send_update
 from models import Coin, Pair
 from scheduler import SafeScheduler
 from logger import Logger
@@ -67,7 +67,7 @@ def get_market_ticker_price_from_list(all_tickers, ticker_symbol):
     ticker = first(all_tickers, condition=lambda x: x[u'symbol'] == ticker_symbol)
     return float(ticker[u'price']) if ticker else None
 
-def transaction_through_tether(client: BinanceAPIManager, pair: Pair):
+def transaction_through_tether(client: BinanceAPIManager, pair: Pair, all_tickers):
     '''
     Jump from the source coin to the destination coin through tether
     '''
@@ -77,22 +77,18 @@ def transaction_through_tether(client: BinanceAPIManager, pair: Pair):
     # This isn't pretty, but at the moment we don't have implemented logic to escape from a bridge coin... This'll do for now
     result = None
     while result is None:
-        result = client.buy_alt(pair.to_coin, BRIDGE)
+        result = client.buy_alt(pair.to_coin, BRIDGE, all_tickers)
 
     set_current_coin(pair.to_coin)
-    update_trade_threshold(client)
+    update_trade_threshold(client, float(result[u'price']), all_tickers)
 
 
-def update_trade_threshold(client: BinanceAPIManager):
+def update_trade_threshold(client: BinanceAPIManager, current_coin_price:float, all_tickers):
     '''
     Update all the coins with the threshold of buying the current held coin
     '''
 
-    all_tickers = client.get_all_market_tickers()
-
     current_coin = get_current_coin()
-
-    current_coin_price = get_market_ticker_price_from_list(all_tickers, current_coin + BRIDGE)
 
     if current_coin_price is None:
         logger.info("Skipping update... current coin {0} not found".format(current_coin + BRIDGE))
@@ -180,7 +176,7 @@ def scout(client: BinanceAPIManager, transaction_fee=0.001, multiplier=5):
         logger.info('Will be jumping from {0} to {1}'.format(
             current_coin, best_pair.to_coin_id))
         transaction_through_tether(
-            client, best_pair)
+            client, best_pair, all_tickers)
 
 
 def update_values(client: BinanceAPIManager):
@@ -197,7 +193,9 @@ def update_values(client: BinanceAPIManager):
                 continue
             usd_value = get_market_ticker_price_from_list(all_ticker_values, coin + "USDT")
             btc_value = get_market_ticker_price_from_list(all_ticker_values, coin + "BTC")
-            session.add(CoinValue(coin, balance, usd_value, btc_value, datetime=now))
+            cv = CoinValue(coin, balance, usd_value, btc_value, datetime=now)
+            session.add(cv)
+            send_update(cv)
 
 
 def migrate_old_state():
@@ -257,7 +255,8 @@ def main():
         if config.get(USER_CFG_SECTION, 'current_coin') == '':
             current_coin = get_current_coin()
             logger.info("Purchasing {0} to begin trading".format(current_coin))
-            client.buy_alt(current_coin, BRIDGE)
+            all_tickers = client.get_all_market_tickers()
+            client.buy_alt(current_coin, BRIDGE, all_tickers)
             logger.info("Ready to start trading")
 
     schedule = SafeScheduler(logger)
