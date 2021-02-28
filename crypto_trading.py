@@ -55,11 +55,13 @@ with open('supported_coin_list') as f:
     supported_coin_list = f.read().upper().strip().splitlines()
     supported_coin_list = list(filter(None, supported_coin_list))
 
+
 def first(iterable, condition=lambda x: True):
     try:
         return next(x for x in iterable if condition(x))
     except StopIteration:
         return None
+
 
 def get_market_ticker_price_from_list(all_tickers, ticker_symbol):
     '''
@@ -67,6 +69,7 @@ def get_market_ticker_price_from_list(all_tickers, ticker_symbol):
     '''
     ticker = first(all_tickers, condition=lambda x: x[u'symbol'] == ticker_symbol)
     return float(ticker[u'price']) if ticker else None
+
 
 def transaction_through_bridge(client: BinanceAPIManager, pair: Pair, all_tickers):
     '''
@@ -88,7 +91,6 @@ def update_trade_threshold(client: BinanceAPIManager, current_coin_price:float, 
     '''
     Update all the coins with the threshold of buying the current held coin
     '''
-
     current_coin = get_current_coin()
 
     if current_coin_price is None:
@@ -111,7 +113,6 @@ def initialize_trade_thresholds(client: BinanceAPIManager):
     '''
     Initialize the buying threshold of all the coins for trading between them
     '''
-
     all_tickers = client.get_all_market_tickers()
 
     session: Session
@@ -228,6 +229,9 @@ def update_values(client: BinanceAPIManager):
 
 
 def migrate_old_state():
+    '''
+    For migrating from old dotfile format to SQL db. This method should be removed in the future.
+    '''
     if os.path.isfile('.current_coin'):
         with open('.current_coin', 'r') as f:
             coin = f.read().strip()
