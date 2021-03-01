@@ -25,7 +25,8 @@ config = configparser.ConfigParser()
 config['DEFAULT'] = {
     'scout_transaction_fee': '0.001',
     'scout_multiplier': '5',
-    'scout_sleep_time': '5'
+    'scout_sleep_time': '5',
+    'tld': 'com'
 }
 
 if not os.path.exists(CFG_FL_NAME):
@@ -54,11 +55,13 @@ with open('supported_coin_list') as f:
     supported_coin_list = f.read().upper().strip().splitlines()
     supported_coin_list = list(filter(None, supported_coin_list))
 
+
 def first(iterable, condition=lambda x: True):
     try:
         return next(x for x in iterable if condition(x))
     except StopIteration:
         return None
+
 
 def get_market_ticker_price_from_list(all_tickers, ticker_symbol):
     '''
@@ -67,9 +70,10 @@ def get_market_ticker_price_from_list(all_tickers, ticker_symbol):
     ticker = first(all_tickers, condition=lambda x: x[u'symbol'] == ticker_symbol)
     return float(ticker[u'price']) if ticker else None
 
-def transaction_through_tether(client: BinanceAPIManager, pair: Pair, all_tickers):
+
+def transaction_through_bridge(client: BinanceAPIManager, pair: Pair, all_tickers):
     '''
-    Jump from the source coin to the destination coin through tether
+    Jump from the source coin to the destination coin through bridge coin
     '''
     if client.sell_alt(pair.from_coin, BRIDGE) is None:
         logger.info("Couldn't sell, going back to scouting mode...")
@@ -87,7 +91,6 @@ def update_trade_threshold(client: BinanceAPIManager, current_coin_price:float, 
     '''
     Update all the coins with the threshold of buying the current held coin
     '''
-
     current_coin = get_current_coin()
 
     if current_coin_price is None:
@@ -110,7 +113,6 @@ def initialize_trade_thresholds(client: BinanceAPIManager):
     '''
     Initialize the buying threshold of all the coins for trading between them
     '''
-
     all_tickers = client.get_all_market_tickers()
 
     session: Session
@@ -133,14 +135,39 @@ def initialize_trade_thresholds(client: BinanceAPIManager):
             pair.ratio = from_coin_price / to_coin_price
 
 
+def initialize_current_coin(client: BinanceAPIManager):
+    '''
+    Decide what is the current coin, and set it up in the DB.
+    '''
+    if get_current_coin() is None:
+        current_coin_symbol = config.get(USER_CFG_SECTION, 'current_coin')
+        if not current_coin_symbol:
+            current_coin_symbol = random.choice(supported_coin_list)
+
+        logger.info("Setting initial coin to {0}".format(current_coin_symbol))
+
+        if current_coin_symbol not in supported_coin_list:
+            exit("***\nERROR!\nSince there is no backup file, a proper coin name must be provided at init\n***")
+        set_current_coin(current_coin_symbol)
+
+        # if we don't have a configuration, we selected a coin at random... Buy it so we can start trading.
+        if config.get(USER_CFG_SECTION, 'current_coin') == '':
+            current_coin = get_current_coin()
+            logger.info("Purchasing {0} to begin trading".format(current_coin))
+            all_tickers = client.get_all_market_tickers()
+            client.buy_alt(current_coin, BRIDGE, all_tickers)
+            logger.info("Ready to start trading")
+
+
 def scout(client: BinanceAPIManager, transaction_fee=0.001, multiplier=5):
     '''
     Scout for potential jumps from the current coin to another coin
     '''
-
     all_tickers = client.get_all_market_tickers()
 
     current_coin = get_current_coin()
+    #Display on the console, the current coin+Bridge, so users can see *some* activity and not thinkg the bot has stopped. Not logging though to reduce log size.
+    print( str( datetime.datetime.now() ) + " - CONSOLE - INFO - I am scouting the best trades. Current coin: {0} ".format( current_coin + BRIDGE ) , end='\r')
 
     current_coin_price = get_market_ticker_price_from_list(all_tickers, current_coin + BRIDGE)
 
@@ -175,11 +202,14 @@ def scout(client: BinanceAPIManager, transaction_fee=0.001, multiplier=5):
         best_pair = max(ratio_dict, key=ratio_dict.get)
         logger.info('Will be jumping from {0} to {1}'.format(
             current_coin, best_pair.to_coin_id))
-        transaction_through_tether(
+        transaction_through_bridge(
             client, best_pair, all_tickers)
 
 
 def update_values(client: BinanceAPIManager):
+    '''
+    Log current value state of all altcoin balances against BTC and USDT in DB.
+    '''
     all_ticker_values = client.get_all_market_tickers()
 
     now = datetime.datetime.now()
@@ -199,6 +229,9 @@ def update_values(client: BinanceAPIManager):
 
 
 def migrate_old_state():
+    '''
+    For migrating from old dotfile format to SQL db. This method should be removed in the future.
+    '''
     if os.path.isfile('.current_coin'):
         with open('.current_coin', 'r') as f:
             coin = f.read().strip()
@@ -228,7 +261,7 @@ def migrate_old_state():
 def main():
     api_key = config.get(USER_CFG_SECTION, 'api_key')
     api_secret_key = config.get(USER_CFG_SECTION, 'api_secret_key')
-    tld = config.get(USER_CFG_SECTION, 'tld') or 'com' # Default Top-level domain is 'com'
+    tld = config.get(USER_CFG_SECTION, 'tld')
 
     client = BinanceAPIManager(api_key, api_secret_key, tld, logger)
 
@@ -241,24 +274,8 @@ def main():
 
     initialize_trade_thresholds(client)
 
-    if get_current_coin() is None:
-        current_coin_symbol = config.get(USER_CFG_SECTION, 'current_coin')
-        if not current_coin_symbol:
-            current_coin_symbol = random.choice(supported_coin_list)
-
-        logger.info("Setting initial coin to {0}".format(current_coin_symbol))
-
-        if current_coin_symbol not in supported_coin_list:
-            exit("***\nERROR!\nSince there is no backup file, a proper coin name must be provided at init\n***")
-        set_current_coin(current_coin_symbol)
-
-        if config.get(USER_CFG_SECTION, 'current_coin') == '':
-            current_coin = get_current_coin()
-            logger.info("Purchasing {0} to begin trading".format(current_coin))
-            all_tickers = client.get_all_market_tickers()
-            client.buy_alt(current_coin, BRIDGE, all_tickers)
-            logger.info("Ready to start trading")
-
+    initialize_current_coin(client)
+    
     schedule = SafeScheduler(logger)
     schedule.every(SCOUT_SLEEP_TIME).seconds.do(scout,
                                                 client=client,
