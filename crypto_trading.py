@@ -257,7 +257,8 @@ def main():
             logger.info("Purchasing {0} to begin trading".format(current_coin))
             all_tickers = client.get_all_market_tickers()
             client.buy_alt(current_coin, BRIDGE, all_tickers)
-            logger.info("Ready to start trading")
+
+    logger.info("Ready to start trading")
 
     schedule = SafeScheduler(logger)
     schedule.every(SCOUT_SLEEP_TIME).seconds.do(scout,
