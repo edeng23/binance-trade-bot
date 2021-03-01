@@ -76,14 +76,14 @@ class BinanceAPIManager:
     def wait_for_order(self, origin_symbol, target_symbol, order_id):
         while True:
             try:
-                time.sleep(3)
                 order_status = self.BinanceClient.get_order(symbol=origin_symbol + target_symbol, orderId=order_id)
                 break
             except BinanceAPIException as e:
                 self.logger.info(e)
-                time.sleep(10)
+                time.sleep(1)
             except Exception as e:
                 self.logger.info("Unexpected Error: {0}".format(e))
+                time.sleep(1)
 
         self.logger.info(order_status)
 
@@ -91,12 +91,12 @@ class BinanceAPIManager:
             try:
                 order_status = self.BinanceClient.get_order(
                     symbol=origin_symbol + target_symbol, orderId=order_id)
-                time.sleep(1)
             except BinanceAPIException as e:
                 self.logger.info(e)
-                time.sleep(2)
+                time.sleep(1)
             except Exception as e:
                 self.logger.info("Unexpected Error: {0}".format(e))
+                time.sleep(1)
 
         return order_status
 
@@ -184,7 +184,6 @@ class BinanceAPIManager:
 
         # Binance server can take some time to save the order
         self.logger.info("Waiting for Binance")
-        time.sleep(5)
 
         stat = self.wait_for_order(origin_symbol, target_symbol, order[u'orderId'])
 
