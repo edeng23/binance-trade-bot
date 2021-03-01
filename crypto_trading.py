@@ -135,7 +135,7 @@ def initialize_trade_thresholds(client: BinanceAPIManager):
             pair.ratio = from_coin_price / to_coin_price
 
 
-def initialize_current_coint(client: BinanceAPIManager):
+def initialize_current_coin(client: BinanceAPIManager):
     '''
     Decide what is the current coin, and set it up in the DB.
     '''
@@ -274,7 +274,7 @@ def main():
 
     initialize_trade_thresholds(client)
 
-    initialize_current_coint(client)
+    initialize_current_coin(client)
     
     schedule = SafeScheduler(logger)
     schedule.every(SCOUT_SLEEP_TIME).seconds.do(scout,
