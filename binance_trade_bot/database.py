@@ -173,6 +173,19 @@ class Database:
 
             # All weekly entries will be kept forever
 
+    def get_max_sell_trade(self, target_coin):
+        session: Session
+        with self.db_session() as session:
+            max_sell_trade = session.query(Trade) \
+                .filter(Trade.alt_coin_id == target_coin.symbol,
+                        Trade.selling == 1) \
+                .order_by(Trade.alt_trade_amount.desc()) \
+                .first()
+            if max_sell_trade is None:
+                return None
+            session.expunge(max_sell_trade)
+            return max_sell_trade
+
     def create_database(self):
         Base.metadata.create_all(self.engine)
 
