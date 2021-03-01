@@ -142,7 +142,7 @@ def scout(client: BinanceAPIManager, transaction_fee=0.001, multiplier=5):
 
     current_coin = get_current_coin()
     #Display on the console, the current coin+Bridge, so users can see *some* activity and not thinkg the bot has stopped. Not logging though to reduce log size.
-    print( str( datetime.datetime.now() ) + " - CONSOLE - INFO - I am scouting the best trades. Current coin: {0} ".format( current_coin + BRIDGE ))
+    print( str( datetime.datetime.now() ) + " - CONSOLE - INFO - I am scouting the best trades. Current coin: {0} ".format( current_coin + BRIDGE ) , end='\r')
 
     current_coin_price = get_market_ticker_price_from_list(all_tickers, current_coin + BRIDGE)
 
