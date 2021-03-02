@@ -166,9 +166,7 @@ def scout(client: BinanceAPIManager, transaction_fee=0.001, multiplier=5):
     all_tickers = client.get_all_market_tickers()
 
     current_coin = get_current_coin()
-    #Display on the console, the current coin+Bridge, so users can see *some* activity and not thinkg the bot has stopped. Not logging though to reduce log size.
-    print( str( datetime.datetime.now() ) + " - CONSOLE - INFO - I am scouting the best trades. Current coin: {0} ".format( current_coin + BRIDGE ) , end='\r')
-
+   
     current_coin_price = get_market_ticker_price_from_list(all_tickers, current_coin + BRIDGE)
 
     if current_coin_price is None:
@@ -181,6 +179,8 @@ def scout(client: BinanceAPIManager, transaction_fee=0.001, multiplier=5):
         if not pair.to_coin.enabled:
             continue
         optional_coin_price = get_market_ticker_price_from_list(all_tickers, pair.to_coin + BRIDGE)
+        #Display on the console, the current coin pair and bridge coin, so users can see *some* activity and not thinkg the bot has stopped. Not logging though to reduce log size.
+        print( str( datetime.datetime.now() ) + " - CONSOLE - INFO - I am scouting the best trades. Examining coin pair: {}{} via bridge {} ".format( current_coin, pair.to_coin, BRIDGE ) , end='\r')
 
         if optional_coin_price is None:
             logger.info("Skipping scouting... optional coin {0} not found".format(pair.to_coin + BRIDGE))
