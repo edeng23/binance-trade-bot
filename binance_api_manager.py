@@ -193,6 +193,8 @@ class BinanceAPIManager:
 
         self.logger.info("Sold {0}".format(origin_symbol))
 
+        self.logger.info("Spot Balance is {0}".format(stat["cummulativeQuoteQty"]))
+
         trade_log.set_complete(stat["cummulativeQuoteQty"])
 
         return order
