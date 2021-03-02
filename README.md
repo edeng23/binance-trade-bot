@@ -42,7 +42,7 @@ Run the following line in the terminal: `pip install -r requirements.txt`.
 
 ### Create user configuration
 
-Create a .ini file named `user.cfg` based off `.user.cfg.example`, then add your API keys and current coin.
+Create a .cfg file named `user.cfg` based off `.user.cfg.example`, then add your API keys and current coin.
 
 ### Notifications with Apprise
 
