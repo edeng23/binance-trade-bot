@@ -4,11 +4,11 @@ import time
 from binance.client import Client
 from binance.exceptions import BinanceAPIException
 
-from config import Config
-from database import Database
-from logger import Logger
-from models import Coin
-from utils import get_market_ticker_price_from_list
+from .config import Config
+from .database import Database
+from .logger import Logger
+from .models import Coin
+from .utils import get_market_ticker_price_from_list
 
 
 class BinanceAPIManager:

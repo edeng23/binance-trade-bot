@@ -2,7 +2,7 @@
 import configparser
 import os
 
-from models import Coin
+from .models import Coin
 
 CFG_FL_NAME = 'user.cfg'
 USER_CFG_SECTION = 'binance_user_config'
