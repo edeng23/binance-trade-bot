@@ -6,7 +6,7 @@ from binance.exceptions import BinanceAPIException
 
 from database import TradeLog
 from logger import Logger
-from models import Coin
+from models import Coin, Pair
 
 
 class BinanceAPIManager:
@@ -160,6 +160,103 @@ class BinanceAPIManager:
         trade_log = TradeLog(origin_coin, target_coin, True)
         origin_symbol = origin_coin.symbol
         target_symbol = target_coin.symbol
+
+        origin_tick = self.get_alt_tick(origin_symbol, target_symbol)
+
+        order_quantity = math.floor(
+            self.get_currency_balance(origin_symbol) * 10 ** origin_tick
+        ) / float(10 ** origin_tick)
+        self.logger.info("Selling {0} of {1}".format(order_quantity, origin_symbol))
+
+        origin_balance = self.get_currency_balance(origin_symbol)
+        target_balance = self.get_currency_balance(target_symbol)
+        self.logger.info("Balance is {0}".format(origin_balance))
+        order = None
+        while order is None:
+            order = self.BinanceClient.order_market_sell(
+                symbol=origin_symbol + target_symbol, quantity=(order_quantity)
+            )
+
+        self.logger.info("order")
+        self.logger.info(order)
+
+        trade_log.set_ordered(origin_balance, target_balance, order_quantity)
+
+        # Binance server can take some time to save the order
+        self.logger.info("Waiting for Binance")
+
+        stat = self.wait_for_order(origin_symbol, target_symbol, order[u'orderId'])
+
+        new_balance = self.get_currency_balance(origin_symbol)
+        while new_balance >= origin_balance:
+            new_balance = self.get_currency_balance(origin_symbol)
+
+        self.logger.info("Sold {0}".format(origin_symbol))
+
+        trade_log.set_complete(stat["cummulativeQuoteQty"])
+
+        return order
+
+    def direct_pair_buy(self, pair: Pair, all_tickers):
+        return self.retry(self._direct_pair_buy, pair, all_tickers)
+
+    def _direct_pair_buy(self, pair: Pair, all_tickers):
+        '''
+        Market buy destination coin directly for source coin
+        '''
+        trade_log = TradeLog(pair.from_coin, pair.to_coin, False)
+        origin_symbol = pair.from_coin_id
+        target_symbol = pair.to_coin_id
+
+        origin_tick = self.get_alt_tick(target_symbol, origin_symbol)
+
+        origin_balance = self.get_currency_balance(origin_symbol)
+        target_balance = self.get_currency_balance(target_symbol)
+        from_coin_price = self.get_market_ticker_price_from_list(all_tickers, target_symbol + origin_symbol)
+
+        order_quantity = math.floor(
+            origin_balance
+            * 10 ** origin_tick
+            / from_coin_price
+        ) / float(10 ** origin_tick)
+        self.logger.info("BUY QTY {0}".format(order_quantity))
+
+        # Try to buy until successful
+        order = None
+        while order is None:
+            try:
+                order = self.BinanceClient.order_market_buy(
+                    symbol=target_symbol + origin_symbol,
+                    quantity=order_quantity,
+                )
+                self.logger.info(order)
+            except BinanceAPIException as e:
+                self.logger.info(e)
+                time.sleep(1)
+            except Exception as e:
+                self.logger.info("Unexpected Error: {0}".format(e))
+
+        trade_log.set_ordered(origin_balance, target_balance, order_quantity)
+
+        stat = self.wait_for_order(target_symbol, origin_symbol, order[u'orderId'])
+
+        self.logger.info("Bought {0}".format(target_symbol))
+
+        trade_log.set_complete(stat["cummulativeQuoteQty"])
+
+        return order
+        
+        
+    def direct_pair_sell(self, pair: Pair, all_tickers):
+        return self.retry(self._direct_pair_sell, pair, all_tickers)
+ 
+    def _direct_pair_sell(self, pair: Pair, all_tickers):
+        '''
+        Market sell origin coin directly for target coin
+        '''
+        trade_log = TradeLog(pair.from_coin, pair.to_coin, False)
+        origin_symbol = pair.to_coin_id
+        target_symbol = pair.from_coin_id
 
         origin_tick = self.get_alt_tick(origin_symbol, target_symbol)
 

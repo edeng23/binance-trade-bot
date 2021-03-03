@@ -75,13 +75,27 @@ def transaction_through_bridge(client: BinanceAPIManager, pair: Pair, all_ticker
     '''
     Jump from the source coin to the destination coin through bridge coin
     '''
-    if client.sell_alt(pair.from_coin, BRIDGE) is None:
-        logger.info("Couldn't sell, going back to scouting mode...")
-        return None
-    # This isn't pretty, but at the moment we don't have implemented logic to escape from a bridge coin... This'll do for now
-    result = None
-    while result is None:
-        result = client.buy_alt(pair.to_coin, BRIDGE, all_tickers)
+    available_tickers = {}
+    for ticker in all_tickers:
+        available_tickers[ticker['symbol']] = None
+    if pair.from_coin_id+pair.to_coin_id in available_tickers:
+        logger.info("Direct pair {0}{1} exists. Selling {0} for {1}".format(pair.from_coin_id, pair.to_coin_id))
+        result = None
+        while result is None:
+            result = client.direct_pair_sell(pair, all_tickers)
+    elif pair.to_coin_id+pair.from_coin_id in available_tickers:
+        logger.info("Direct pair {0}{1} exists. Buying {0} with {1}".format(pair.to_coin_id, pair.from_coin_id))
+        result = None
+        while result is None:
+            result = client.direct_pair_buy(pair, all_tickers)
+    else:
+        if client.sell_alt(pair.from_coin, BRIDGE) is None:
+            logger.info("Couldn't sell, going back to scouting mode...")
+            return None
+        # This isn't pretty, but at the moment we don't have implemented logic to escape from a bridge coin... This'll do for now
+        result = None
+        while result is None:
+            result = client.buy_alt(pair.to_coin, BRIDGE, all_tickers)
 
     set_current_coin(pair.to_coin)
     update_trade_threshold(client, float(result[u'price']), all_tickers)
