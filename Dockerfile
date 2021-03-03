@@ -17,4 +17,4 @@ WORKDIR /app
 COPY --from=builder /install /usr/local
 COPY . .
 
-CMD [ "python", "crypto_trading.py" ]
+CMD ["python", "-m", "binance_trade_bot"]

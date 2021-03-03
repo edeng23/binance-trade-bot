@@ -1,12 +1,12 @@
 #!python3
 import time
 
-from auto_trader import AutoTrader
-from binance_api_manager import BinanceAPIManager
-from config import Config
-from database import Database
-from logger import Logger
-from scheduler import SafeScheduler
+from .auto_trader import AutoTrader
+from .binance_api_manager import BinanceAPIManager
+from .config import Config
+from .database import Database
+from .logger import Logger
+from .scheduler import SafeScheduler
 
 
 def main():
@@ -36,7 +36,3 @@ def main():
     while True:
         schedule.run_pending()
         time.sleep(1)
-
-
-if __name__ == "__main__":
-    main()

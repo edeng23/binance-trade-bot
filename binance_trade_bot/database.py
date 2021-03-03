@@ -10,9 +10,9 @@ from socketio.exceptions import ConnectionError
 from sqlalchemy import create_engine, func
 from sqlalchemy.orm import sessionmaker, scoped_session, Session
 
-from config import Config
-from logger import Logger
-from models import *
+from .config import Config
+from .logger import Logger
+from .models import *
 
 
 class Database:

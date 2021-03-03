@@ -4,12 +4,12 @@ from typing import Dict, List
 
 from sqlalchemy.orm import Session
 
-from binance_api_manager import BinanceAPIManager
-from config import Config
-from database import Database
-from logger import Logger
-from models import Pair, Coin, CoinValue
-from utils import get_market_ticker_price_from_list
+from .binance_api_manager import BinanceAPIManager
+from .config import Config
+from .database import Database
+from .logger import Logger
+from .models import Pair, Coin, CoinValue
+from .utils import get_market_ticker_price_from_list
 
 
 class AutoTrader:
