@@ -26,7 +26,8 @@ config['DEFAULT'] = {
     'scout_transaction_fee': '0.001',
     'scout_multiplier': '5',
     'scout_sleep_time': '5',
-    'tld': 'com'
+    'tld': 'com',
+    'heartbeat_duration': 0
 }
 
 if not os.path.exists(CFG_FL_NAME):
@@ -44,6 +45,9 @@ SCOUT_HISTORY_PRUNE_TIME = float(config.get(USER_CFG_SECTION, 'hourToKeepScoutHi
 SCOUT_TRANSACTION_FEE = float(config.get(USER_CFG_SECTION, 'scout_transaction_fee'))
 SCOUT_MULTIPLIER = float(config.get(USER_CFG_SECTION, 'scout_multiplier'))
 SCOUT_SLEEP_TIME = int(config.get(USER_CFG_SECTION, 'scout_sleep_time'))
+
+HEARTBEAT_DURATION = int(config.get(USER_CFG_SECTION, "heartbeat_duration"))
+HEARTBEAT_MESSAGE = config.get(USER_CFG_SECTION, "heartbeat_message").replace('\\n', '\n')
 
 logger = Logger()
 logger.info('Started')
@@ -257,6 +261,55 @@ def migrate_old_state():
         os.rename('.current_coin_table', '.current_coin_table.old')
         logger.info(f".current_coin_table renamed to .current_coin_table.old - You can now delete this file")
 
+def get_current_ratios(client: BinanceAPIManager):
+    all_tickers = client.get_all_market_tickers()
+
+    current_coin = get_current_coin()
+
+    current_coin_price = get_market_ticker_price_from_list(all_tickers, current_coin + BRIDGE)
+
+    if current_coin_price is None:
+        logger.info("Skipping scouting... current coin {0} not found".format(current_coin + BRIDGE))
+        return
+
+    heartbeat_msg = ""
+
+    for pair in get_pairs_from(current_coin):
+        if not pair.to_coin.enabled:
+            continue
+        optional_coin_price = get_market_ticker_price_from_list(all_tickers, pair.to_coin + BRIDGE)
+
+        if optional_coin_price is None:
+            logger.info("Skipping scouting... optional coin {0} not found".format(pair.to_coin + BRIDGE))
+            continue
+
+        # Obtain (current coin)/(optional coin)
+        coin_opt_coin_ratio = current_coin_price / optional_coin_price
+
+        current_value = (
+            coin_opt_coin_ratio
+            - SCOUT_TRANSACTION_FEE
+            * SCOUT_MULTIPLIER
+            * coin_opt_coin_ratio
+        )
+        difference = (current_value - pair.ratio) / pair.ratio * 100
+
+        heartbeat_msg += f"{current_coin.symbol} to {pair.to_coin.symbol}. Diff: {round(difference, 2)}%\n"
+
+    return heartbeat_msg
+
+def get_heartbeat_formatting(client: BinanceAPIManager):
+    '''
+    Format variables for the string
+    '''
+    current_coin = get_current_coin().symbol
+    heartbeat_data = {
+        "current_coin": current_coin,
+        "balance": client.get_currency_balance(current_coin),
+        "ratios": get_current_ratios(client=client)
+    }
+
+    return heartbeat_data
 
 def main():
     api_key = config.get(USER_CFG_SECTION, 'api_key')
@@ -284,6 +337,10 @@ def main():
     schedule.every(1).minutes.do(update_values, client=client).tag("updating value history")
     schedule.every(1).minutes.do(prune_scout_history, hours=SCOUT_HISTORY_PRUNE_TIME).tag("pruning scout history")
     schedule.every(1).hours.do(prune_value_history).tag("pruning value history")
+    if HEARTBEAT_DURATION > 0:
+        schedule.every(HEARTBEAT_DURATION).seconds.do(
+            logger.info, HEARTBEAT_MESSAGE.format(**get_heartbeat_formatting(client=client))
+        ).tag("heartbeat")
 
     while True:
         schedule.run_pending()
