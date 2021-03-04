@@ -11,8 +11,8 @@ from binance_api_manager import BinanceAPIManager
 from sqlalchemy.orm import Session
 
 from database import set_coins, set_current_coin, get_current_coin, get_pairs_from, \
-    db_session, create_database, get_pair, log_scout, CoinValue, prune_scout_history, prune_value_history, send_update
-from models import Coin, Pair
+    db_session, create_database, get_pair, log_scout, CoinValue, prune_scout_history, prune_value_history, send_update, set_scout_executed
+from models import Coin, Pair, ScoutHistory
 from scheduler import SafeScheduler
 from logger import Logger
 
@@ -175,7 +175,7 @@ def scout(client: BinanceAPIManager, transaction_fee=0.001, multiplier=5):
         logger.info("Skipping scouting... current coin {0} not found".format(current_coin + BRIDGE))
         return
 
-    ratio_dict: Dict[Pair, float] = {}
+    ratio_dict: Dict[Pair, float, ScoutHistory] = {}
 
     for pair in get_pairs_from(current_coin):
         if not pair.to_coin.enabled:
@@ -186,24 +186,28 @@ def scout(client: BinanceAPIManager, transaction_fee=0.001, multiplier=5):
             logger.info("Skipping scouting... optional coin {0} not found".format(pair.to_coin + BRIDGE))
             continue
 
-        log_scout(pair, pair.ratio, current_coin_price, optional_coin_price)
+        ls = log_scout(pair, pair.ratio, current_coin_price, optional_coin_price)
 
         # Obtain (current coin)/(optional coin)
         coin_opt_coin_ratio = current_coin_price / optional_coin_price
 
         # save ratio so we can pick the best option, not necessarily the first
-        ratio_dict[pair] = (coin_opt_coin_ratio - transaction_fee * multiplier * coin_opt_coin_ratio) - pair.ratio
+        ratio_dict[pair] = []
+        ratio_dict[pair].append((coin_opt_coin_ratio - transaction_fee * multiplier * coin_opt_coin_ratio) - pair.ratio)
+        ratio_dict[pair].append(ls)
+
 
     # keep only ratios bigger than zero
-    ratio_dict = {k: v for k, v in ratio_dict.items() if v > 0}
+    ratio_dict = {k: v for k, v in ratio_dict.items() if v[0] > 0}
 
     # if we have any viable options, pick the one with the biggest ratio
     if ratio_dict:
-        best_pair = max(ratio_dict, key=ratio_dict.get)
+        best_pair = max(ratio_dict.items(), key=lambda x : x[1][0])
         logger.info('Will be jumping from {0} to {1}'.format(
-            current_coin, best_pair.to_coin_id))
+            current_coin, best_pair[0].to_coin_id))
+        set_scout_executed(best_pair[1][1])
         transaction_through_bridge(
-            client, best_pair, all_tickers)
+            client, best_pair[0], all_tickers)
 
 
 def update_values(client: BinanceAPIManager):

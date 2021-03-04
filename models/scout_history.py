@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Float
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Float, Boolean
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 
@@ -22,12 +22,15 @@ class ScoutHistory(Base):
 
     datetime = Column(DateTime)
 
-    def __init__(self, pair: Pair, target_ratio: float, current_coin_price: float, other_coin_price: float):
+    executed = Column(Boolean)
+
+    def __init__(self, pair: Pair, target_ratio: float, current_coin_price: float, other_coin_price: float, executed=False):
         self.pair = pair
         self.target_ratio = target_ratio
         self.current_coin_price = current_coin_price
         self.other_coin_price = other_coin_price
         self.datetime = datetime.utcnow()
+        self.executed = executed
 
     @hybrid_property
     def current_ratio(self):

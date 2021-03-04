@@ -124,13 +124,21 @@ def get_pairs_from(from_coin: Union[Coin, str]):
         return pairs
 
 
-def log_scout(pair: Pair, target_ratio: float, current_coin_price: float, other_coin_price: float):
+def log_scout(pair: Pair, target_ratio: float, current_coin_price: float, other_coin_price: float) -> ScoutHistory:
     session: Session
     with db_session() as session:
         pair = session.merge(pair)
         sh = ScoutHistory(pair, target_ratio, current_coin_price, other_coin_price)
         session.add(sh)
         send_update(sh)
+        return sh
+
+
+def set_scout_executed(scout_history):
+        session: Session
+        with db_session() as session:
+            scout_history.executed = True
+            session.merge(scout_history)
 
 
 def prune_scout_history(hours: float):
