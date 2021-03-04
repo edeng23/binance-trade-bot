@@ -9,7 +9,7 @@ services:
       - ./user.cfg:/app/user.cfg
       - ./data:/app/data
       - ./logs:/app/logs
-    command: python crypto_trading.py
+    command: python -m binance_trade_bot
 
   api:
     depends_on:
