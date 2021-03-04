@@ -62,7 +62,11 @@ class Config:
         )
         self.BINANCE_TLD = os.environ.get("TLD") or config.get(USER_CFG_SECTION, "tld")
 
-        self.SUPPORTED_COIN_LIST = os.environ.get("SUPPORTED_COIN_LIST").split() or []
+        self.SUPPORTED_COIN_LIST = (
+            os.environ.get("SUPPORTED_COIN_LIST").split()
+            if os.environ.get("SUPPORTED_COIN_LIST")
+            else []
+        )
 
         # Get supported coin list from supported_coin_list file
         if not self.SUPPORTED_COIN_LIST:
