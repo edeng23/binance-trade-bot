@@ -160,11 +160,11 @@ class Database:
             pairs: List[Pair] = session.query(Pair).filter(Pair.from_coin == from_coin)
             return pairs
 
-    def log_scout(self, pair: Pair, target_ratio: float, current_coin_price: float, other_coin_price: float) -> ScoutHistory:
+    def log_scout(self, pair: Pair, current_coin_price: float, other_coin_price: float) -> ScoutHistory:
         session: Session
         with self.db_session() as session:
             pair = session.merge(pair)
-            sh = ScoutHistory(pair, target_ratio, current_coin_price, other_coin_price)
+            sh = ScoutHistory(pair, current_coin_price, other_coin_price)
             session.add(sh)
             self.send_update(sh)
             return sh

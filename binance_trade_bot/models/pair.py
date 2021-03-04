@@ -19,10 +19,9 @@ class Pair(Base):
     step_size = Column(Float)
 
     
-    def __init__(self, from_coin: Coin, to_coin: Coin, ratio: float, step_size=None):
+    def __init__(self, from_coin: Coin, to_coin: Coin, step_size=None):
         self.from_coin = from_coin
         self.to_coin = to_coin
-        self.ratio = ratio
         self.step_size = step_size
 
     def __repr__(self):
