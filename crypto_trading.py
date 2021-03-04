@@ -82,12 +82,12 @@ def transaction_through_bridge(client: BinanceAPIManager, pair: Pair, all_ticker
         logger.info("Direct pair {0}{1} exists. Selling {0} for {1}".format(pair.from_coin_id, pair.to_coin_id))
         result = None
         while result is None:
-            result = client.direct_pair_sell(pair, all_tickers)
+            result = client.direct_pair_sell(pair, all_tickers, BRIDGE)
     elif pair.to_coin_id+pair.from_coin_id in available_tickers:
         logger.info("Direct pair {0}{1} exists. Buying {0} with {1}".format(pair.to_coin_id, pair.from_coin_id))
         result = None
         while result is None:
-            result = client.direct_pair_buy(pair, all_tickers)
+            result = client.direct_pair_buy(pair, all_tickers, BRIDGE)
     else:
         if client.sell_alt(pair.from_coin, BRIDGE) is None:
             logger.info("Couldn't sell, going back to scouting mode...")
