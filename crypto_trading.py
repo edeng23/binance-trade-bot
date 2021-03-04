@@ -11,7 +11,8 @@ from binance_api_manager import BinanceAPIManager
 from sqlalchemy.orm import Session
 
 from database import set_coins, set_current_coin, get_current_coin, get_pairs_from, \
-    db_session, create_database, get_pair, log_scout, CoinValue, prune_scout_history, prune_value_history, send_update, set_bridge, get_alt_step, set_alt_step, set_scout_executed
+    db_session, create_database, get_pair, log_scout, CoinValue, prune_scout_history, prune_value_history, send_update, set_bridge, get_alt_step, set_alt_step, set_scout_executed, \
+    get_previous_sell_trade
 from models import Coin, Pair, ScoutHistory
 from scheduler import SafeScheduler
 from logger import Logger
@@ -178,17 +179,23 @@ def scout(client: BinanceAPIManager, transaction_fee=0.001, multiplier=5):
     '''
     Scout for potential jumps from the current coin to another coin
     '''
-    all_tickers = client.get_all_market_tickers()
 
     current_coin = get_current_coin()
-    #Display on the console, the current coin+Bridge, so users can see *some* activity and not thinkg the bot has stopped. Not logging though to reduce log size.
-    print( str( datetime.datetime.now() ) + " - CONSOLE - INFO - I am scouting the best trades. Current coin: {0} ".format( current_coin + BRIDGE ) , end='\r')
 
+    current_coin_balance = client.get_currency_balance(current_coin.symbol)
+    all_tickers = client.get_all_market_tickers()
     current_coin_price = get_market_ticker_price_from_list(all_tickers, current_coin + BRIDGE)
 
     if current_coin_price is None:
         logger.info("Skipping scouting... current coin {0} not found".format(current_coin + BRIDGE))
         return
+
+    possible_bridge_amount = (current_coin_balance * current_coin_price) - ((current_coin_balance * current_coin_price) * transaction_fee * multiplier)
+
+    # Display on the console, the current coin+Bridge,
+    # so users can see *some* activity and not thinking the bot has stopped.
+    logger.log("Scouting. Current coin: {0} price: {1} {2}: {3}"
+                .format(current_coin + BRIDGE, current_coin_price, BRIDGE, possible_bridge_amount), "info", False)
 
     ratio_dict: Dict[Pair, float, ScoutHistory] = {}
 
@@ -201,15 +208,34 @@ def scout(client: BinanceAPIManager, transaction_fee=0.001, multiplier=5):
             logger.info("Skipping scouting... optional coin {0} not found".format(pair.to_coin + BRIDGE))
             continue
 
-        ls = log_scout(pair, pair.ratio, current_coin_price, optional_coin_price)
-
         # Obtain (current coin)/(optional coin)
         coin_opt_coin_ratio = current_coin_price / optional_coin_price
 
-        # save ratio so we can pick the best option, not necessarily the first
-        ratio_dict[pair] = []
-        ratio_dict[pair].append((coin_opt_coin_ratio - transaction_fee * multiplier * coin_opt_coin_ratio) - pair.ratio)
-        ratio_dict[pair].append(ls)
+        # Skipping... if possible target amount is lower than expected target amount.
+        possible_target_amount = (possible_bridge_amount / optional_coin_price) - ((possible_bridge_amount / optional_coin_price) * transaction_fee * multiplier)
+
+        skip_ratio = False
+        previous_sell_trade = get_previous_sell_trade(pair.to_coin)
+        if previous_sell_trade is not None:
+            expected_target_amount = previous_sell_trade.alt_trade_amount
+            ratio_diff = (coin_opt_coin_ratio - transaction_fee * multiplier * coin_opt_coin_ratio) - pair.ratio
+            if expected_target_amount > possible_target_amount:
+                skip_ratio = True
+                logger.info("{0: >10} \t\t expected {1: >20f} \t\t actual {2: >20f} \t\t diff {3: >20f} \t\t ratio diff {4: >20f}"
+                            .format(pair.from_coin_id + pair.to_coin_id,
+                                    expected_target_amount, possible_target_amount, (possible_target_amount - expected_target_amount), ratio_diff))
+            else:
+                logger.info("{0: >10} \t\t !!!!!!!! {1: >20f} \t\t actual {2: >20f} \t\t diff {3: >20f} \t\t ratio diff {4: >20f}"
+                            .format(pair.from_coin_id + pair.to_coin_id,
+                                    expected_target_amount, possible_target_amount, (possible_target_amount - expected_target_amount), ratio_diff))
+
+
+            if not skip_ratio:
+                # save ratio so we can pick the best option, not necessarily the first
+                ls = log_scout(pair, pair.ratio, current_coin_price, optional_coin_price)
+                ratio_dict[pair] = []
+                ratio_dict[pair].append(expected_target_amount)
+                ratio_dict[pair].append(ls)
 
 
     # keep only ratios bigger than zero

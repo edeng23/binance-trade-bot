@@ -223,6 +223,21 @@ def prune_value_history():
         # All weekly entries will be kept forever
 
 
+def get_previous_sell_trade(target_coin):
+    session: Session
+    with db_session() as session:
+        previous_sell_trade = session.query(Trade) \
+            .filter(Trade.alt_coin_id == target_coin.symbol,
+                    Trade.selling == 1,
+                    Trade.state == 'COMPLETE') \
+            .order_by(Trade.datetime.desc()) \
+            .first()
+        if previous_sell_trade is None:
+            return None
+        session.expunge(previous_sell_trade)
+        return previous_sell_trade
+
+
 class TradeLog:
     def __init__(self, from_coin: Coin, to_coin: Coin, selling: bool):
         session: Session
