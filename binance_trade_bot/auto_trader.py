@@ -121,7 +121,7 @@ class AutoTrader:
             self.logger.info("Skipping scouting... current coin {0} not found".format(current_coin + self.config.BRIDGE))
             return
 
-        ratio_dict: Dict[Pair, float] = {}
+        ratio_dict: Dict[Pair, float, ScoutHistory] = {}
 
         for pair in self.db.get_pairs_from(current_coin):
             if not pair.to_coin.enabled:
@@ -132,16 +132,19 @@ class AutoTrader:
                 self.logger.info("Skipping scouting... optional coin {0} not found".format(pair.to_coin + self.config.BRIDGE))
                 continue
 
-            self.db.log_scout(pair, pair.ratio, current_coin_price, optional_coin_price)
+            ls = self.db.log_scout(pair, pair.ratio, current_coin_price, optional_coin_price)
 
             # Obtain (current coin)/(optional coin)
             coin_opt_coin_ratio = current_coin_price / optional_coin_price
 
             # save ratio so we can pick the best option, not necessarily the first
-            ratio_dict[pair] = (coin_opt_coin_ratio - self.config.SCOUT_TRANSACTION_FEE * self.config.SCOUT_MULTIPLIER * coin_opt_coin_ratio) - pair.ratio
+            ratio_dict[pair] = []
+            ratio_dict[pair].append((coin_opt_coin_ratio - self.config.SCOUT_TRANSACTION_FEE * self.config.SCOUT_MULTIPLIER * coin_opt_coin_ratio) - pair.ratio)
+            ratio_dict[pair].append(ls)
+
 
         # keep only ratios bigger than zero
-        ratio_dict = {k: v for k, v in ratio_dict.items() if v > 0}
+        ratio_dict = {k: v for k, v in ratio_dict.items() if v[0] > 0}
 
         # if we have any viable options, pick the one with the biggest ratio
         if ratio_dict:
