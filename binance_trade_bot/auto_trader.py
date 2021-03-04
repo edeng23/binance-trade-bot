@@ -23,7 +23,7 @@ class AutoTrader:
         '''
         Jump from the source coin to the destination coin through bridge coin
         '''
-        if self.manager.sell_alt(pair.from_coin, self.config.BRIDGE) is None:
+        if self.manager.sell_alt(pair.from_coin, self.config.BRIDGE, all_tickers) is None:
             self.logger.info("Couldn't sell, going back to scouting mode...")
             return None
         # This isn't pretty, but at the moment we don't have implemented logic to escape from a bridge coin... This'll do for now
