@@ -56,17 +56,18 @@ Create a .cfg file named `user.cfg` based off `.user.cfg.example`, then add your
 
 #### Environment Variables
 
-Most of the options provided in `user.cfg` can also be configured using environment variables.
+All of the options provided in `user.cfg` can also be configured using environment variables.
 
 ```
+CURRENT_COIN_SYMBOL:
 SUPPORTED_COIN_LIST: "XLM TRX ICX EOS IOTA ONT QTUM ETC ADA XMR DASH NEO ATOM DOGE VET BAT OMG BTT"
 BRIDGE_SYMBOL: USDT
-CURRENT_COIN_SYMBOL:
-API_KEY:
-API_SECRET_KEY:
-SCOUT_TRANSACTION_FEE:
-SCOUT_MULTIPLIER:
-SCOUT_SLEEP_TIME:
+API_KEY: vmPUZE6mv9SD5VNHk4HlWFsOr6aKE2zvsw0MuIgwCIPy6utIco14y7Ju91duEh8A
+API_SECRET_KEY: NhqPtmdSJYdKjVHjA7PZj4Mge3R5YNiP1e3UZjInClVN65XAbvqqM6A7H5fATj0j
+SCOUT_TRANSACTION_FEE: 0.001
+SCOUT_MULTIPLIER: 5
+SCOUT_SLEEP_TIME: 5
+TLD: com
 ```
 
 ### Notifications with Apprise
