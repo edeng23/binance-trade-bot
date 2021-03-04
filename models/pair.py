@@ -16,7 +16,6 @@ class Pair(Base):
     to_coin_id = Column(String, ForeignKey('coins.symbol'))
     to_coin = relationship("Coin", foreign_keys=[to_coin_id], lazy='joined')
 
-    ratio = Column(Float)
     step_size = Column(Float)
 
     
@@ -27,7 +26,7 @@ class Pair(Base):
         self.step_size = step_size
 
     def __repr__(self):
-        return f"<{self.from_coin_id}->{self.to_coin_id} :: {self.ratio}>"
+        return f"<{self.from_coin_id}->{self.to_coin_id}>"
 
     def info(self):
-        return {"from_coin": self.from_coin.info(), "to_coin": self.to_coin.info(), "ratio": self.ratio}
+        return {"from_coin": self.from_coin.info(), "to_coin": self.to_coin.info()}

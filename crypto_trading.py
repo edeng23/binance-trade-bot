@@ -88,54 +88,6 @@ def transaction_through_bridge(client: BinanceAPIManager, pair: Pair, all_ticker
     update_trade_threshold(client, float(result[u'price']), all_tickers)
 
 
-def update_trade_threshold(client: BinanceAPIManager, current_coin_price:float, all_tickers):
-    '''
-    Update all the coins with the threshold of buying the current held coin
-    '''
-    current_coin = get_current_coin()
-
-    if current_coin_price is None:
-        logger.info("Skipping update... current coin {0} not found".format(current_coin + BRIDGE))
-        return
-
-    session: Session
-    with db_session() as session:
-        for pair in session.query(Pair).filter(Pair.to_coin == current_coin):
-            from_coin_price = get_market_ticker_price_from_list(all_tickers, pair.from_coin + BRIDGE)
-
-            if from_coin_price is None:
-                logger.info("Skipping update for coin {0} not found".format(pair.from_coin + BRIDGE))
-                continue
-
-            pair.ratio = from_coin_price / current_coin_price
-
-
-def initialize_trade_thresholds(client: BinanceAPIManager):
-    '''
-    Initialize the buying threshold of all the coins for trading between them
-    '''
-    all_tickers = client.get_all_market_tickers()
-
-    session: Session
-    with db_session() as session:
-        for pair in session.query(Pair).filter(Pair.ratio == None).all():
-            if not pair.from_coin.enabled or not pair.to_coin.enabled:
-                continue
-            logger.info("Initializing {0} vs {1}".format(pair.from_coin, pair.to_coin))
-
-            from_coin_price = get_market_ticker_price_from_list(all_tickers, pair.from_coin + BRIDGE)
-            if from_coin_price is None:
-                logger.info("Skipping initializing {0}, symbol not found".format(pair.from_coin + BRIDGE))
-                continue
-
-            to_coin_price = get_market_ticker_price_from_list(all_tickers, pair.to_coin + BRIDGE)
-            if to_coin_price is None:
-                logger.info("Skipping initializing {0}, symbol not found".format(pair.to_coin + BRIDGE))
-                continue
-
-            pair.ratio = from_coin_price / to_coin_price
-
-
 def initialize_current_coin(client: BinanceAPIManager):
     '''
     Decide what is the current coin, and set it up in the DB.
@@ -218,30 +170,26 @@ def scout(client: BinanceAPIManager, transaction_fee=0.001, multiplier=5):
         previous_sell_trade = get_previous_sell_trade(pair.to_coin)
         if previous_sell_trade is not None:
             expected_target_amount = previous_sell_trade.alt_trade_amount
-            ratio_diff = (coin_opt_coin_ratio - transaction_fee * multiplier * coin_opt_coin_ratio) - pair.ratio
             if expected_target_amount > possible_target_amount:
                 skip_ratio = True
-                logger.info("{0: >10} \t\t expected {1: >20f} \t\t actual {2: >20f} \t\t diff {3: >20f} \t\t ratio diff {4: >20f}"
+                logger.info("{0: >10} \t\t expected {1: >20f} \t\t actual {2: >20f} \t\t diff {3: >20f}"
                             .format(pair.from_coin_id + pair.to_coin_id,
-                                    expected_target_amount, possible_target_amount, (possible_target_amount - expected_target_amount), ratio_diff))
+                                    expected_target_amount, possible_target_amount, (possible_target_amount - expected_target_amount)))
             else:
-                logger.info("{0: >10} \t\t !!!!!!!! {1: >20f} \t\t actual {2: >20f} \t\t diff {3: >20f} \t\t ratio diff {4: >20f}"
+                logger.info("{0: >10} \t\t !!!!!!!! {1: >20f} \t\t actual {2: >20f} \t\t diff {3: >20f}"
                             .format(pair.from_coin_id + pair.to_coin_id,
-                                    expected_target_amount, possible_target_amount, (possible_target_amount - expected_target_amount), ratio_diff))
+                                    expected_target_amount, possible_target_amount, (possible_target_amount - expected_target_amount)))
 
 
             if not skip_ratio:
                 # save ratio so we can pick the best option, not necessarily the first
-                ls = log_scout(pair, pair.ratio, current_coin_price, optional_coin_price)
+                ls = log_scout(pair, current_coin_price, optional_coin_price)
                 ratio_dict[pair] = []
                 ratio_dict[pair].append(expected_target_amount)
                 ratio_dict[pair].append(ls)
 
 
-    # keep only ratios bigger than zero
-    ratio_dict = {k: v for k, v in ratio_dict.items() if v[0] > 0}
-
-    # if we have any viable options, pick the one with the biggest ratio
+    # if we have any viable options, pick the one with the biggest expected target amount
     if ratio_dict:
         best_pair = max(ratio_dict.items(), key=lambda x : x[1][0])
         logger.info('Will be jumping from {0} to {1}'.format(
@@ -296,7 +244,6 @@ def migrate_old_state():
                         if from_coin == to_coin:
                             continue
                         pair = session.merge(get_pair(from_coin, to_coin))
-                        pair.ratio = ratio
                         session.add(pair)
 
         os.rename('.current_coin_table', '.current_coin_table.old')
@@ -319,7 +266,6 @@ def main():
 
     migrate_old_state()
 
-    initialize_trade_thresholds(client)
     initialize_step_sizes(client, BRIDGE)
 
     initialize_current_coin(client)
