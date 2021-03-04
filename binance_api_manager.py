@@ -150,10 +150,10 @@ class BinanceAPIManager:
 
         return order
 
-    def sell_alt(self, origin_coin: Coin, target_coin: Coin):
-        return self.retry(self._sell_alt, origin_coin, target_coin)
+    def sell_alt(self, origin_coin: Coin, target_coin: Coin, all_tickers):
+        return self.retry(self._sell_alt, origin_coin, target_coin, all_tickers)
 
-    def _sell_alt(self, origin_coin: Coin, target_coin: Coin):
+    def _sell_alt(self, origin_coin: Coin, target_coin: Coin, all_tickers):
         """
         Sell altcoin
         """
@@ -162,6 +162,8 @@ class BinanceAPIManager:
         target_symbol = target_coin.symbol
 
         origin_tick = self.get_alt_tick(origin_symbol, target_symbol)
+
+        from_coin_price = self.get_market_ticker_price_from_list(all_tickers, origin_symbol + target_symbol)
 
         order_quantity = math.floor(
             self.get_currency_balance(origin_symbol) * 10 ** origin_tick
@@ -173,8 +175,10 @@ class BinanceAPIManager:
         self.logger.info("Balance is {0}".format(origin_balance))
         order = None
         while order is None:
-            order = self.BinanceClient.order_market_sell(
-                symbol=origin_symbol + target_symbol, quantity=(order_quantity)
+            order = self.BinanceClient.order_limit_sell(
+                symbol=origin_symbol + target_symbol,
+                quantity=(order_quantity),
+                price=from_coin_price
             )
 
         self.logger.info("order")

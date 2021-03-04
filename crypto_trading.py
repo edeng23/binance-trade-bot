@@ -75,7 +75,7 @@ def transaction_through_bridge(client: BinanceAPIManager, pair: Pair, all_ticker
     '''
     Jump from the source coin to the destination coin through bridge coin
     '''
-    if client.sell_alt(pair.from_coin, BRIDGE) is None:
+    if client.sell_alt(pair.from_coin, BRIDGE, all_tickers) is None:
         logger.info("Couldn't sell, going back to scouting mode...")
         return None
     # This isn't pretty, but at the moment we don't have implemented logic to escape from a bridge coin... This'll do for now
