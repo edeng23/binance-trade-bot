@@ -169,22 +169,23 @@ def scout(client: BinanceAPIManager, transaction_fee=0.001, multiplier=5):
         previous_sell_trade = get_previous_sell_trade(pair.to_coin)
         if previous_sell_trade is not None:
             expected_target_amount = previous_sell_trade.alt_trade_amount
+            delta_percentage = (expected_target_amount - possible_target_amount) / possible_target_amount * 100
             if expected_target_amount > possible_target_amount:
                 skip_ratio = True
-                logger.info("{0: >10} \t\t expected {1: >20f} \t\t actual {2: >20f} \t\t diff {3: >20f}"
+                logger.info("{0: >10} \t\t expected {1: >20f} \t\t actual {2: >20f} \t\t diff {3: >20f}%"
                             .format(pair.from_coin_id + pair.to_coin_id,
-                                    expected_target_amount, possible_target_amount, (possible_target_amount - expected_target_amount)))
+                                    expected_target_amount, possible_target_amount, delta_percentage))
             else:
-                logger.info("{0: >10} \t\t !!!!!!!! {1: >20f} \t\t actual {2: >20f} \t\t diff {3: >20f}"
+                logger.info("{0: >10} \t\t !!!!!!!! {1: >20f} \t\t actual {2: >20f} \t\t diff {3: >20f}%"
                             .format(pair.from_coin_id + pair.to_coin_id,
-                                    expected_target_amount, possible_target_amount, (possible_target_amount - expected_target_amount)))
+                                    expected_target_amount, possible_target_amount, delta_percentage))
 
 
             if not skip_ratio:
                 # save ratio so we can pick the best option, not necessarily the first
                 ls = log_scout(pair, current_coin_price, optional_coin_price)
                 ratio_dict[pair] = []
-                ratio_dict[pair].append(expected_target_amount)
+                ratio_dict[pair].append(delta_percentage)
                 ratio_dict[pair].append(ls)
 
 
