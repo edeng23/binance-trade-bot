@@ -89,6 +89,8 @@ If you are interested in running a Telegram bot, more information can be found a
 
 ### Docker
 
+The official image is available [here](https://hub.docker.com/r/edeng23/binance-trade-bot) and will update on every new change.
+
 ```shell
 docker-compose up
 ```
