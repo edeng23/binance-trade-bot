@@ -46,14 +46,14 @@ class Logger:
         if notification and self.NotificationHandler.enabled:
             self.NotificationHandler.send_notification(message)
 
-    def info(self, message):
-        self.log(message, "info")
+    def info(self, message, notification=True):
+        self.log(message, "info", notification)
 
-    def warning(self, message):
-        self.log(message, "warning")
+    def warning(self, message, notification=True):
+        self.log(message, "warning", notification)
 
-    def error(self, message):
-        self.log(message, "error")
+    def error(self, message, notification=True):
+        self.log(message, "error", notification)
 
-    def debug(self, message):
-        self.log(message, "debug")
+    def debug(self, message, notification=True):
+        self.log(message, "debug", notification)
