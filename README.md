@@ -7,7 +7,7 @@
 
 ## Why?
 
-This script was inspired by the observation that all cryptocurrencies pretty much behave in the same way. When one spikes, they all spike, and when one takes a dive, they all do. *Pretty much*. Moreover, all coins follow Bitcoin's lead; the difference is their phase offset.
+This script was inspired by the observation that all cryptocurrencies pretty much behave in the same way. When one spikes, they all spike, and when one takes a dive, they all do. _Pretty much_. Moreover, all coins follow Bitcoin's lead; the difference is their phase offset.
 
 So, if coins are basically oscillating with respect to each other, it seems smart to trade the rising coin for the falling coin, and then trade back when the ratio is reversed.
 
@@ -32,10 +32,10 @@ The bot jumps between a configured set of coins on the condition that it does no
 
 ## Binance Setup
 
-* Create a [Binance account](https://accounts.binance.com/en/register).
-* Enable Two-factor Authentication.
-* Create a new API key.
-* Get a cryptocurrency. If its symbol is not in the default list, add it.
+-   Create a [Binance account](https://accounts.binance.com/en/register).
+-   Enable Two-factor Authentication.
+-   Create a new API key.
+-   Get a cryptocurrency. If its symbol is not in the default list, add it.
 
 ## Tool Setup
 
@@ -48,14 +48,15 @@ Run the following line in the terminal: `pip install -r requirements.txt`.
 Create a .cfg file named `user.cfg` based off `.user.cfg.example`, then add your API keys and current coin.
 
 **The configuration file consists of the following fields:**
-- **api_key** - Binance API key generated in the Binance account setup stage.
-- **api_secret_key** - Binance secret key generated in the Binance account setup stage.
-- **current_coin** - This is your starting coin of choice. This should be one of the coins from your supported coin list. If you want to start from your bridge currency, leave this field empty - the bot will select a random coin from your supported coin list and buy it.
-- **bridge** - Your bridge currency of choice. Notice that different bridges will allow different sets of supported coins. For example, there may be a Binance particular-coin/USDT pair but no particular-coin/BUSD pair. 
-- **tld** - 'com' or 'us', depending on your region. Default is 'com'.
-- **hourToKeepScoutHistory** - Controls how many hours of scouting values are kept in the database. After the amount of time specified has passed, the information will be deleted. 
-- **scout_transaction_fee** - The transaction fee percentage. This value should be changed, for example, if you are [using BNB to pay for fees](https://www.binance.com/en/support/faq/115000583311-Using-BNB-to-Pay-for-Fees). 
-- **scout_multiplier** - Controls the value by which the difference between the current state of coin ratios and previous state of ratios is multiplied. For bigger values, the bot will wait for bigger margins to arrive before making a trade. 
+
+-   **api_key** - Binance API key generated in the Binance account setup stage.
+-   **api_secret_key** - Binance secret key generated in the Binance account setup stage.
+-   **current_coin** - This is your starting coin of choice. This should be one of the coins from your supported coin list. If you want to start from your bridge currency, leave this field empty - the bot will select a random coin from your supported coin list and buy it.
+-   **bridge** - Your bridge currency of choice. Notice that different bridges will allow different sets of supported coins. For example, there may be a Binance particular-coin/USDT pair but no particular-coin/BUSD pair.
+-   **tld** - 'com' or 'us', depending on your region. Default is 'com'.
+-   **hourToKeepScoutHistory** - Controls how many hours of scouting values are kept in the database. After the amount of time specified has passed, the information will be deleted.
+-   **scout_transaction_fee** - The transaction fee percentage. This value should be changed, for example, if you are [using BNB to pay for fees](https://www.binance.com/en/support/faq/115000583311-Using-BNB-to-Pay-for-Fees).
+-   **scout_multiplier** - Controls the value by which the difference between the current state of coin ratios and previous state of ratios is multiplied. For bigger values, the bot will wait for bigger margins to arrive before making a trade.
 
 #### Environment Variables
 
@@ -96,18 +97,21 @@ docker-compose up
 ```
 
 if you only want to start the sqlitebrowser
+
 ```shell
 docker-compose up -d sqlitebrowser
 ```
+
 ## Support the Project
 
 <a href="https://www.buymeacoffee.com/edeng" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="41" width="174"></a>
 
 ## Join the Chat
 
-* **Discord**: [Invite Link](https://discord.gg/m4TNaxreCN)
+-   **Discord**: [Invite Link](https://discord.gg/m4TNaxreCN)
 
 ## FAQ
+
 A list of answers to what seem to be the most frequently asked questions can be found in our discord server, in the corresponding channel.
 
 <p align="center">
@@ -116,5 +120,5 @@ A list of answers to what seem to be the most frequently asked questions can be 
 
 ## Disclaimer
 
-The code within this repository comes with no guarantee. Run it at your own risk. 
+The code within this repository comes with no guarantee. Run it at your own risk.
 Do not risk money which you are afraid to lose. There might be bugs in the code - this software does not come with any warranty.
