@@ -11,7 +11,7 @@ from binance_api_manager import BinanceAPIManager
 from sqlalchemy.orm import Session
 
 from database import set_coins, set_current_coin, get_current_coin, get_pairs_from, \
-    db_session, create_database, get_pair, log_scout, CoinValue, prune_scout_history, prune_value_history, send_update, set_scout_executed
+    db_session, create_database, get_pair, log_scout, CoinValue, prune_scout_history, prune_value_history, send_update, set_bridge, get_alt_step, set_alt_step, set_scout_executed
 from models import Coin, Pair, ScoutHistory
 from scheduler import SafeScheduler
 from logger import Logger
@@ -159,6 +159,21 @@ def initialize_current_coin(client: BinanceAPIManager):
             logger.info("Ready to start trading")
 
 
+
+def initialize_step_sizes(client: BinanceAPIManager, bridge: Coin):
+    '''
+    Initialize the step sizes of all the coins for trading with the bridge coin
+    '''
+
+    session: Session
+    with db_session() as session:
+        # For all the enabled coins, update the coin tickSize
+        for coin in session.query(Coin).filter(Coin.enabled == True).all():
+            tick_size = get_alt_step(coin, bridge)
+            if tick_size is None:
+                set_alt_step(coin, bridge, client.get_alt_tick(coin.symbol, bridge.symbol))
+
+
 def scout(client: BinanceAPIManager, transaction_fee=0.001, multiplier=5):
     '''
     Scout for potential jumps from the current coin to another coin
@@ -274,9 +289,12 @@ def main():
 
     set_coins(supported_coin_list)
 
+    set_bridge(BRIDGE)
+
     migrate_old_state()
 
     initialize_trade_thresholds(client)
+    initialize_step_sizes(client, BRIDGE)
 
     initialize_current_coin(client)
     
