@@ -66,7 +66,7 @@ class AutoTrader:
             for pair in session.query(Pair).filter(Pair.ratio == None).all():
                 if not pair.from_coin.enabled or not pair.to_coin.enabled:
                     continue
-                self.logger.info("Initializing {0} vs {1}".format(pair.from_coin, pair.to_coin))
+                self.logger.info("Initializing {0} vs {1}".format(pair.from_coin, pair.to_coin), False)
 
                 from_coin_price = get_market_ticker_price_from_list(all_tickers, pair.from_coin + self.config.BRIDGE)
                 if from_coin_price is None:
