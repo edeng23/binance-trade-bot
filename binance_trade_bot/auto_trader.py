@@ -103,18 +103,17 @@ class AutoTrader:
                 self.manager.buy_alt(current_coin, self.config.BRIDGE, all_tickers)
                 self.logger.info("Ready to start trading")
 
-    def initialize_step_sizes(client: BinanceAPIManager, bridge: Coin):
+    def initialize_step_sizes(self):
         '''
         Initialize the step sizes of all the coins for trading with the bridge coin
         '''
-
         session: Session
         with db_session() as session:
             # For all the enabled coins, update the coin tickSize
             for coin in session.query(Coin).filter(Coin.enabled == True).all():
-                tick_size = get_alt_step(coin, bridge)
+                tick_size = get_alt_step(coin, self.config.BRIDGE)
                 if tick_size is None:
-                    set_alt_step(coin, bridge, client.get_alt_tick(coin.symbol, bridge.symbol))
+                    set_alt_step(coin, self.config.BRIDGE, client.get_alt_tick(coin.symbol, self.config.BRIDGE.symbol))
 
     def scout(self):
         '''
@@ -150,10 +149,30 @@ class AutoTrader:
             # Obtain (current coin)/(optional coin)
             coin_opt_coin_ratio = current_coin_price / optional_coin_price
 
-            # save ratio so we can pick the best option, not necessarily the first
-            ratio_dict[pair] = []
-            ratio_dict[pair].append((coin_opt_coin_ratio - self.config.SCOUT_TRANSACTION_FEE * self.config.SCOUT_MULTIPLIER * coin_opt_coin_ratio) - pair.ratio)
-            ratio_dict[pair].append(ls)
+            # Skipping... if possible target amount is lower than expected target amount.
+            possible_target_amount = (possible_bridge_amount / optional_coin_price) - ((possible_bridge_amount / optional_coin_price) * transaction_fee * multiplier)
+
+            skip_ratio = False
+            previous_sell_trade = get_previous_sell_trade(pair.to_coin)
+            if previous_sell_trade is not None:
+                expected_target_amount = previous_sell_trade.alt_trade_amount
+                ratio_diff = (coin_opt_coin_ratio - transaction_fee * multiplier * coin_opt_coin_ratio) - pair.ratio
+                if expected_target_amount > possible_target_amount:
+                    skip_ratio = True
+                    logger.info("{0: >10} \t\t expected {1: >20f} \t\t actual {2: >20f} \t\t diff {3: >20f} \t\t ratio diff {4: >20f}"
+                                .format(pair.from_coin_id + pair.to_coin_id,
+                                        expected_target_amount, possible_target_amount, (possible_target_amount - expected_target_amount), ratio_diff))
+                else:
+                    logger.info("{0: >10} \t\t !!!!!!!! {1: >20f} \t\t actual {2: >20f} \t\t diff {3: >20f} \t\t ratio diff {4: >20f}"
+                                .format(pair.from_coin_id + pair.to_coin_id,
+                                        expected_target_amount, possible_target_amount, (possible_target_amount - expected_target_amount), ratio_diff))
+
+
+                if not skip_ratio:
+                    # save ratio so we can pick the best option, not necessarily the first
+                    ratio_dict[pair] = []
+                    ratio_dict[pair].append((coin_opt_coin_ratio - self.config.SCOUT_TRANSACTION_FEE * self.config.SCOUT_MULTIPLIER * coin_opt_coin_ratio) - pair.ratio)
+                    ratio_dict[pair].append(ls)
 
 
         # keep only ratios bigger than zero
@@ -161,10 +180,12 @@ class AutoTrader:
 
         # if we have any viable options, pick the one with the biggest ratio
         if ratio_dict:
-            best_pair = max(ratio_dict, key=ratio_dict.get)
+            best_pair = max(ratio_dict.items(), key=lambda x : x[1][0])
             self.logger.info('Will be jumping from {0} to {1}'.format(
-                current_coin, best_pair.to_coin_id))
-            self.transaction_through_bridge(best_pair, all_tickers)
+                current_coin, best_pair[0].to_coin_id))
+            self.set_scout_executed(best_pair[1][1])
+            self.transaction_through_bridge(
+                client, best_pair[0], all_tickers)
 
     def update_values(self):
         '''

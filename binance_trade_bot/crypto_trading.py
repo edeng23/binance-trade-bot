@@ -23,8 +23,10 @@ def main():
 
     db.set_coins(config.SUPPORTED_COIN_LIST)
     db.migrate_old_state()
+    db.set_bridge(config.BRIDGE)
 
     trader.initialize_trade_thresholds()
+    trader.initialize_step_sizes(config.BRIDGE)
     trader.initialize_current_coin()
     
     schedule = SafeScheduler(logger)

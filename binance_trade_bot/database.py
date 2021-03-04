@@ -172,6 +172,20 @@ class Database:
             session.merge(scout_history)
             self.send_update(sh)
 
+    def get_previous_sell_trade(target_coin):
+        session: Session
+        with self.db_session() as session:
+            previous_sell_trade = session.query(Trade) \
+                .filter(Trade.alt_coin_id == target_coin.symbol,
+                        Trade.selling == 1,
+                        Trade.state == 'COMPLETE') \
+                .order_by(Trade.datetime.desc()) \
+                .first()
+            if previous_sell_trade is None:
+                return None
+            session.expunge(previous_sell_trade)
+            return previous_sell_trade
+
     def prune_scout_history(self):
         time_diff = datetime.now() - timedelta(hours=self.config.SCOUT_HISTORY_PRUNE_TIME)
         session: Session
