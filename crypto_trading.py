@@ -27,7 +27,8 @@ config['DEFAULT'] = {
     'scout_multiplier': '5',
     'scout_sleep_time': '5',
     'tld': 'com',
-    'heartbeat_duration': 0
+    'heartbeat_duration': 0,
+    'heartbeat_message': ''
 }
 
 if not os.path.exists(CFG_FL_NAME):
