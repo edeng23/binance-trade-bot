@@ -103,6 +103,19 @@ class AutoTrader:
                 self.manager.buy_alt(current_coin, self.config.BRIDGE, all_tickers)
                 self.logger.info("Ready to start trading")
 
+    def initialize_step_sizes(client: BinanceAPIManager, bridge: Coin):
+        '''
+        Initialize the step sizes of all the coins for trading with the bridge coin
+        '''
+
+        session: Session
+        with db_session() as session:
+            # For all the enabled coins, update the coin tickSize
+            for coin in session.query(Coin).filter(Coin.enabled == True).all():
+                tick_size = get_alt_step(coin, bridge)
+                if tick_size is None:
+                    set_alt_step(coin, bridge, client.get_alt_tick(coin.symbol, bridge.symbol))
+
     def scout(self):
         '''
         Scout for potential jumps from the current coin to another coin

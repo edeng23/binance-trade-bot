@@ -17,11 +17,14 @@ class Pair(Base):
     to_coin = relationship("Coin", foreign_keys=[to_coin_id], lazy='joined')
 
     ratio = Column(Float)
+    step_size = Column(Float)
 
-    def __init__(self, from_coin: Coin, to_coin: Coin, ratio=None):
+    
+    def __init__(self, from_coin: Coin, to_coin: Coin, ratio: float, step_size=None):
         self.from_coin = from_coin
         self.to_coin = to_coin
         self.ratio = ratio
+        self.step_size = step_size
 
     def __repr__(self):
         return f"<{self.from_coin_id}->{self.to_coin_id} :: {self.ratio}>"

@@ -76,6 +76,41 @@ class Database:
                         if pair is None:
                             session.add(Pair(from_coin, to_coin))
 
+    def set_bridge(self, bridge: Coin):
+        session: Session
+        # Add bridge to the database and set as disabled
+        with self.db_session() as session:
+            coin = session.query(Coin).get(bridge.symbol)
+            if coin == None:
+                bridge.enabled = False
+                session.add(bridge)
+            else:
+                bridge = coin
+
+            # For all the combinations of coins in the database, add a pair with the bridge to the database
+            coins: List[Coin] = session.query(Coin).filter(Coin.enabled).all()
+            for from_coin in coins:
+                pair = session.query(Pair).filter(Pair.from_coin == from_coin, Pair.to_coin == bridge).first()
+                if pair is None:
+                    session.add(Pair(from_coin, bridge))
+            for to_coin in coins:
+                pair = session.query(Pair).filter(Pair.from_coin == bridge, Pair.to_coin == to_coin).first()
+                if pair is None:
+                    session.add(Pair(bridge, to_coin))
+
+    def get_alt_step(self, alt: Coin, crypto: Coin) -> float:
+        session: Session
+        with self.db_session() as session:
+            pair = session.query(Pair).filter(Pair.from_coin == alt, Pair.to_coin == crypto).first()
+            session.expunge(pair)
+            return pair.step_size
+
+    def set_alt_step(self, alt: Coin, crypto: Coin, step_size: float):
+        session: Session
+        with self.db_session() as session:
+            pair = session.query(Pair).filter(Pair.from_coin == alt, Pair.to_coin == crypto).first()
+            pair.step_size = step_size
+
     def get_coin(self, coin: Union[Coin, str]) -> Coin:
         if type(coin) == Coin:
             return coin
