@@ -115,7 +115,7 @@ class AutoTrader:
             previous_sell_trade = get_previous_sell_trade(pair.to_coin)
             if previous_sell_trade is not None:
                 expected_target_amount = previous_sell_trade.alt_trade_amount
-                delta_percentage = (expected_target_amount - possible_target_amount) / possible_target_amount * 100
+                delta_percentage = (possible_target_amount - expected_target_amount) / expected_target_amount * 100
                 if expected_target_amount > possible_target_amount:
                     skip_ratio = True
                     logger.info("{0: >10} \t\t expected {1: >20f} \t\t actual {2: >20f} \t\t diff {3: >20f}%"
