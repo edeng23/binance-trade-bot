@@ -28,9 +28,9 @@ def main():
     trader.initialize_trade_thresholds()
     trader.initialize_step_sizes(config.BRIDGE)
     trader.initialize_current_coin()
-    
+
     schedule = SafeScheduler(logger)
-    schedule.every(config.SCOUT_SLEEP_TIME).seconds.do(trader.scout).tag("scouting")
+    schedule.every(config.SCOUT_SLEEP_TIME).seconds.do(trader.scout_loop).tag("scouting")
     schedule.every(1).minutes.do(trader.update_values).tag("updating value history")
     schedule.every(1).minutes.do(db.prune_scout_history).tag("pruning scout history")
     schedule.every(1).hours.do(db.prune_value_history).tag("pruning value history")

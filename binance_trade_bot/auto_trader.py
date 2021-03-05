@@ -33,6 +33,16 @@ class AutoTrader:
 
         self.db.set_current_coin(pair.to_coin)
 
+    def transaction_to_coin(self, to_coin: Coin, all_tickers):
+        '''
+        Jump from BRIDGE coin to the destination coin
+        '''
+        result = None
+        while result is None:
+            result = self.manager.buy_alt(to_coin, self.config.BRIDGE, all_tickers)
+
+        self.db.set_current_coin(to_coin)
+
     def initialize_current_coin(self):
         '''
         Decide what is the current coin, and set it up in the DB.
@@ -68,7 +78,17 @@ class AutoTrader:
                 if tick_size is None:
                     set_alt_step(coin, self.config.BRIDGE, client.get_alt_tick(coin.symbol, self.config.BRIDGE.symbol))
 
-    def scout(self):
+    def scout_loop(self):
+        '''
+        Outer scout loop, check if we currently have alt or bridge
+        '''
+        current_coin = get_current_coin()
+        if (current_coin.symbol == self.config.BRIDGE.symbol):
+            scout_bridge(self.config.BRIDGE)
+        else:
+            scout_alt(current_coin)
+
+    def scout_alt(self):
         '''
         Scout for potential jumps from the current coin to another coin
         '''
@@ -79,9 +99,9 @@ class AutoTrader:
             datetime.now()) + " - CONSOLE - INFO - I am scouting the best trades. Current coin: {0} ".format(
             current_coin + self.config.BRIDGE), end='\r')
 
-        current_coin_balance = client.get_currency_balance(current_coin.symbol)
+        current_coin_balance = self.manager.get_currency_balance(current_coin.symbol)
         all_tickers = self.manager.get_all_market_tickers()
-        current_coin_price = get_market_ticker_price_from_list(all_tickers, current_coin + self.config.BRIDGE)
+        current_coin_price = utils.get_market_ticker_price_from_list(all_tickers, current_coin + self.config.BRIDGE)
 
         if current_coin_price is None:
             self.logger.info("Skipping scouting... current coin {0} not found".format(current_coin + self.config.BRIDGE))
@@ -91,7 +111,7 @@ class AutoTrader:
 
         # Display on the console, the current coin+Bridge,
         # so users can see *some* activity and not thinking the bot has stopped.
-        logger.log("Scouting. Current coin: {0} price: {1} {2}: {3}"
+        self.logger.log("Scouting. Current coin: {0} price: {1} {2}: {3}"
                     .format(current_coin + BRIDGE, current_coin_price, BRIDGE, possible_bridge_amount), "info", False)
 
         ratio_dict: Dict[Pair, float, ScoutHistory] = {}
@@ -144,6 +164,74 @@ class AutoTrader:
             self.set_scout_executed(best_pair[1][1])
             self.transaction_through_bridge(
                 client, best_pair[0], all_tickers)
+
+    def scout_bridge(self):
+        '''
+        Scout for potential jumps from the bridge coin to another coin
+        '''
+
+        bridge_balance = self.manager.get_currency_balance(current_coin.symbol)
+        all_tickers = self.manager.get_all_market_tickers()
+        # current_coin_price = get_market_ticker_price_from_list(all_tickers, current_coin + BRIDGE)
+
+        # if current_coin_price is None:
+        #     logger.info("Skipping scouting... current coin {0} not found".format(current_coin + BRIDGE))
+        #     return
+
+        possible_bridge_amount = bridge_balance
+
+        # Display on the console, the current coin+Bridge,
+        # so users can see *some* activity and not thinking the bot has stopped.
+        self.logger.log("Scouting. Current coin: {0}: {1}"
+                    .format(current_coin, possible_bridge_amount), "info", False)
+
+        ratio_dict: Dict[Coin, float, ScoutHistory] = {}
+
+        session: Session
+        with db_session() as session:
+            # For all the enabled coins, update the coin tickSize
+            for coin in session.query(Coin).filter(Coin.enabled == True).all():
+                optional_coin_price = get_market_ticker_price_from_list(all_tickers, coin + self.config.BRIDGE)
+
+                if optional_coin_price is None:
+                    logger.info("Skipping scouting... optional coin {0} not found".format(coin + self.config.BRIDGE))
+                    continue
+
+                # Skipping... if possible target amount is lower than expected target amount.
+                possible_target_amount = (possible_bridge_amount / optional_coin_price) - ((possible_bridge_amount / optional_coin_price) * transaction_fee * multiplier)
+
+                skip_ratio = False
+                previous_sell_trade = self.db.get_previous_sell_trade(coin)
+                if previous_sell_trade is not None:
+                    expected_target_amount = previous_sell_trade.alt_trade_amount
+                    delta_percentage = (possible_target_amount - expected_target_amount) / expected_target_amount * 100
+                    if expected_target_amount > possible_target_amount:
+                        skip_ratio = True
+                        self.logger.info("{0: >10} \t\t expected {1: >20f} \t\t actual {2: >20f} \t\t diff {3: >20f}%"
+                                    .format(self.config.BRIDGE + coin,
+                                            expected_target_amount, possible_target_amount, delta_percentage))
+                    else:
+                        self.logger.info("{0: >10} \t\t !!!!!!!! {1: >20f} \t\t actual {2: >20f} \t\t diff {3: >20f}%"
+                                    .format(self.config.BRIDGE + coin,
+                                            expected_target_amount, possible_target_amount, delta_percentage))
+
+
+                    if not skip_ratio:
+                        # save ratio so we can pick the best option, not necessarily the first
+    #                    ls = log_scout(pair, current_coin_price, optional_coin_price)
+                        ratio_dict[coin] = []
+                        ratio_dict[coin].append(delta_percentage)
+                        ratio_dict[coin].append(ls)
+
+
+            # if we have any viable options, pick the one with the biggest expected target amount
+            if ratio_dict:
+                best_coin = max(ratio_dict.items(), key=lambda x : x[1][0])
+                logger.info('Will be jumping from {0} to {1}'.format(
+                    current_coin, best_coin[0]))
+    #            set_scout_executed(best_pair[1][1])
+                transaction_to_coin(
+                    client, best_coin[0], all_tickers)
 
     def update_values(self):
         '''
