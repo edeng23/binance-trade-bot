@@ -19,6 +19,8 @@ class Config:
             "scout_sleep_time": "5",
             "hourToKeepScoutHistory": "1",
             "tld": "com",
+            "heartbeat_duration": "0",
+            "heartbeat_message": ""
         }
 
         if not os.path.exists(CFG_FL_NAME):
@@ -51,6 +53,16 @@ class Config:
         self.SCOUT_SLEEP_TIME = int(
             os.environ.get("SCOUT_SLEEP_TIME")
             or config.get(USER_CFG_SECTION, "scout_sleep_time")
+        )
+
+        # Get config for heartbeat
+        self.HEARTBEAT_DURATION = int(
+            os.environ.get("HEARTBEAT_DURATION")
+            or config.get(USER_CFG_SECTION, "heartbeat_duration")
+        )
+
+        self.HEARTBEAT_MESSAGE = os.environ.get("HEARTBEAT_MESSAGE") or config.get(
+            USER_CFG_SECTION, "heartbeat_message"
         )
 
         # Get config for binance
