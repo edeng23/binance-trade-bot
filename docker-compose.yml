@@ -2,24 +2,24 @@ version: "3"
 
 services:
   crypto-trading:
-    image: edeng23/binance-trade-bot
+    build: .
+    image: binance_trader
     container_name: binance_trader
     volumes:
-      - ./user.cfg:/app/user.cfg
-      - ./data:/app/data
-      - ./logs:/app/logs
-    command: python -m binance_trade_bot
+    - ./user.cfg:/app/user.cfg
+    - ./data:/app/data
+    command: python crypto_trading.py
 
   api:
-    image: edeng23/binance-trade-bot
+    depends_on:
+      - crypto-trading
+    image: binance_trader
     container_name: binance_trader_api
     volumes:
       - ./data:/app/data
     ports:
       - 5123:5123
     command: gunicorn api_server:app -k eventlet -w 1 --threads 1 -b 0.0.0.0:5123
-    depends_on:
-      - crypto-trading
 
   sqlitebrowser:
     image: ghcr.io/linuxserver/sqlitebrowser

@@ -42,33 +42,7 @@ Run the following line in the terminal: `pip install -r requirements.txt`.
 
 ### Create user configuration
 
-Create a .cfg file named `user.cfg` based off `.user.cfg.example`, then add your API keys and current coin.
-
-**The configuration file consists of the following fields:**
-- **api_key** - Binance API key generated in the Binance account setup stage.
-- **api_secret_key** - Binance secret key generated in the Binance account setup stage.
-- **current_coin** - This is your starting coin of choice. This should be one of the coins from your supported coin list. If you want to start from your bridge currency, leave this field empty - the bot will select a random coin from your supported coin list and buy it.
-- **bridge** - Your bridge currency of choice. Notice that different bridges will allow different sets of supported coins. For example, there may be a Binance particular-coin/USDT pair but no particular-coin/BUSD pair. 
-- **tld** - 'com' or 'us', depending on your region. Default is 'com'.
-- **hourToKeepScoutHistory** - Controls how many hours of scouting values are kept in the database. After the amount of time specified has passed, the information will be deleted. 
-- **scout_transaction_fee** - The transaction fee percentage. This value should be changed, for example, if you are [using BNB to pay for fees](https://www.binance.com/en/support/faq/115000583311-Using-BNB-to-Pay-for-Fees). 
-- **scout_multiplier** - Controls the value by which the difference between the current state of coin ratios and previous state of ratios is multiplied. For bigger values, the bot will wait for bigger margins to arrive before making a trade. 
-
-#### Environment Variables
-
-All of the options provided in `user.cfg` can also be configured using environment variables.
-
-```
-CURRENT_COIN_SYMBOL:
-SUPPORTED_COIN_LIST: "XLM TRX ICX EOS IOTA ONT QTUM ETC ADA XMR DASH NEO ATOM DOGE VET BAT OMG BTT"
-BRIDGE_SYMBOL: USDT
-API_KEY: vmPUZE6mv9SD5VNHk4HlWFsOr6aKE2zvsw0MuIgwCIPy6utIco14y7Ju91duEh8A
-API_SECRET_KEY: NhqPtmdSJYdKjVHjA7PZj4Mge3R5YNiP1e3UZjInClVN65XAbvqqM6A7H5fATj0j
-SCOUT_TRANSACTION_FEE: 0.001
-SCOUT_MULTIPLIER: 5
-SCOUT_SLEEP_TIME: 5
-TLD: com
-```
+Create a .ini file named `user.cfg` based off `.user.cfg.example`, then add your API keys and current coin.
 
 ### Notifications with Apprise
 
@@ -78,11 +52,11 @@ To set this up you need to create a apprise.yml file in the config directory.
 
 There is an example version of this file to get you started.
 
-If you are interested in running a Telegram bot, more information can be found at [Telegram's official documentation](https://core.telegram.org/bots).
+If you are interedted in running a Telegram bot, more information can be found at [Telegram's official documentation](https://core.telegram.org/bots).
 
 ### Run
 
-`python -m binance_trade_bot`
+`./crypto_trading.py`
 
 ### Docker
 
@@ -101,9 +75,6 @@ docker-compose up -d sqlitebrowser
 ## Join the Chat
 
 * **Discord**: [Invite Link](https://discord.gg/m4TNaxreCN)
-
-## FAQ
-A list of answers to what seem to be the most frequently asked questions can be found in our discord server, in the corresponding channel.
 
 <p align="center">
   <img src = "https://usercontent2.hubstatic.com/6061829.jpg">
