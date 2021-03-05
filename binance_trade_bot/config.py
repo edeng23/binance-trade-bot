@@ -61,9 +61,10 @@ class Config:
             or config.get(USER_CFG_SECTION, "heartbeat_duration")
         )
 
-        self.HEARTBEAT_MESSAGE = os.environ.get("HEARTBEAT_MESSAGE") or config.get(
-            USER_CFG_SECTION, "heartbeat_message"
-        )
+        self.HEARTBEAT_MESSAGE = (
+            os.environ.get("HEARTBEAT_MESSAGE")
+            or config.get(USER_CFG_SECTION, "heartbeat_message")
+        ).replace('\\n', '\n')
 
         # Get config for binance
         self.BINANCE_API_KEY = os.environ.get("API_KEY") or config.get(
