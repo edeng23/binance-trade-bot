@@ -295,7 +295,7 @@ def get_current_ratios(client: BinanceAPIManager):
         )
         difference = (current_value - pair.ratio) / pair.ratio * 100
 
-        heartbeat_msg += f"{current_coin.symbol} to {pair.to_coin.symbol}. Diff: {round(difference, 2)}%\n"
+        heartbeat_msg += f"{current_coin.symbol:<5} to {pair.to_coin.symbol:<5}. Diff: {round(difference, 2):>6.2f}%\n"
 
     return heartbeat_msg
 
