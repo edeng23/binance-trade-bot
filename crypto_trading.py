@@ -200,7 +200,6 @@ def scout_alt(client: BinanceAPIManager, current_coin: Coin, transaction_fee=0.0
                             .format(pair.from_coin_id + pair.to_coin_id,
                                     expected_target_amount, possible_target_amount, delta_percentage))
 
-
             if not skip_ratio:
                 # save ratio so we can pick the best option, not necessarily the first
                 ls = log_scout(pair, current_coin_price, optional_coin_price)
