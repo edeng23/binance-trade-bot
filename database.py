@@ -134,10 +134,14 @@ def set_current_coin(coin: Union[Coin, str]):
 def get_current_coin() -> Optional[Coin]:
     session: Session
     with db_session() as session:
-        current_coin = session.query(CurrentCoin).order_by(CurrentCoin.datetime.desc()).first()
-        if current_coin is None:
+        trade = session.query(Trade).order_by(Trade.datetime.desc()).first()
+        if trade is None:
             return None
-        coin = current_coin.coin
+        coin = None
+        if trade.state == TradeState.COMPLETE:
+            coin = trade.alt_coin
+        else:
+            coin = trade.crypto_coin
         session.expunge(coin)
         return coin
 

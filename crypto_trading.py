@@ -87,6 +87,17 @@ def transaction_through_bridge(client: BinanceAPIManager, pair: Pair, all_ticker
     set_current_coin(pair.to_coin)
 
 
+def transaction_to_coin(client: BinanceAPIManager, to_coin: Coin, all_tickers):
+    '''
+    Jump from BRIDGE coin to the destination coin
+    '''
+    result = None
+    while result is None:
+        result = client.buy_alt(to_coin, BRIDGE, all_tickers)
+
+    set_current_coin(to_coin)
+
+
 def initialize_current_coin(client: BinanceAPIManager):
     '''
     Decide what is the current coin, and set it up in the DB.
@@ -126,12 +137,21 @@ def initialize_step_sizes(client: BinanceAPIManager, bridge: Coin):
                 set_alt_step(coin, bridge, client.get_alt_tick(coin.symbol, bridge.symbol))
 
 
-def scout(client: BinanceAPIManager, transaction_fee=0.001, multiplier=5):
+def scout_loop(client: BinanceAPIManager, transaction_fee=0.001, multiplier=5):
+    '''
+    Outer scout loop, check if we currently have alt or bridge
+    '''
+    current_coin = get_current_coin()
+    if (current_coin.symbol == BRIDGE.symbol):
+        scout_bridge(client, BRIDGE, transaction_fee, multiplier)
+    else:
+        scout_alt(client, current_coin, transaction_fee, multiplier)
+
+
+def scout_alt(client: BinanceAPIManager, current_coin: Coin, transaction_fee=0.001, multiplier=5):
     '''
     Scout for potential jumps from the current coin to another coin
     '''
-
-    current_coin = get_current_coin()
 
     current_coin_balance = client.get_currency_balance(current_coin.symbol)
     all_tickers = client.get_all_market_tickers()
@@ -197,6 +217,75 @@ def scout(client: BinanceAPIManager, transaction_fee=0.001, multiplier=5):
         set_scout_executed(best_pair[1][1])
         transaction_through_bridge(
             client, best_pair[0], all_tickers)
+
+
+def scout_bridge(client: BinanceAPIManager, current_coin: Coin, transaction_fee=0.001, multiplier=5):
+    '''
+    Scout for potential jumps from the bridge coin to another coin
+    '''
+
+    bridge_balance = client.get_currency_balance(current_coin.symbol)
+    all_tickers = client.get_all_market_tickers()
+    # current_coin_price = get_market_ticker_price_from_list(all_tickers, current_coin + BRIDGE)
+
+    # if current_coin_price is None:
+    #     logger.info("Skipping scouting... current coin {0} not found".format(current_coin + BRIDGE))
+    #     return
+
+    possible_bridge_amount = bridge_balance
+
+    # Display on the console, the current coin+Bridge,
+    # so users can see *some* activity and not thinking the bot has stopped.
+    logger.log("Scouting. Current coin: {0}: {1}"
+                .format(current_coin, possible_bridge_amount), "info", False)
+
+    ratio_dict: Dict[Coin, float, ScoutHistory] = {}
+
+    session: Session
+    with db_session() as session:
+        # For all the enabled coins, update the coin tickSize
+        for coin in session.query(Coin).filter(Coin.enabled == True).all():
+            optional_coin_price = get_market_ticker_price_from_list(all_tickers, coin + BRIDGE)
+
+            if optional_coin_price is None:
+                logger.info("Skipping scouting... optional coin {0} not found".format(coin + BRIDGE))
+                continue
+
+            # Skipping... if possible target amount is lower than expected target amount.
+            possible_target_amount = (possible_bridge_amount / optional_coin_price) - ((possible_bridge_amount / optional_coin_price) * transaction_fee * multiplier)
+
+            skip_ratio = False
+            previous_sell_trade = get_previous_sell_trade(coin)
+            if previous_sell_trade is not None:
+                expected_target_amount = previous_sell_trade.alt_trade_amount
+                delta_percentage = (possible_target_amount - expected_target_amount) / expected_target_amount * 100
+                if expected_target_amount > possible_target_amount:
+                    skip_ratio = True
+                    logger.info("{0: >10} \t\t expected {1: >20f} \t\t actual {2: >20f} \t\t diff {3: >20f}%"
+                                .format(BRIDGE + coin,
+                                        expected_target_amount, possible_target_amount, delta_percentage))
+                else:
+                    logger.info("{0: >10} \t\t !!!!!!!! {1: >20f} \t\t actual {2: >20f} \t\t diff {3: >20f}%"
+                                .format(BRIDGE + coin,
+                                        expected_target_amount, possible_target_amount, delta_percentage))
+
+
+                if not skip_ratio:
+                    # save ratio so we can pick the best option, not necessarily the first
+#                    ls = log_scout(pair, current_coin_price, optional_coin_price)
+                    ratio_dict[coin] = []
+                    ratio_dict[coin].append(delta_percentage)
+                    ratio_dict[coin].append(ls)
+
+
+        # if we have any viable options, pick the one with the biggest expected target amount
+        if ratio_dict:
+            best_coin = max(ratio_dict.items(), key=lambda x : x[1][0])
+            logger.info('Will be jumping from {0} to {1}'.format(
+                current_coin, best_coin[0]))
+#            set_scout_executed(best_pair[1][1])
+            transaction_to_coin(
+                client, best_coin[0], all_tickers)
 
 
 def update_values(client: BinanceAPIManager):
@@ -271,7 +360,7 @@ def main():
     initialize_current_coin(client)
     
     schedule = SafeScheduler(logger)
-    schedule.every(SCOUT_SLEEP_TIME).seconds.do(scout,
+    schedule.every(SCOUT_SLEEP_TIME).seconds.do(scout_loop,
                                                 client=client,
                                                 transaction_fee=SCOUT_TRANSACTION_FEE,
                                                 multiplier=SCOUT_MULTIPLIER).tag("scouting")
