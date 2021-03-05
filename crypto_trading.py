@@ -299,10 +299,8 @@ def get_current_ratios(client: BinanceAPIManager):
 
     return heartbeat_msg
 
-def get_heartbeat_formatting(client: BinanceAPIManager):
-    '''
-    Format variables for the string
-    '''
+def get_heartbeat_message(client: BinanceAPIManager):
+    # Format variables for the message
     current_coin = get_current_coin().symbol
     heartbeat_data = {
         "current_coin": current_coin,
@@ -310,7 +308,7 @@ def get_heartbeat_formatting(client: BinanceAPIManager):
         "ratios": get_current_ratios(client=client)
     }
 
-    return heartbeat_data
+    logger.info(HEARTBEAT_MESSAGE.format(**heartbeat_data))
 
 def main():
     api_key = config.get(USER_CFG_SECTION, 'api_key')
@@ -339,9 +337,7 @@ def main():
     schedule.every(1).minutes.do(prune_scout_history, hours=SCOUT_HISTORY_PRUNE_TIME).tag("pruning scout history")
     schedule.every(1).hours.do(prune_value_history).tag("pruning value history")
     if HEARTBEAT_DURATION > 0:
-        schedule.every(HEARTBEAT_DURATION).seconds.do(
-            logger.info, HEARTBEAT_MESSAGE.format(**get_heartbeat_formatting(client=client))
-        ).tag("heartbeat")
+        schedule.every(HEARTBEAT_DURATION).seconds.do(get_heartbeat_message, client=client).tag("heartbeat")
 
     while True:
         schedule.run_pending()
