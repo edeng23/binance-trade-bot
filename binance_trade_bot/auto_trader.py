@@ -23,13 +23,27 @@ class AutoTrader:
         '''
         Jump from the source coin to the destination coin through bridge coin
         '''
-        if self.manager.sell_alt(pair.from_coin, self.config.BRIDGE) is None:
-            self.logger.info("Couldn't sell, going back to scouting mode...")
-            return None
-        # This isn't pretty, but at the moment we don't have implemented logic to escape from a bridge coin... This'll do for now
-        result = None
-        while result is None:
-            result = self.manager.buy_alt(pair.to_coin, self.config.BRIDGE, all_tickers)
+        available_tickers = {}
+        for ticker in all_tickers:
+            available_tickers[ticker['symbol']] = None
+        if pair.from_coin_id+pair.to_coin_id in available_tickers:
+            logger.info("Direct pair {0}{1} exists. Selling {0} for {1}".format(pair.from_coin_id, pair.to_coin_id))
+            result = None
+            while result is None:
+                result = client.direct_pair_sell(pair, all_tickers, BRIDGE)
+        elif pair.to_coin_id+pair.from_coin_id in available_tickers:
+            logger.info("Direct pair {0}{1} exists. Buying {0} with {1}".format(pair.to_coin_id, pair.from_coin_id))
+            result = None
+            while result is None:
+                result = client.direct_pair_buy(pair, all_tickers, BRIDGE)
+        else:
+            if self.manager.sell_alt(pair.from_coin, self.config.BRIDGE) is None:
+                self.logger.info("Couldn't sell, going back to scouting mode...")
+                return None
+            # This isn't pretty, but at the moment we don't have implemented logic to escape from a bridge coin... This'll do for now
+            result = None
+            while result is None:
+                result = self.manager.buy_alt(pair.to_coin, self.config.BRIDGE, all_tickers)
 
         self.db.set_current_coin(pair.to_coin)
         self.update_trade_threshold(float(result[u'price']), all_tickers)

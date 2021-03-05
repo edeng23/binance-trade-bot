@@ -7,7 +7,7 @@ from binance.exceptions import BinanceAPIException
 from .config import Config
 from .database import Database
 from .logger import Logger
-from .models import Coin
+from .models import Coin, Pair
 from .utils import get_market_ticker_price_from_list
 
 
@@ -185,4 +185,99 @@ class BinanceAPIManager:
 
         trade_log.set_complete(stat["cummulativeQuoteQty"])
 
+        return order
+
+    def direct_pair_buy(self, pair: Pair, all_tickers, BRIDGE):
+        return self.retry(self._direct_pair_buy, pair, all_tickers, BRIDGE)
+
+    def _direct_pair_buy(self, pair: Pair, all_tickers, BRIDGE):
+        '''
+        Market buy destination coin directly for source coin
+        '''
+        trade_log = TradeLog(pair.from_coin, pair.to_coin, False)
+        origin_symbol = pair.from_coin_id
+        target_symbol = pair.to_coin_id
+
+        origin_tick = self.get_alt_tick(target_symbol, origin_symbol)
+
+        origin_balance = self.get_currency_balance(origin_symbol)
+        target_balance = self.get_currency_balance(target_symbol)
+        from_coin_price = self.get_market_ticker_price_from_list(all_tickers, target_symbol + origin_symbol)
+
+        order_quantity = math.floor(
+            origin_balance
+            * 10 ** origin_tick
+            / from_coin_price
+        ) / float(10 ** origin_tick)
+        self.logger.info("Buying {0} of {1}".format(order_quantity, target_symbol))
+        
+        order = None
+        while order is None:
+            order = self.BinanceClient.order_market_buy(
+                symbol=origin_symbol + target_symbol, 
+                quantity=(order_quantity)
+            )
+            
+        self.logger.info("order")
+        self.logger.info(order)
+
+        trade_log.set_ordered(origin_balance, target_balance, order_quantity)
+
+        stat = self.wait_for_order(target_symbol, origin_symbol, order[u'orderId'])
+
+        self.logger.info("Bought {0}".format(target_symbol))
+
+        trade_log.set_complete(stat["cummulativeQuoteQty"])
+
+        # Since it was a direct-pair market trade, "order" does not contain the price of the target coin relative to the bridge currency.
+        # the order price relative to the bridge currency is determined based on the current price since the transaction is nearly instant.
+        order[u'price'] = self.get_market_ticker_price_from_list(all_tickers, pair.to_coin + BRIDGE)
+        self.logger.info("Price of {0} was {1} {2} per {0}.".format(target_symbol, order[u'price'], BRIDGE.symbol))
+        
+        return order
+        
+        
+    def direct_pair_sell(self, pair: Pair, all_tickers, BRIDGE):
+        return self.retry(self._direct_pair_sell, pair, all_tickers, BRIDGE)
+ 
+    def _direct_pair_sell(self, pair: Pair, all_tickers, BRIDGE):
+        '''
+        Market sell origin coin directly for target coin
+        '''
+        trade_log = TradeLog(pair.from_coin, pair.to_coin, False)
+        origin_symbol = pair.from_coin_id
+        target_symbol = pair.to_coin_id
+
+        origin_tick = self.get_alt_tick(origin_symbol, target_symbol)
+
+        order_quantity = math.floor(
+            self.get_currency_balance(origin_symbol) * 10 ** origin_tick
+        ) / float(10 ** origin_tick)
+        self.logger.info("Selling {0} of {1}".format(order_quantity, origin_symbol))
+
+        origin_balance = self.get_currency_balance(origin_symbol)
+        target_balance = self.get_currency_balance(target_symbol)
+        self.logger.info("Balance is {0}".format(origin_balance))
+        order = None
+        while order is None:
+            order = self.BinanceClient.order_market_sell(
+                symbol=origin_symbol + target_symbol, quantity=(order_quantity)
+            )
+
+        self.logger.info("order")
+        self.logger.info(order)
+
+        trade_log.set_ordered(origin_balance, target_balance, order_quantity)
+
+        stat = self.wait_for_order(origin_symbol, target_symbol, order[u'orderId'])
+
+        self.logger.info("Sold {0}".format(origin_symbol))
+
+        trade_log.set_complete(stat["cummulativeQuoteQty"])
+
+        # Since it was a direct-pair market trade, "order" does not contain the price of the target coin relative to the bridge currency.
+        # the order price relative to the bridge currency is determined based on the current price since the transaction is nearly instant.
+        order[u'price'] = self.get_market_ticker_price_from_list(all_tickers, pair.to_coin + BRIDGE)
+        self.logger.info("Price of {0} was {1} {2} per {0}.".format(target_symbol, order[u'price'], BRIDGE.symbol))
+        
         return order
