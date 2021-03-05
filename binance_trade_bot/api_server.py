@@ -9,14 +9,20 @@ from flask_socketio import SocketIO, emit
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-import database
-from database import db_session
-from models import CoinValue, Trade, ScoutHistory, Coin, Pair, CurrentCoin
+from .config import Config
+from .database import Database
+from .logger import Logger
+from .models import CoinValue, Trade, ScoutHistory, Coin, Pair, CurrentCoin
 
 app = Flask(__name__)
 cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 socketio = SocketIO(app, cors_allowed_origins="*")
+
+
+logger = Logger()
+config = Config()
+db = Database(logger, config)
 
 
 def filter_period(query, model):
@@ -43,7 +49,7 @@ def filter_period(query, model):
 @app.route('/api/value_history')
 def value_history(coin: str = None):
     session: Session
-    with db_session() as session:
+    with db.db_session() as session:
         query = session.query(CoinValue).order_by(CoinValue.coin_id.asc(),
                                                   CoinValue.datetime.asc())
 
@@ -60,7 +66,7 @@ def value_history(coin: str = None):
 @app.route('/api/total_value_history')
 def total_value_history():
     session: Session
-    with db_session() as session:
+    with db.db_session() as session:
         query = session.query(CoinValue.datetime,
                               func.sum(CoinValue.btc_value),
                               func.sum(CoinValue.usd_value)).group_by(
@@ -75,7 +81,7 @@ def total_value_history():
 @app.route('/api/trade_history')
 def trade_history():
     session: Session
-    with db_session() as session:
+    with db.db_session() as session:
         query = session.query(Trade).order_by(Trade.datetime.asc())
 
         query = filter_period(query, Trade)
@@ -86,10 +92,10 @@ def trade_history():
 
 @app.route('/api/scouting_history')
 def scouting_history():
-    current_coin = database.get_current_coin()
+    current_coin = db.get_current_coin()
     coin = current_coin.symbol if current_coin is not None else None
     session: Session
-    with db_session() as session:
+    with db.db_session() as session:
         query = session.query(ScoutHistory).join(ScoutHistory.pair).filter(
             Pair.from_coin_id == coin).order_by(ScoutHistory.datetime.asc())
 
@@ -101,14 +107,14 @@ def scouting_history():
 
 @app.route('/api/current_coin')
 def current_coin():
-    coin = database.get_current_coin()
+    coin = db.get_current_coin()
     return coin.info() if coin else None
 
 
 @app.route('/api/current_coin_history')
 def current_coin_history():
     session: Session
-    with db_session() as session:
+    with db.db_session() as session:
         query = session.query(CurrentCoin)
 
         query = filter_period(query, CurrentCoin)
@@ -120,8 +126,8 @@ def current_coin_history():
 @app.route('/api/coins')
 def coins():
     session: Session
-    with db_session() as session:
-        current_coin = session.merge(database.get_current_coin())
+    with db.db_session() as session:
+        current_coin = session.merge(db.get_current_coin())
         coins: List[Coin] = session.query(Coin).all()
         return jsonify([{
             **coin.info(),
@@ -132,7 +138,7 @@ def coins():
 @app.route('/api/pairs')
 def pairs():
     session: Session
-    with db_session() as session:
+    with db.db_session() as session:
         all_pairs: List[Pair] = session.query(Pair).all()
         return jsonify([pair.info() for pair in all_pairs])
 
