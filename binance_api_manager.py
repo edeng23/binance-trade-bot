@@ -4,17 +4,14 @@ import time
 from binance.client import Client
 from binance.exceptions import BinanceAPIException
 
-from .config import Config
-from .database import Database
-from .logger import Logger
-from .models import Coin
-from .utils import get_market_ticker_price_from_list
+from database import TradeLog
+from logger import Logger
+from models import Coin
 
 
 class BinanceAPIManager:
-    def __init__(self, config: Config, db: Database, logger: Logger):
-        self.BinanceClient = Client(config.BINANCE_API_KEY, config.BINANCE_API_SECRET_KEY, tld=config.BINANCE_TLD)
-        self.db = db
+    def __init__(self, APIKey: str, APISecret: str, Tld: str, logger: Logger):
+        self.BinanceClient = Client(APIKey, APISecret, None, Tld)
         self.logger = logger
 
     def get_all_market_tickers(self):
@@ -40,6 +37,19 @@ class BinanceAPIManager:
             if currency_balance[u"asset"] == currency_symbol:
                 return float(currency_balance[u"free"])
         return None
+
+    def first(self, iterable, condition=lambda x: True):
+        try:
+            return next(x for x in iterable if condition(x))
+        except StopIteration:
+            return None
+
+    def get_market_ticker_price_from_list(self, all_tickers, ticker_symbol):
+        '''
+        Get ticker price of a specific coin
+        '''
+        ticker = self.first(all_tickers, condition=lambda x: x[u'symbol'] == ticker_symbol)
+        return float(ticker[u'price']) if ticker else None
 
     def retry(self, func, *args, **kwargs):
         time.sleep(1)
@@ -97,7 +107,7 @@ class BinanceAPIManager:
         """
         Buy altcoin
         """
-        trade_log = self.db.start_trade_log(origin_coin, target_coin, False)
+        trade_log = TradeLog(origin_coin, target_coin, False)
         origin_symbol = origin_coin.symbol
         target_symbol = target_coin.symbol
 
@@ -105,7 +115,7 @@ class BinanceAPIManager:
 
         origin_balance = self.get_currency_balance(origin_symbol)
         target_balance = self.get_currency_balance(target_symbol)
-        from_coin_price = get_market_ticker_price_from_list(all_tickers, origin_symbol + target_symbol)
+        from_coin_price = self.get_market_ticker_price_from_list(all_tickers, origin_symbol + target_symbol)
 
         order_quantity = math.floor(
             target_balance
@@ -147,7 +157,7 @@ class BinanceAPIManager:
         """
         Sell altcoin
         """
-        trade_log = self.db.start_trade_log(origin_coin, target_coin, True)
+        trade_log = TradeLog(origin_coin, target_coin, True)
         origin_symbol = origin_coin.symbol
         target_symbol = target_coin.symbol
 

@@ -1,8 +1,5 @@
-import queue
-import threading
 from os import path
-
-import apprise
+import apprise, queue, threading
 
 APPRISE_CONFIG_PATH = "config/apprise.yml"
 
