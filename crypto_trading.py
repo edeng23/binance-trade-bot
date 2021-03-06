@@ -274,7 +274,7 @@ def scout_bridge(client: BinanceAPIManager, current_coin: Coin, transaction_fee=
 #                    ls = log_scout(pair, current_coin_price, optional_coin_price)
                     ratio_dict[coin] = []
                     ratio_dict[coin].append(delta_percentage)
-                    ratio_dict[coin].append(ls)
+#                    ratio_dict[coin].append(ls)
 
 
         # if we have any viable options, pick the one with the biggest expected target amount
