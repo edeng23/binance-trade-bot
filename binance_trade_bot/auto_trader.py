@@ -1,4 +1,5 @@
 import random
+import threading
 from datetime import datetime
 from typing import Dict, List
 
@@ -132,7 +133,8 @@ class AutoTrader:
                 self.logger.info("Skipping scouting... optional coin {0} not found".format(pair.to_coin + self.config.BRIDGE))
                 continue
 
-            self.db.log_scout(pair, pair.ratio, current_coin_price, optional_coin_price)
+            thread = threading.Thread(group=None, target=self.db.log_scout, name=None, args=(pair, pair.ratio, current_coin_price, optional_coin_price))
+            thread.start()
 
             # Obtain (current coin)/(optional coin)
             coin_opt_coin_ratio = current_coin_price / optional_coin_price
