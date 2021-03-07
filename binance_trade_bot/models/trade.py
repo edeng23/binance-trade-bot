@@ -1,7 +1,14 @@
 import enum
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Float, Enum, Boolean
+from sqlalchemy import Boolean
+from sqlalchemy import Column
+from sqlalchemy import DateTime
+from sqlalchemy import Enum
+from sqlalchemy import Float
+from sqlalchemy import ForeignKey
+from sqlalchemy import Integer
+from sqlalchemy import String
 from sqlalchemy.orm import relationship
 
 from .base import Base
@@ -14,16 +21,16 @@ class TradeState(enum.Enum):
     COMPLETE = "COMPLETE"
 
 
-class Trade(Base):
+class Trade(Base):  # pylint: disable=too-few-public-methods
     __tablename__ = "trade_history"
 
     id = Column(Integer, primary_key=True)
 
-    alt_coin_id = Column(String, ForeignKey('coins.symbol'))
-    alt_coin = relationship("Coin", foreign_keys=[alt_coin_id], lazy='joined')
+    alt_coin_id = Column(String, ForeignKey("coins.symbol"))
+    alt_coin = relationship("Coin", foreign_keys=[alt_coin_id], lazy="joined")
 
-    crypto_coin_id = Column(String, ForeignKey('coins.symbol'))
-    crypto_coin = relationship("Coin", foreign_keys=[crypto_coin_id], lazy='joined')
+    crypto_coin_id = Column(String, ForeignKey("coins.symbol"))
+    crypto_coin = relationship("Coin", foreign_keys=[crypto_coin_id], lazy="joined")
 
     selling = Column(Boolean)
 
@@ -44,13 +51,15 @@ class Trade(Base):
         self.datetime = datetime.utcnow()
 
     def info(self):
-        return {"id": self.id,
-                "alt_coin": self.alt_coin.info(),
-                "crypto_coin": self.crypto_coin.info(),
-                "selling": self.selling,
-                "state": self.state.value,
-                "alt_starting_balance": self.alt_starting_balance,
-                "alt_trade_amount": self.alt_trade_amount,
-                "crypto_starting_balance": self.crypto_starting_balance,
-                "crypto_trade_amount": self.crypto_trade_amount,
-                "datetime": self.datetime.isoformat()}
+        return {
+            "id": self.id,
+            "alt_coin": self.alt_coin.info(),
+            "crypto_coin": self.crypto_coin.info(),
+            "selling": self.selling,
+            "state": self.state.value,
+            "alt_starting_balance": self.alt_starting_balance,
+            "alt_trade_amount": self.alt_trade_amount,
+            "crypto_starting_balance": self.crypto_starting_balance,
+            "crypto_trade_amount": self.crypto_trade_amount,
+            "datetime": self.datetime.isoformat(),
+        }

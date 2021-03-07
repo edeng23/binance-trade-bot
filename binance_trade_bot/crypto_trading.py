@@ -11,7 +11,7 @@ from .scheduler import SafeScheduler
 
 def main():
     logger = Logger()
-    logger.info('Starting')
+    logger.info("Starting")
 
     config = Config()
     db = Database(logger, config)
@@ -26,7 +26,7 @@ def main():
 
     trader.initialize_trade_thresholds()
     trader.initialize_current_coin()
-    
+
     schedule = SafeScheduler(logger)
     schedule.every(config.SCOUT_SLEEP_TIME).seconds.do(trader.scout).tag("scouting")
     schedule.every(1).minutes.do(trader.update_values).tag("updating value history")
