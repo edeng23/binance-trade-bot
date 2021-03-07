@@ -170,3 +170,50 @@ class AutoTrader:
                 cv = CoinValue(coin, balance, usd_value, btc_value, datetime=now)
                 session.add(cv)
                 self.db.send_update(cv)
+
+    def get_current_ratios(self):
+        all_tickers = self.manager.get_all_market_tickers()
+
+        current_coin = self.db.get_current_coin()
+
+        current_coin_price = get_market_ticker_price_from_list(all_tickers, current_coin + self.config.BRIDGE)
+
+        if current_coin_price is None:
+            self.logger.info("Skipping scouting... current coin {0} not found".format(current_coin + self.config.BRIDGE))
+            return
+
+        heartbeat_msg = ""
+
+        for pair in self.db.get_pairs_from(current_coin):
+            if not pair.to_coin.enabled:
+                continue
+            optional_coin_price = get_market_ticker_price_from_list(all_tickers, pair.to_coin + self.config.BRIDGE)
+
+            if optional_coin_price is None:
+                self.logger.info("Skipping scouting... optional coin {0} not found".format(pair.to_coin + self.config.BRIDGE))
+                continue
+
+            # Obtain (current coin)/(optional coin)
+            coin_opt_coin_ratio = current_coin_price / optional_coin_price
+
+            current_value = (
+                coin_opt_coin_ratio
+                - self.config.SCOUT_TRANSACTION_FEE
+                * self.config.SCOUT_MULTIPLIER
+                * coin_opt_coin_ratio
+            )
+            difference = (current_value - pair.ratio) / pair.ratio * 100
+
+            heartbeat_msg += f"{current_coin.symbol:<5} to {pair.to_coin.symbol:<5}. Diff: {round(difference, 2):>6.2f}%\n"
+
+        return heartbeat_msg
+
+    def heartbeat_message(self):
+        current_coin = self.db.get_current_coin().symbol
+        heartbeat_data = {
+            "current_coin": current_coin,
+            "balance": self.manager.get_currency_balance(current_coin),
+            "ratios": self.get_current_ratios()
+        }
+
+        self.logger.info(self.config.HEARTBEAT_MESSAGE.format(**heartbeat_data))
