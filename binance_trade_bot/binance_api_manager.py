@@ -194,7 +194,7 @@ class BinanceAPIManager:
         '''
         Market buy destination coin directly for source coin
         '''
-        trade_log = TradeLog(pair.from_coin, pair.to_coin, False)
+        trade_log = self.db.start_trade_log(pair.from_coin, pair.to_coin, False)
         origin_symbol = pair.from_coin_id
         target_symbol = pair.to_coin_id
 
@@ -202,7 +202,7 @@ class BinanceAPIManager:
 
         origin_balance = self.get_currency_balance(origin_symbol)
         target_balance = self.get_currency_balance(target_symbol)
-        from_coin_price = self.get_market_ticker_price_from_list(all_tickers, target_symbol + origin_symbol)
+        from_coin_price = get_market_ticker_price_from_list(all_tickers, target_symbol + origin_symbol)
 
         order_quantity = math.floor(
             origin_balance
@@ -214,7 +214,7 @@ class BinanceAPIManager:
         order = None
         while order is None:
             order = self.BinanceClient.order_market_buy(
-                symbol=origin_symbol + target_symbol, 
+                symbol=target_symbol + origin_symbol, 
                 quantity=(order_quantity)
             )
             
@@ -231,7 +231,7 @@ class BinanceAPIManager:
 
         # Since it was a direct-pair market trade, "order" does not contain the price of the target coin relative to the bridge currency.
         # the order price relative to the bridge currency is determined based on the current price since the transaction is nearly instant.
-        order[u'price'] = self.get_market_ticker_price_from_list(all_tickers, pair.to_coin + BRIDGE)
+        order[u'price'] = get_market_ticker_price_from_list(all_tickers, pair.to_coin + BRIDGE)
         self.logger.info("Price of {0} was {1} {2} per {0}.".format(target_symbol, order[u'price'], BRIDGE.symbol))
         
         return order
@@ -244,7 +244,7 @@ class BinanceAPIManager:
         '''
         Market sell origin coin directly for target coin
         '''
-        trade_log = TradeLog(pair.from_coin, pair.to_coin, False)
+        trade_log = self.db.start_trade_log(pair.from_coin, pair.to_coin, False)
         origin_symbol = pair.from_coin_id
         target_symbol = pair.to_coin_id
 
@@ -277,7 +277,7 @@ class BinanceAPIManager:
 
         # Since it was a direct-pair market trade, "order" does not contain the price of the target coin relative to the bridge currency.
         # the order price relative to the bridge currency is determined based on the current price since the transaction is nearly instant.
-        order[u'price'] = self.get_market_ticker_price_from_list(all_tickers, pair.to_coin + BRIDGE)
+        order[u'price'] = get_market_ticker_price_from_list(all_tickers, pair.to_coin + BRIDGE)
         self.logger.info("Price of {0} was {1} {2} per {0}.".format(target_symbol, order[u'price'], BRIDGE.symbol))
         
         return order
