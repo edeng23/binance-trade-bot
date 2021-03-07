@@ -57,8 +57,8 @@ Create a .cfg file named `user.cfg` based off `.user.cfg.example`, then add your
 -   **hourToKeepScoutHistory** - Controls how many hours of scouting values are kept in the database. After the amount of time specified has passed, the information will be deleted.
 -   **scout_transaction_fee** - The transaction fee percentage. This value should be changed, for example, if you are [using BNB to pay for fees](https://www.binance.com/en/support/faq/115000583311-Using-BNB-to-Pay-for-Fees).
 -   **scout_multiplier** - Controls the value by which the difference between the current state of coin ratios and previous state of ratios is multiplied. For bigger values, the bot will wait for bigger margins to arrive before making a trade.
--   **heartbeat_duration** - The time in seconds until the heartbeat message is sent. If 0, the heartbeat message won't be used. If 3600, the heartbeat message will be sent every hour.
--   **heartbeat_message** - The message to be sent everything heartbeat_duration seconds. Configurable with variables. Possible variables are:
+-   **heartbeat_duration** - The time in minutes until the heartbeat message is sent. If 0, the heartbeat message won't be used. If 60, the heartbeat message will be sent every hour.
+-   **heartbeat_message** - The message to be sent everything heartbeat_duration minutes. Configurable with variables. Possible variables are:
     -   **current_coin**: Displays the current coin's symbol.
     -   **balance**: Displays the balance of the current coin.
     -   **ratios**: Displays the ratios in percentage for each pair with the current coin.
