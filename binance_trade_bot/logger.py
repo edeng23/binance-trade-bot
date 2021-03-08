@@ -3,9 +3,6 @@ import logging.handlers
 
 from .notifications import NotificationHandler
 
-LOG_PATH = "logs/crypto_trading.log"
-
-
 class Logger:
 
     Logger = None
@@ -18,6 +15,7 @@ class Logger:
         formatter = logging.Formatter(
             "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
         )
+        # default is "logs/crypto_trading.log"
         fh = logging.FileHandler("logs/" + loggingService + ".log")
         fh.setLevel(logging.DEBUG)
         fh.setFormatter(formatter)
