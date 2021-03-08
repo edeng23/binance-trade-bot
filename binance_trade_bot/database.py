@@ -121,13 +121,20 @@ class Database:
             pairs: List[Pair] = session.query(Pair).filter(Pair.from_coin == from_coin)
             return pairs
 
-    def log_scout(
-        self,
-        pair: Pair,
-        target_ratio: float,
-        current_coin_price: float,
-        other_coin_price: float,
-    ):
+
+    def log_scout_stack(self, sh_stack):
+        session: Session
+        with self.db_session() as session:
+            merged_shs = []
+            for sh_temp in sh_stack:
+                pair = session.merge(sh_temp.pair)
+                sh = ScoutHistory(pair, sh_temp.target_ratio, sh_temp.current_coin_price, sh_temp.other_coin_price)
+                merged_shs.append(sh)
+                session.add(sh)
+
+            self.send_bulk_update(merged_shs)
+        
+    def log_scout(self, pair: Pair, target_ratio: float, current_coin_price: float, other_coin_price: float):
         session: Session
         with self.db_session() as session:
             pair = session.merge(pair)
@@ -192,6 +199,19 @@ class Database:
 
     def start_trade_log(self, from_coin: Coin, to_coin: Coin, selling: bool):
         return TradeLog(self, from_coin, to_coin, selling)
+
+    def send_bulk_update(self, models):
+        if not self.socketio_connect():
+            return
+        
+        bulk_data = []
+        for model in models:
+            bulk_data.append(model.info()) 
+
+        self.socketio_client.emit('bulk_save_objects', {
+            "table": models[0]._tablename__,
+            "data": bulkdata
+        }, namespace="/backend")
 
     def send_update(self, model):
         if not self.socketio_connect():
