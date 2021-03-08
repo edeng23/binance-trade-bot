@@ -210,7 +210,7 @@ class Database:
 
         self.socketio_client.emit('bulk_save_objects', {
             "table": models[0]._tablename__,
-            "data": bulkdata
+            "data": bulk_data
         }, namespace="/backend")
 
     def send_update(self, model):
