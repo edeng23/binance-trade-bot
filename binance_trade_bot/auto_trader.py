@@ -71,22 +71,22 @@ class AutoTrader:
         Initialize the step sizes of all the coins for trading with the bridge coin
         '''
         session: Session
-        with db_session() as session:
+        with self.db.db_session() as session:
             # For all the enabled coins, update the coin tickSize
             for coin in session.query(Coin).filter(Coin.enabled == True).all():
-                tick_size = get_alt_step(coin, self.config.BRIDGE)
+                tick_size = self.db.get_alt_step(coin, self.config.BRIDGE)
                 if tick_size is None:
-                    set_alt_step(coin, self.config.BRIDGE, client.get_alt_tick(coin.symbol, self.config.BRIDGE.symbol))
+                    self.db.set_alt_step(coin, self.config.BRIDGE, client.get_alt_tick(coin.symbol, self.config.BRIDGE.symbol))
 
     def scout_loop(self):
         '''
         Outer scout loop, check if we currently have alt or bridge
         '''
-        current_coin = get_current_coin()
+        current_coin = self.db.get_current_coin()
         if (current_coin.symbol == self.config.BRIDGE.symbol):
-            scout_bridge(self.config.BRIDGE)
+            self.scout_bridge()
         else:
-            scout_alt(current_coin)
+            self.scout_alt()
 
     def scout_alt(self):
         '''
@@ -101,18 +101,18 @@ class AutoTrader:
 
         current_coin_balance = self.manager.get_currency_balance(current_coin.symbol)
         all_tickers = self.manager.get_all_market_tickers()
-        current_coin_price = utils.get_market_ticker_price_from_list(all_tickers, current_coin + self.config.BRIDGE)
+        current_coin_price = get_market_ticker_price_from_list(all_tickers, current_coin + self.config.BRIDGE)
 
         if current_coin_price is None:
             self.logger.info("Skipping scouting... current coin {0} not found".format(current_coin + self.config.BRIDGE))
             return
 
-        possible_bridge_amount = (current_coin_balance * current_coin_price) - ((current_coin_balance * current_coin_price) * transaction_fee * multiplier)
+        possible_bridge_amount = (current_coin_balance * current_coin_price) - ((current_coin_balance * current_coin_price) * self.config.SCOUT_TRANSACTION_FEE * self.config.SCOUT_MULTIPLIER)
 
         # Display on the console, the current coin+Bridge,
         # so users can see *some* activity and not thinking the bot has stopped.
         self.logger.log("Scouting. Current coin: {0} price: {1} {2}: {3}"
-                    .format(current_coin + BRIDGE, current_coin_price, BRIDGE, possible_bridge_amount), "info", False)
+                    .format(current_coin + self.config.BRIDGE, current_coin_price, self.config.BRIDGE, possible_bridge_amount), "info", False)
 
         ratio_dict: Dict[Pair, float, ScoutHistory] = {}
 
@@ -129,10 +129,10 @@ class AutoTrader:
             coin_opt_coin_ratio = current_coin_price / optional_coin_price
 
             # Skipping... if possible target amount is lower than expected target amount.
-            possible_target_amount = (possible_bridge_amount / optional_coin_price) - ((possible_bridge_amount / optional_coin_price) * transaction_fee * multiplier)
+            possible_target_amount = (possible_bridge_amount / optional_coin_price) - ((possible_bridge_amount / optional_coin_price) * self.config.SCOUT_TRANSACTION_FEE * self.config.SCOUT_MULTIPLIER)
 
             skip_ratio = False
-            previous_sell_trade = get_previous_sell_trade(pair.to_coin)
+            previous_sell_trade = self.db.get_previous_sell_trade(pair.to_coin)
 
 # TODO add code for the case when we did not previously sell a coin !!!
 # e.g., store current expected target amount as trade
@@ -142,11 +142,11 @@ class AutoTrader:
                 delta_percentage = (possible_target_amount - expected_target_amount) / expected_target_amount * 100
                 if expected_target_amount > possible_target_amount:
                     skip_ratio = True
-                    logger.info("{0: >10} \t\t expected {1: >20f} \t\t actual {2: >20f} \t\t diff {3: >20f}%"
+                    self.logger.info("{0: >10} \t\t expected {1: >20f} \t\t actual {2: >20f} \t\t diff {3: >20f}%"
                                 .format(pair.from_coin_id + pair.to_coin_id,
                                         expected_target_amount, possible_target_amount, delta_percentage))
                 else:
-                    logger.info("{0: >10} \t\t !!!!!!!! {1: >20f} \t\t actual {2: >20f} \t\t diff {3: >20f}%"
+                    self.logger.info("{0: >10} \t\t !!!!!!!! {1: >20f} \t\t actual {2: >20f} \t\t diff {3: >20f}%"
                                 .format(pair.from_coin_id + pair.to_coin_id,
                                         expected_target_amount, possible_target_amount, delta_percentage))
 

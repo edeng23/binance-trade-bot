@@ -25,8 +25,7 @@ def main():
     db.migrate_old_state()
     db.set_bridge(config.BRIDGE)
 
-    trader.initialize_trade_thresholds()
-    trader.initialize_step_sizes(config.BRIDGE)
+    trader.initialize_step_sizes()
     trader.initialize_current_coin()
 
     schedule = SafeScheduler(logger)
