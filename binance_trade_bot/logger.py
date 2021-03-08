@@ -11,14 +11,14 @@ class Logger:
     Logger = None
     NotificationHandler = None
 
-    def __init__(self):
+    def __init__(self, loggingService = "crypto_trading"):
         # Logger setup
-        self.Logger = logging.getLogger("crypto_trader_logger")
+        self.Logger = logging.getLogger(loggingService + "_logger")
         self.Logger.setLevel(logging.DEBUG)
         formatter = logging.Formatter(
             "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
         )
-        fh = logging.FileHandler(LOG_PATH)
+        fh = logging.FileHandler("logs/" + loggingService + ".log")
         fh.setLevel(logging.DEBUG)
         fh.setFormatter(formatter)
         self.Logger.addHandler(fh)
