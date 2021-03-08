@@ -102,6 +102,19 @@ if you only want to start the sqlitebrowser
 docker-compose up -d sqlitebrowser
 ```
 
+## Direct Pair Transactions
+
+The system also supports using direct-pair transactions when they are available, e.g. converting from ETH to XRP directly rather than via a bridge currency. Benefits of this are:
+-   Reduces the time to execute jumps
+-   Cuts down on transaction fees since only one transaction is made
+-   Eliminates the possibility of getting temporarily "stuck" on the bridge currency if the price of the target coin increases mid-jump
+
+### How to Maximize Direct Pairs
+To determine which currencies are available for direct pair transations, a small tool called `max_coin_clique.py` is available. This script checks for all available currency pairs and compares it to a list of all currencies supported by Binance. It outputs a set of `.png` images showing each currency and it's pairs as a graph, as well as subsets of currencies that only have three direct pairs, or four direct pairs.
+
+To maximize the likelihood of utilizing a direct pair transaction, you may wish to avoid coins that can only trade with one other currency on your supported coin list.
+
+
 ## Support the Project
 
 <a href="https://www.buymeacoffee.com/edeng" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="41" width="174"></a>
