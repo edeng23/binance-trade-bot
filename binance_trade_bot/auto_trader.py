@@ -164,9 +164,6 @@ class AutoTrader:
             skip_ratio = False
             previous_sell_trade = self.db.get_previous_sell_trade(pair.to_coin)
 
-# TODO add code for the case when we did not previously sell a coin !!!
-# e.g., store current expected target amount as trade
-
             if previous_sell_trade is not None:
                 expected_target_amount = previous_sell_trade.alt_trade_amount
                 delta_percentage = (possible_target_amount - expected_target_amount) / expected_target_amount * 100
