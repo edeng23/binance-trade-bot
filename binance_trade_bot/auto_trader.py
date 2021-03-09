@@ -47,24 +47,17 @@ class AutoTrader:
         '''
         Decide what is the current coin, and set it up in the DB.
         '''
-        if self.db.get_current_coin() is None:
-            current_coin_symbol = self.config.CURRENT_COIN_SYMBOL
-            if not current_coin_symbol:
-                current_coin_symbol = random.choice(self.config.SUPPORTED_COIN_LIST)
+        current_coin_symbol = self.config.CURRENT_COIN_SYMBOL
+        if not current_coin_symbol:
+            exit("***\nERROR!\nCurrent coin not set in user.cfg\n***")
 
-            self.logger.info("Setting initial coin to {0}".format(current_coin_symbol))
+        if current_coin_symbol not in self.config.SUPPORTED_COIN_LIST:
+            exit("***\nERROR!\nCurrent coin not listed in supported coin list defined in user.cfg\n***")
 
-            if current_coin_symbol not in self.config.SUPPORTED_COIN_LIST:
-                exit("***\nERROR!\nSince there is no backup file, a proper coin name must be provided at init\n***")
-            self.db.set_current_coin(current_coin_symbol)
+        current_coin_balance = self.manager.get_currency_balance(current_coin_symbol)
+        if not current_coin_balance:
+            exit("***\nERROR!\nBinance account not holding any balance for current coin set in user.cfg\n***")
 
-            # if we don't have a configuration, we selected a coin at random... Buy it so we can start trading.
-            if self.config.CURRENT_COIN_SYMBOL == '':
-                current_coin = self.db.get_current_coin()
-                self.logger.info("Purchasing {0} to begin trading".format(current_coin))
-                all_tickers = self.manager.get_all_market_tickers()
-                self.manager.buy_alt(current_coin, self.config.BRIDGE, all_tickers)
-                self.logger.info("Ready to start trading")
 
     def initialize_step_sizes(self):
         '''
