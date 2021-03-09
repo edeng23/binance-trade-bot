@@ -72,4 +72,6 @@ repos:
     - python-binance>=0.3
     - python-socketio[client]
     - schedule
+    - setuptools_cythonize
+    - setuptools_scm
     - sqlalchemy

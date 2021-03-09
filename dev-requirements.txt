@@ -1,1 +1,3 @@
 pylint-sqlalchemy
+setuptools_scm
+setuptools_cythonize
