@@ -122,7 +122,7 @@ class Database:
             return pairs
 
 
-    def log_scout_stack(self, sh_stack):
+    def log_scout_stack(self, sh_stack: List[ScoutHistory]):
         session: Session
         with self.db_session() as session:
             merged_shs = []
@@ -204,11 +204,11 @@ class Database:
         if not self.socketio_connect():
             return
         
-        bulk_data = []
+        bulk_data = list(model.info() for model in models)
         for model in models:
             bulk_data.append(model.info()) 
 
-        self.socketio_client.emit('bulk_save_objects', {
+        self.socketio_client.emit('update_bulk', {
             "table": models[0]._tablename__,
             "data": bulk_data
         }, namespace="/backend")
