@@ -12,6 +12,7 @@ class TradeState(enum.Enum):
     STARTING = "STARTING"
     ORDERED = "ORDERED"
     COMPLETE = "COMPLETE"
+    INITIALIZED = "INITIALIZED"
 
 
 class Trade(Base):
@@ -39,7 +40,6 @@ class Trade(Base):
     def __init__(self, alt_coin: Coin, crypto_coin: Coin, selling: bool):
         self.alt_coin = alt_coin
         self.crypto_coin = crypto_coin
-        self.state = TradeState.STARTING
         self.selling = selling
         self.datetime = datetime.utcnow()
 

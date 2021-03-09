@@ -120,22 +120,12 @@ class Database:
             session.expunge(coin)
             return coin
 
-    def set_current_coin(self, coin: Union[Coin, str]):
-        coin = self.get_coin(coin)
-        session: Session
-        with self.db_session() as session:
-            if type(coin) == Coin:
-                coin = session.merge(coin)
-            cc = CurrentCoin(coin)
-            session.add(cc)
-            self.send_update(cc)
-
     def get_current_coin(self) -> Optional[Coin]:
         session: Session
         with self.db_session() as session:
-            trade = session.query(Trade).order_by(Trade.datetime.desc()).first()
+            trade = session.query(Trade).filter(Trade.state != TradeState.INITIALIZED).order_by(Trade.datetime.desc()).first()
             if trade is None:
-                return None
+                return self.get_coin(self.config.CURRENT_COIN_SYMBOL)
             coin = None
             if trade.state == TradeState.COMPLETE:
                 coin = trade.alt_coin
@@ -182,7 +172,7 @@ class Database:
             previous_sell_trade = session.query(Trade) \
                 .filter(Trade.alt_coin_id == target_coin.symbol,
                         Trade.selling == 1,
-                        Trade.state == 'COMPLETE') \
+                        (Trade.state == TradeState.COMPLETE) | (Trade.state == TradeState.INITIALIZED)) \
                 .order_by(Trade.datetime.desc()) \
                 .first()
             if previous_sell_trade is None:
@@ -257,7 +247,6 @@ class Database:
             with open('.current_coin', 'r') as f:
                 coin = f.read().strip()
                 self.logger.info(f".current_coin file found, loading current coin {coin}")
-                self.set_current_coin(coin)
             os.rename('.current_coin', '.current_coin.old')
             self.logger.info(f".current_coin renamed to .current_coin.old - You can now delete this file")
 
@@ -308,6 +297,15 @@ class TradeLog:
             trade: Trade = session.merge(self.trade)
             trade.crypto_trade_amount = crypto_trade_amount
             trade.state = TradeState.COMPLETE
+            self.db.send_update(trade)
+
+    def set_initialized(self, alt_starting_balance, crypto_starting_balance):
+        session: Session
+        with self.db.db_session() as session:
+            trade: Trade = session.merge(self.trade)
+            trade.alt_starting_balance = alt_starting_balance
+            trade.crypto_starting_balance = crypto_starting_balance
+            trade.state = TradeState.INITIALIZED
             self.db.send_update(trade)
 
 
