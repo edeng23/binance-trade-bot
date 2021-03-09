@@ -163,7 +163,7 @@ class AutoTrader:
             ) - pair.ratio
 
 
-        if(len(scout_stack) > 0):
+        if scout_stack:
             self.db.log_scout_stack(scout_stack)
             scout_stack.clear()
 
