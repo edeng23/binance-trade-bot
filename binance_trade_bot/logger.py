@@ -10,13 +10,13 @@ class Logger:
 
     def __init__(self, loggingService = "crypto_trading"):
         # Logger setup
-        self.Logger = logging.getLogger(loggingService + "_logger")
+        self.Logger = logging.getLogger(f"{loggingService}_logger")
         self.Logger.setLevel(logging.DEBUG)
         formatter = logging.Formatter(
             "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
         )
         # default is "logs/crypto_trading.log"
-        fh = logging.FileHandler("logs/" + loggingService + ".log")
+        fh = logging.FileHandler(f"logs/{loggingService}.log")
         fh.setLevel(logging.DEBUG)
         fh.setFormatter(formatter)
         self.Logger.addHandler(fh)
