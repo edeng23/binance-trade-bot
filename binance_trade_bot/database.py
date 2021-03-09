@@ -2,17 +2,23 @@ import json
 import os
 import time
 from contextlib import contextmanager
-from datetime import datetime, timedelta
-from typing import List, Union, Optional
+from datetime import datetime
+from datetime import timedelta
+from typing import List
+from typing import Optional
+from typing import Union
 
 from socketio import Client
-from socketio.exceptions import ConnectionError
-from sqlalchemy import create_engine, func
-from sqlalchemy.orm import sessionmaker, scoped_session, Session
+from socketio.exceptions import ConnectionError as SocketIOConnectionError
+from sqlalchemy import create_engine
+from sqlalchemy import func
+from sqlalchemy.orm import scoped_session
+from sqlalchemy.orm import Session
+from sqlalchemy.orm import sessionmaker
 
 from .config import Config
 from .logger import Logger
-from .models import *
+from .models import *  # pylint: disable=wildcard-import
 
 
 class Database:
@@ -28,11 +34,11 @@ class Database:
             return True
         try:
             if not self.socketio_client.connected:
-                self.socketio_client.connect('http://api:5123', namespaces=["/backend"])
+                self.socketio_client.connect("http://api:5123", namespaces=["/backend"])
             while not self.socketio_client.connected or not self.socketio_client.namespaces:
                 time.sleep(0.1)
             return True
-        except ConnectionError:
+        except SocketIOConnectionError:
             return False
 
     @contextmanager
@@ -72,12 +78,16 @@ class Database:
             for from_coin in coins:
                 for to_coin in coins:
                     if from_coin != to_coin:
-                        pair = session.query(Pair).filter(Pair.from_coin == from_coin, Pair.to_coin == to_coin).first()
+                        pair = (
+                            session.query(Pair)
+                            .filter(Pair.from_coin == from_coin, Pair.to_coin == to_coin)
+                            .first()
+                        )
                         if pair is None:
                             session.add(Pair(from_coin, to_coin))
 
     def get_coin(self, coin: Union[Coin, str]) -> Coin:
-        if type(coin) == Coin:
+        if isinstance(coin, Coin):
             return coin
         session: Session
         with self.db_session() as session:
@@ -89,7 +99,7 @@ class Database:
         coin = self.get_coin(coin)
         session: Session
         with self.db_session() as session:
-            if type(coin) == Coin:
+            if isinstance(coin, Coin):
                 coin = session.merge(coin)
             cc = CurrentCoin(coin)
             session.add(cc)
@@ -110,7 +120,11 @@ class Database:
         to_coin = self.get_coin(to_coin)
         session: Session
         with self.db_session() as session:
-            pair: Pair = session.query(Pair).filter(Pair.from_coin == from_coin, Pair.to_coin == to_coin).first()
+            pair: Pair = (
+                session.query(Pair)
+                .filter(Pair.from_coin == from_coin, Pair.to_coin == to_coin)
+                .first()
+            )
             session.expunge(pair)
             return pair
 
@@ -121,7 +135,13 @@ class Database:
             pairs: List[Pair] = session.query(Pair).filter(Pair.from_coin == from_coin)
             return pairs
 
-    def log_scout(self, pair: Pair, target_ratio: float, current_coin_price: float, other_coin_price: float):
+    def log_scout(
+        self,
+        pair: Pair,
+        target_ratio: float,
+        current_coin_price: float,
+        other_coin_price: float,
+    ):
         session: Session
         with self.db_session() as session:
             pair = session.merge(pair)
@@ -139,37 +159,51 @@ class Database:
         session: Session
         with self.db_session() as session:
             # Sets the first entry for each coin for each hour as 'hourly'
-            hourly_entries: List[CoinValue] = session.query(CoinValue).group_by(
-                CoinValue.coin_id, func.strftime('%H', CoinValue.datetime)).all()
+            hourly_entries: List[CoinValue] = (
+                session.query(CoinValue)
+                .group_by(CoinValue.coin_id, func.strftime("%H", CoinValue.datetime))
+                .all()
+            )
             for entry in hourly_entries:
                 entry.interval = Interval.HOURLY
 
             # Sets the first entry for each coin for each day as 'daily'
-            daily_entries: List[CoinValue] = session.query(CoinValue).group_by(
-                CoinValue.coin_id, func.date(CoinValue.datetime)).all()
+            daily_entries: List[CoinValue] = (
+                session.query(CoinValue)
+                .group_by(CoinValue.coin_id, func.date(CoinValue.datetime))
+                .all()
+            )
             for entry in daily_entries:
                 entry.interval = Interval.DAILY
 
-            # Sets the first entry for each coin for each month as 'weekly' (Sunday is the start of the week)
-            weekly_entries: List[CoinValue] = session.query(CoinValue).group_by(
-                CoinValue.coin_id, func.strftime("%Y-%W", CoinValue.datetime)).all()
+            # Sets the first entry for each coin for each month as 'weekly'
+            # (Sunday is the start of the week)
+            weekly_entries: List[CoinValue] = (
+                session.query(CoinValue)
+                .group_by(CoinValue.coin_id, func.strftime("%Y-%W", CoinValue.datetime))
+                .all()
+            )
             for entry in weekly_entries:
                 entry.interval = Interval.WEEKLY
 
-            # The last 24 hours worth of minutely entries will be kept, so count(coins) * 1440 entries
+            # The last 24 hours worth of minutely entries will be kept, so
+            # count(coins) * 1440 entries
             time_diff = datetime.now() - timedelta(hours=24)
-            session.query(CoinValue).filter(CoinValue.interval == Interval.MINUTELY,
-                                            CoinValue.datetime < time_diff).delete()
+            session.query(CoinValue).filter(
+                CoinValue.interval == Interval.MINUTELY, CoinValue.datetime < time_diff
+            ).delete()
 
             # The last 28 days worth of hourly entries will be kept, so count(coins) * 672 entries
             time_diff = datetime.now() - timedelta(days=28)
-            session.query(CoinValue).filter(CoinValue.interval == Interval.HOURLY,
-                                            CoinValue.datetime < time_diff).delete()
+            session.query(CoinValue).filter(
+                CoinValue.interval == Interval.HOURLY, CoinValue.datetime < time_diff
+            ).delete()
 
             # The last years worth of daily entries will be kept, so count(coins) * 365 entries
             time_diff = datetime.now() - timedelta(days=365)
-            session.query(CoinValue).filter(CoinValue.interval == Interval.DAILY,
-                                            CoinValue.datetime < time_diff).delete()
+            session.query(CoinValue).filter(
+                CoinValue.interval == Interval.DAILY, CoinValue.datetime < time_diff
+            ).delete()
 
             # All weekly entries will be kept forever
 
@@ -183,25 +217,29 @@ class Database:
         if not self.socketio_connect():
             return
 
-        self.socketio_client.emit('update', {
-            "table": model.__tablename__,
-            "data": model.info()
-        }, namespace="/backend")
+        self.socketio_client.emit(
+            "update",
+            {"table": model.__tablename__, "data": model.info()},
+            namespace="/backend",
+        )
 
     def migrate_old_state(self):
-        '''
-        For migrating from old dotfile format to SQL db. This method should be removed in the future.
-        '''
-        if os.path.isfile('.current_coin'):
-            with open('.current_coin', 'r') as f:
+        """
+        For migrating from old dotfile format to SQL db. This method should be removed in
+        the future.
+        """
+        if os.path.isfile(".current_coin"):
+            with open(".current_coin") as f:
                 coin = f.read().strip()
                 self.logger.info(f".current_coin file found, loading current coin {coin}")
                 self.set_current_coin(coin)
-            os.rename('.current_coin', '.current_coin.old')
-            self.logger.info(f".current_coin renamed to .current_coin.old - You can now delete this file")
+            os.rename(".current_coin", ".current_coin.old")
+            self.logger.info(
+                f".current_coin renamed to .current_coin.old - You can now delete this file"
+            )
 
-        if os.path.isfile('.current_coin_table'):
-            with open('.current_coin_table', 'r') as f:
+        if os.path.isfile(".current_coin_table"):
+            with open(".current_coin_table") as f:
                 self.logger.info(f".current_coin_table file found, loading into database")
                 table: dict = json.load(f)
                 session: Session
@@ -214,8 +252,11 @@ class Database:
                             pair.ratio = ratio
                             session.add(pair)
 
-            os.rename('.current_coin_table', '.current_coin_table.old')
-            self.logger.info(f".current_coin_table renamed to .current_coin_table.old - You can now delete this file")
+            os.rename(".current_coin_table", ".current_coin_table.old")
+            self.logger.info(
+                ".current_coin_table renamed to .current_coin_table.old - "
+                "You can now delete this file"
+            )
 
 
 class TradeLog:
@@ -250,8 +291,6 @@ class TradeLog:
             self.db.send_update(trade)
 
 
-if __name__ == '__main__':
-    logger = Logger()
-    config = Config()
-    database = Database(logger, config)
+if __name__ == "__main__":
+    database = Database(Logger(), Config())
     database.create_database()

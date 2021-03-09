@@ -1,5 +1,4 @@
 import logging
-import logging.handlers
 
 from .notifications import NotificationHandler
 
@@ -8,43 +7,41 @@ LOG_PATH = "logs/crypto_trading.log"
 
 class Logger:
 
-    Logger = None
-    NotificationHandler = None
+    logger = None
+    notification_handler = None
 
     def __init__(self):
         # Logger setup
-        self.Logger = logging.getLogger("crypto_trader_logger")
-        self.Logger.setLevel(logging.DEBUG)
-        formatter = logging.Formatter(
-            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-        )
-        fh = logging.FileHandler(LOG_PATH)
-        fh.setLevel(logging.DEBUG)
-        fh.setFormatter(formatter)
-        self.Logger.addHandler(fh)
+        self.logger = logging.getLogger("crypto_trader_logger")
+        self.logger.setLevel(logging.DEBUG)
+        formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        handler = logging.FileHandler(LOG_PATH)
+        handler.setLevel(logging.DEBUG)
+        handler.setFormatter(formatter)
+        self.logger.addHandler(handler)
 
         # logging to console
-        ch = logging.StreamHandler()
-        ch.setLevel(logging.DEBUG)
-        ch.setFormatter(formatter)
-        self.Logger.addHandler(ch)
+        handler = logging.StreamHandler()
+        handler.setLevel(logging.DEBUG)
+        handler.setFormatter(formatter)
+        self.logger.addHandler(handler)
 
         # notification handler
-        self.NotificationHandler = NotificationHandler()
+        self.notification_handler = NotificationHandler()
 
     def log(self, message, level="info", notification=True):
 
-        if "info" == level:
-            self.Logger.info(message)
-        elif "warning" == level:
-            self.Logger.warning(message)
-        elif "error" == level:
-            self.Logger.error(message)
-        elif "debug" == level:
-            self.Logger.debug(message)
+        if level == "info":
+            self.logger.info(message)
+        elif level == "warning":
+            self.logger.warning(message)
+        elif level == "error":
+            self.logger.error(message)
+        elif level == "debug":
+            self.logger.debug(message)
 
-        if notification and self.NotificationHandler.enabled:
-            self.NotificationHandler.send_notification(message)
+        if notification and self.notification_handler.enabled:
+            self.notification_handler.send_notification(message)
 
     def info(self, message):
         self.log(message, "info")

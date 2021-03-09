@@ -2,7 +2,8 @@ import datetime
 import logging
 from traceback import format_exc
 
-from schedule import Scheduler, Job
+from schedule import Job
+from schedule import Scheduler
 
 
 class SafeScheduler(Scheduler):
@@ -23,10 +24,11 @@ class SafeScheduler(Scheduler):
     def _run_job(self, job: Job):
         try:
             super()._run_job(job)
-        except Exception:
+        except Exception:  # pylint: disable=broad-except
             self.logger.error(f"Error while {next(iter(job.tags))}...\n{format_exc()}")
             job.last_run = datetime.datetime.now()
             if not self.rerun_immediately:
-                # Reschedule the job for the next time it was meant to run, instead of letting it run
+                # Reschedule the job for the next time it was meant to run, instead of
+                # letting it run
                 # next tick
-                job._schedule_next_run()
+                job._schedule_next_run()  # pylint: disable=protected-access

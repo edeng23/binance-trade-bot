@@ -1,16 +1,20 @@
 from datetime import datetime
 
-from sqlalchemy import Column, String, ForeignKey, DateTime, Integer
+from sqlalchemy import Column
+from sqlalchemy import DateTime
+from sqlalchemy import ForeignKey
+from sqlalchemy import Integer
+from sqlalchemy import String
 from sqlalchemy.orm import relationship
 
 from .base import Base
 from .coin import Coin
 
 
-class CurrentCoin(Base):
+class CurrentCoin(Base):  # pylint: disable=too-few-public-methods
     __tablename__ = "current_coin_history"
     id = Column(Integer, primary_key=True)
-    coin_id = Column(String, ForeignKey('coins.symbol'))
+    coin_id = Column(String, ForeignKey("coins.symbol"))
     coin = relationship("Coin")
     datetime = Column(DateTime)
 

@@ -8,7 +8,7 @@ CFG_FL_NAME = "user.cfg"
 USER_CFG_SECTION = "binance_user_config"
 
 
-class Config:
+class Config:  # pylint: disable=too-few-public-methods
     def __init__(self):
         # Init config
         config = configparser.ConfigParser()
@@ -22,9 +22,7 @@ class Config:
         }
 
         if not os.path.exists(CFG_FL_NAME):
-            print(
-                "No configuration file (user.cfg) found! See README. Assuming default config..."
-            )
+            print("No configuration file (user.cfg) found! See README. Assuming default config...")
             config[USER_CFG_SECTION] = {}
         config.read(CFG_FL_NAME)
 
@@ -45,18 +43,14 @@ class Config:
             or config.get(USER_CFG_SECTION, "scout_transaction_fee")
         )
         self.SCOUT_MULTIPLIER = float(
-            os.environ.get("SCOUT_MULTIPLIER")
-            or config.get(USER_CFG_SECTION, "scout_multiplier")
+            os.environ.get("SCOUT_MULTIPLIER") or config.get(USER_CFG_SECTION, "scout_multiplier")
         )
         self.SCOUT_SLEEP_TIME = int(
-            os.environ.get("SCOUT_SLEEP_TIME")
-            or config.get(USER_CFG_SECTION, "scout_sleep_time")
+            os.environ.get("SCOUT_SLEEP_TIME") or config.get(USER_CFG_SECTION, "scout_sleep_time")
         )
 
         # Get config for binance
-        self.BINANCE_API_KEY = os.environ.get("API_KEY") or config.get(
-            USER_CFG_SECTION, "api_key"
-        )
+        self.BINANCE_API_KEY = os.environ.get("API_KEY") or config.get(USER_CFG_SECTION, "api_key")
         self.BINANCE_API_SECRET_KEY = os.environ.get("API_SECRET_KEY") or config.get(
             USER_CFG_SECTION, "api_secret_key"
         )

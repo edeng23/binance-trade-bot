@@ -1,6 +1,11 @@
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Float
+from sqlalchemy import Column
+from sqlalchemy import DateTime
+from sqlalchemy import Float
+from sqlalchemy import ForeignKey
+from sqlalchemy import Integer
+from sqlalchemy import String
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 
@@ -12,8 +17,8 @@ class ScoutHistory(Base):
     __tablename__ = "scout_history"
 
     id = Column(Integer, primary_key=True)
-    
-    pair_id = Column(String, ForeignKey('pairs.id'))
+
+    pair_id = Column(String, ForeignKey("pairs.id"))
     pair = relationship("Pair")
 
     target_ratio = Column(Float)
@@ -22,7 +27,13 @@ class ScoutHistory(Base):
 
     datetime = Column(DateTime)
 
-    def __init__(self, pair: Pair, target_ratio: float, current_coin_price: float, other_coin_price: float):
+    def __init__(
+        self,
+        pair: Pair,
+        target_ratio: float,
+        current_coin_price: float,
+        other_coin_price: float,
+    ):
         self.pair = pair
         self.target_ratio = target_ratio
         self.current_coin_price = current_coin_price
@@ -35,11 +46,11 @@ class ScoutHistory(Base):
 
     def info(self):
         return {
-                "from_coin": self.pair.from_coin.info(),
-                "to_coin": self.pair.to_coin.info(),
-                "current_ratio": self.current_ratio,
-                "target_ratio": self.target_ratio,
-                "current_coin_price": self.current_coin_price,
-                "other_coin_price": self.other_coin_price,
-                "datetime": self.datetime.isoformat(),
-            }
+            "from_coin": self.pair.from_coin.info(),
+            "to_coin": self.pair.to_coin.info(),
+            "current_ratio": self.current_ratio,
+            "target_ratio": self.target_ratio,
+            "current_coin_price": self.current_coin_price,
+            "other_coin_price": self.other_coin_price,
+            "datetime": self.datetime.isoformat(),
+        }

@@ -13,7 +13,11 @@ from .utils import get_market_ticker_price_from_list
 
 class BinanceAPIManager:
     def __init__(self, config: Config, db: Database, logger: Logger):
-        self.BinanceClient = Client(config.BINANCE_API_KEY, config.BINANCE_API_SECRET_KEY, tld=config.BINANCE_TLD)
+        self.BinanceClient = Client(
+            config.BINANCE_API_KEY,
+            config.BINANCE_API_SECRET_KEY,
+            tld=config.BINANCE_TLD,
+        )
         self.db = db
         self.logger = logger
 
@@ -28,17 +32,17 @@ class BinanceAPIManager:
         Get ticker price of a specific coin
         """
         for ticker in self.BinanceClient.get_symbol_ticker():
-            if ticker[u"symbol"] == ticker_symbol:
-                return float(ticker[u"price"])
+            if ticker["symbol"] == ticker_symbol:
+                return float(ticker["price"])
         return None
 
     def get_currency_balance(self, currency_symbol: str):
         """
         Get balance of a specific coin
         """
-        for currency_balance in self.BinanceClient.get_account()[u"balances"]:
-            if currency_balance[u"asset"] == currency_symbol:
-                return float(currency_balance[u"free"])
+        for currency_balance in self.BinanceClient.get_account()["balances"]:
+            if currency_balance["asset"] == currency_symbol:
+                return float(currency_balance["free"])
         return None
 
     def retry(self, func, *args, **kwargs):
@@ -47,7 +51,7 @@ class BinanceAPIManager:
         while attempts < 20:
             try:
                 return func(*args, **kwargs)
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-except
                 self.logger.info("Failed to Buy/Sell. Trying Again.")
                 if attempts == 0:
                     self.logger.info(e)
@@ -56,36 +60,42 @@ class BinanceAPIManager:
 
     def get_alt_tick(self, origin_symbol: str, target_symbol: str):
         step_size = next(
-            _filter['stepSize'] for _filter in self.BinanceClient.get_symbol_info(origin_symbol + target_symbol)['filters']
-            if _filter['filterType'] == 'LOT_SIZE')
-        if step_size.find('1') == 0:
-            return 1 - step_size.find('.')
-        else:
-            return step_size.find('1') - 1
+            _filter["stepSize"]
+            for _filter in self.BinanceClient.get_symbol_info(origin_symbol + target_symbol)[
+                "filters"
+            ]
+            if _filter["filterType"] == "LOT_SIZE"
+        )
+        if step_size.find("1") == 0:
+            return 1 - step_size.find(".")
+        return step_size.find("1") - 1
 
     def wait_for_order(self, origin_symbol, target_symbol, order_id):
         while True:
             try:
-                order_status = self.BinanceClient.get_order(symbol=origin_symbol + target_symbol, orderId=order_id)
+                order_status = self.BinanceClient.get_order(
+                    symbol=origin_symbol + target_symbol, orderId=order_id
+                )
                 break
             except BinanceAPIException as e:
                 self.logger.info(e)
                 time.sleep(1)
-            except Exception as e:
-                self.logger.info("Unexpected Error: {0}".format(e))
+            except Exception as e:  # pylint: disable=broad-except
+                self.logger.info(f"Unexpected Error: {e}")
                 time.sleep(1)
 
         self.logger.info(order_status)
 
-        while order_status[u'status'] != 'FILLED':
+        while order_status["status"] != "FILLED":
             try:
                 order_status = self.BinanceClient.get_order(
-                    symbol=origin_symbol + target_symbol, orderId=order_id)
+                    symbol=origin_symbol + target_symbol, orderId=order_id
+                )
             except BinanceAPIException as e:
                 self.logger.info(e)
                 time.sleep(1)
-            except Exception as e:
-                self.logger.info("Unexpected Error: {0}".format(e))
+            except Exception as e:  # pylint: disable=broad-except
+                self.logger.info(f"Unexpected Error: {e}")
                 time.sleep(1)
 
         return order_status
@@ -105,14 +115,14 @@ class BinanceAPIManager:
 
         origin_balance = self.get_currency_balance(origin_symbol)
         target_balance = self.get_currency_balance(target_symbol)
-        from_coin_price = get_market_ticker_price_from_list(all_tickers, origin_symbol + target_symbol)
+        from_coin_price = get_market_ticker_price_from_list(
+            all_tickers, origin_symbol + target_symbol
+        )
 
-        order_quantity = math.floor(
-            target_balance
-            * 10 ** origin_tick
-            / from_coin_price
-        ) / float(10 ** origin_tick)
-        self.logger.info("BUY QTY {0}".format(order_quantity))
+        order_quantity = math.floor(target_balance * 10 ** origin_tick / from_coin_price) / float(
+            10 ** origin_tick
+        )
+        self.logger.info(f"BUY QTY {order_quantity}")
 
         # Try to buy until successful
         order = None
@@ -127,14 +137,14 @@ class BinanceAPIManager:
             except BinanceAPIException as e:
                 self.logger.info(e)
                 time.sleep(1)
-            except Exception as e:
-                self.logger.info("Unexpected Error: {0}".format(e))
+            except Exception as e:  # pylint: disable=broad-except
+                self.logger.info(f"Unexpected Error: {e}")
 
         trade_log.set_ordered(origin_balance, target_balance, order_quantity)
 
-        stat = self.wait_for_order(origin_symbol, target_symbol, order[u'orderId'])
+        stat = self.wait_for_order(origin_symbol, target_symbol, order["orderId"])
 
-        self.logger.info("Bought {0}".format(origin_symbol))
+        self.logger.info(f"Bought {origin_symbol}")
 
         trade_log.set_complete(stat["cummulativeQuoteQty"])
 
@@ -156,11 +166,11 @@ class BinanceAPIManager:
         order_quantity = math.floor(
             self.get_currency_balance(origin_symbol) * 10 ** origin_tick
         ) / float(10 ** origin_tick)
-        self.logger.info("Selling {0} of {1}".format(order_quantity, origin_symbol))
+        self.logger.info(f"Selling {order_quantity} of {origin_symbol}")
 
         origin_balance = self.get_currency_balance(origin_symbol)
         target_balance = self.get_currency_balance(target_symbol)
-        self.logger.info("Balance is {0}".format(origin_balance))
+        self.logger.info(f"Balance is {origin_balance}")
         order = None
         while order is None:
             order = self.BinanceClient.order_market_sell(
@@ -175,13 +185,13 @@ class BinanceAPIManager:
         # Binance server can take some time to save the order
         self.logger.info("Waiting for Binance")
 
-        stat = self.wait_for_order(origin_symbol, target_symbol, order[u'orderId'])
+        stat = self.wait_for_order(origin_symbol, target_symbol, order["orderId"])
 
         new_balance = self.get_currency_balance(origin_symbol)
         while new_balance >= origin_balance:
             new_balance = self.get_currency_balance(origin_symbol)
 
-        self.logger.info("Sold {0}".format(origin_symbol))
+        self.logger.info(f"Sold {origin_symbol}")
 
         trade_log.set_complete(stat["cummulativeQuoteQty"])
 

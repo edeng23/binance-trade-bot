@@ -3,8 +3,8 @@ def first(iterable, condition=lambda x: True):
 
 
 def get_market_ticker_price_from_list(all_tickers, ticker_symbol):
-    '''
+    """
     Get ticker price of a specific coin
-    '''
-    ticker = first(all_tickers, condition=lambda x: x[u'symbol'] == ticker_symbol)
-    return float(ticker[u'price']) if ticker else None
+    """
+    ticker = first(all_tickers, condition=lambda x: x["symbol"] == ticker_symbol)
+    return float(ticker["price"]) if ticker else None
