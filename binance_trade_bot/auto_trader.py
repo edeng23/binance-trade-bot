@@ -76,7 +76,7 @@ class AutoTrader:
             for coin in session.query(Coin).filter(Coin.enabled == True).all():
                 tick_size = self.db.get_alt_step(coin, self.config.BRIDGE)
                 if tick_size is None:
-                    self.db.set_alt_step(coin, self.config.BRIDGE, client.get_alt_tick(coin.symbol, self.config.BRIDGE.symbol))
+                    self.db.set_alt_step(coin, self.config.BRIDGE, self.manager.get_alt_tick(coin.symbol, self.config.BRIDGE.symbol))
 
     def scout_loop(self):
         '''
@@ -167,14 +167,14 @@ class AutoTrader:
                 current_coin, best_pair[0].to_coin_id))
             self.set_scout_executed(best_pair[1][1])
             self.transaction_through_bridge(
-                client, best_pair[0], all_tickers)
+                best_pair[0], all_tickers)
 
     def scout_bridge(self):
         '''
         Scout for potential jumps from the bridge coin to another coin
         '''
 
-        bridge_balance = self.manager.get_currency_balance(current_coin.symbol)
+        bridge_balance = self.manager.get_currency_balance(self.config.BRIDGE)
         all_tickers = self.manager.get_all_market_tickers()
         # current_coin_price = get_market_ticker_price_from_list(all_tickers, current_coin + BRIDGE)
 
@@ -235,7 +235,7 @@ class AutoTrader:
                     current_coin, best_coin[0]))
     #            set_scout_executed(best_pair[1][1])
                 transaction_to_coin(
-                    client, best_coin[0], all_tickers)
+                    best_coin[0], all_tickers)
 
     def update_values(self):
         '''

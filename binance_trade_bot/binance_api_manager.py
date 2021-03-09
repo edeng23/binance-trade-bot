@@ -153,7 +153,7 @@ class BinanceAPIManager:
 
         origin_tick = self.get_alt_tick(origin_symbol, target_symbol)
 
-        from_coin_price = self.get_market_ticker_price_from_list(all_tickers, origin_symbol + target_symbol)
+        from_coin_price = get_market_ticker_price_from_list(all_tickers, origin_symbol + target_symbol)
 
         order_quantity = math.floor(
             self.get_currency_balance(origin_symbol) * 10 ** origin_tick
