@@ -75,8 +75,6 @@ class AutoTrader:
                 possible_bridge_amount = (current_coin_balance * current_coin_price) - ((current_coin_balance * current_coin_price) * self.config.SCOUT_TRANSACTION_FEE * self.config.SCOUT_MULTIPLIER)
                 possible_to_amount = (possible_bridge_amount / to_coin_price) - ((possible_bridge_amount / to_coin_price) * self.config.SCOUT_TRANSACTION_FEE * self.config.SCOUT_MULTIPLIER)
 
-                print('{0} >>> possible bridge: {1} >>> minimum alt: {2}'.format(pair, possible_bridge_amount, possible_to_amount))
-
                 trade_log = self.db.start_trade_log(pair.to_coin, self.config.BRIDGE, True)
                 trade_log.set_initialized(current_coin_balance, possible_bridge_amount)
 
