@@ -5,10 +5,26 @@ import {CoinContract} from "./CoinContract";
 import Coin from "./Coin";
 
 
-const BackendRoute = 'http://localhost:5123'
+export const BackendRoute = 'http://localhost:5123'
 
 const MyCoinList = () => {
     const [coins, setCoins] = useState<Array<CoinContract>>([]);
+
+    const enableCoin = () => {
+        return (symbol: string, enable: boolean) => {
+            axios.get(`${BackendRoute}/api/coins/${symbol}?enable=${enable ? 'True' : 'False'}`)
+                .then(() => {
+                        const coinDup = [...coins]
+                        const coinIndex = coinDup.findIndex(coin => coin.symbol === symbol);
+                        const coin: CoinContract = coinDup.splice(coinIndex, 1)[0];
+                        coin.enabled = enable;
+                        coinDup.splice(coinIndex, 0, coin);
+                        setCoins(coinDup);
+
+                    }
+                )
+        }
+    }
 
     useEffect(() => {
         axios
@@ -21,7 +37,7 @@ const MyCoinList = () => {
     return (
         <MyCoinsListWrapper>
             {coins.map(coin =>
-                <Coin key={coin.symbol} coin={coin}/>
+                <Coin key={coin.symbol} coin={coin} enableCoin={enableCoin()}/>
             )}
         </MyCoinsListWrapper>
     );

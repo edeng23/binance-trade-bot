@@ -5,10 +5,13 @@ import {ThemeVariables} from "../ThemeVariables";
 import {CoinContract} from "./CoinContract";
 import img from 'cryptocurrency-icons/32/icon/eth.png';
 import {Radio} from 'semantic-ui-react';
+import {BackendRoute} from "./MyCoinList";
+import axios from "axios";
 
 
 type Props = {
     coin: CoinContract;
+    enableCoin: Function;
 };
 
 function getCoinImage(coinName: String) {
@@ -19,11 +22,11 @@ function getCoinImage(coinName: String) {
     }
 }
 
-function enableCoin(){
+function enableCoin(symbol: string, isEnabled: boolean) {
 
 }
 
-const Coin: React.FC<Props> = ({coin}: Props) => {
+const Coin: React.FC<Props> = ({coin,enableCoin}: Props) => {
 
     return (
         <Card>
@@ -31,7 +34,8 @@ const Coin: React.FC<Props> = ({coin}: Props) => {
                 <img alt="icon" src={getCoinImage(coin.symbol)} height={32} width={32}/>
                 <CoinName>{coin.symbol}</CoinName>
             </SymbolWrapper>
-            <RadioColored toggle checked={coin.enabled}/>
+            <RadioColored toggle checked={coin.enabled}
+                          onChange={() => enableCoin(coin.symbol, !coin.enabled)}/>
         </Card>
     );
 }
@@ -60,7 +64,7 @@ const CoinName = styled.h3`
   margin-left: 0.5em;
 `;
 
-const SymbolWrapper =styled.div`
+const SymbolWrapper = styled.div`
   display: flex;
   align-items: center;
 `;
