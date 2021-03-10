@@ -199,7 +199,7 @@ class AutoTrader:
         Scout for potential jumps from the bridge coin to another coin
         '''
 
-        bridge_balance = self.manager.get_currency_balance(self.config.BRIDGE)
+        bridge_balance = self.manager.get_currency_balance(self.config.BRIDGE+'')
         all_tickers = self.manager.get_all_market_tickers()
         # current_coin_price = get_market_ticker_price_from_list(all_tickers, current_coin + BRIDGE)
 
@@ -212,12 +212,12 @@ class AutoTrader:
         # Display on the console, the current coin+Bridge,
         # so users can see *some* activity and not thinking the bot has stopped.
         self.logger.log("Scouting. Current coin: {0}: {1}"
-                    .format(current_coin, possible_bridge_amount), "info", False)
+                    .format(self.config.BRIDGE, possible_bridge_amount), "info", False)
 
         ratio_dict: Dict[Coin, float, ScoutHistory] = {}
 
         session: Session
-        with db_session() as session:
+        with self.db.db_session() as session:
             # For all the enabled coins, update the coin tickSize
             for coin in session.query(Coin).filter(Coin.enabled == True).all():
                 optional_coin_price = get_market_ticker_price_from_list(all_tickers, coin + self.config.BRIDGE)
@@ -227,7 +227,7 @@ class AutoTrader:
                     continue
 
                 # Skipping... if possible target amount is lower than expected target amount.
-                possible_target_amount = (possible_bridge_amount / optional_coin_price) - ((possible_bridge_amount / optional_coin_price) * transaction_fee * multiplier)
+                possible_target_amount = (possible_bridge_amount / optional_coin_price) - ((possible_bridge_amount / optional_coin_price) * self.config.SCOUT_TRANSACTION_FEE * self.config.SCOUT_MULTIPLIER)
 
                 skip_ratio = False
                 previous_sell_trade = self.db.get_previous_sell_trade(coin)
@@ -256,10 +256,10 @@ class AutoTrader:
             # if we have any viable options, pick the one with the biggest expected target amount
             if ratio_dict:
                 best_coin = max(ratio_dict.items(), key=lambda x : x[1][0])
-                logger.info('Will be jumping from {0} to {1}'.format(
-                    current_coin, best_coin[0]))
+                self.logger.info('Will be jumping from {0} to {1}'.format(
+                    self.config.BRIDGE, best_coin[0]))
     #            set_scout_executed(best_pair[1][1])
-                transaction_to_coin(
+                self.transaction_to_coin(
                     best_coin[0], all_tickers)
 
     def update_values(self):
