@@ -1,6 +1,6 @@
 import math
 import time
-from typing import Dict
+from typing import Dict, List
 
 from binance.client import Client
 from binance.exceptions import BinanceAPIException
@@ -10,7 +10,15 @@ from .config import Config
 from .database import Database
 from .logger import Logger
 from .models import Coin
-from .utils import get_market_ticker_price_from_list
+
+
+class AllTickers:  # pylint: disable=too-few-public-methods
+    def __init__(self, all_tickers: List[Dict]):
+        self.all_tickers = all_tickers
+
+    def get_price(self, ticker_symbol):
+        ticker = next((t for t in self.all_tickers if t["symbol"] == ticker_symbol), None)
+        return float(ticker["price"]) if ticker else None
 
 
 class BinanceAPIManager:
@@ -54,11 +62,11 @@ class BinanceAPIManager:
             return base_fee * 0.75
         return base_fee
 
-    def get_all_market_tickers(self):
+    def get_all_market_tickers(self) -> AllTickers:
         """
         Get ticker price of all coins
         """
-        return self.binance_client.get_all_tickers()
+        return AllTickers(self.binance_client.get_all_tickers())
 
     def get_market_ticker_price(self, ticker_symbol: str):
         """
@@ -135,16 +143,14 @@ class BinanceAPIManager:
 
         return order_status
 
-    def buy_alt(self, origin_coin: Coin, target_coin: Coin, all_tickers):
+    def buy_alt(self, origin_coin: Coin, target_coin: Coin, all_tickers: AllTickers):
         return self.retry(self._buy_alt, origin_coin, target_coin, all_tickers)
 
     def _buy_quantity(
         self, origin_symbol: str, target_symbol: str, target_balance: float = None, from_coin_price: float = None
     ):
         target_balance = target_balance or self.get_currency_balance(target_symbol)
-        from_coin_price = from_coin_price or get_market_ticker_price_from_list(
-            self.get_all_market_tickers(), origin_symbol + target_symbol
-        )
+        from_coin_price = from_coin_price or self.get_all_market_tickers().get_price(origin_symbol + target_symbol)
 
         origin_tick = self.get_alt_tick(origin_symbol, target_symbol)
         return math.floor(target_balance * 10 ** origin_tick / from_coin_price) / float(10 ** origin_tick)
@@ -159,7 +165,7 @@ class BinanceAPIManager:
 
         origin_balance = self.get_currency_balance(origin_symbol)
         target_balance = self.get_currency_balance(target_symbol)
-        from_coin_price = get_market_ticker_price_from_list(all_tickers, origin_symbol + target_symbol)
+        from_coin_price = all_tickers.get_price(origin_symbol + target_symbol)
 
         order_quantity = self._buy_quantity(origin_symbol, target_symbol, target_balance, from_coin_price)
         self.logger.info(f"BUY QTY {order_quantity}")

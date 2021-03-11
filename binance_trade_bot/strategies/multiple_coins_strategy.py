@@ -1,5 +1,4 @@
 from binance_trade_bot.auto_trader import AutoTrader
-from binance_trade_bot.utils import get_market_ticker_price_from_list
 
 
 class Strategy(AutoTrader):
@@ -11,7 +10,7 @@ class Strategy(AutoTrader):
 
         for coin in self.db.get_coins():
             current_coin_balance = self.manager.get_currency_balance(coin.symbol)
-            coin_price = get_market_ticker_price_from_list(all_tickers, coin + self.config.BRIDGE)
+            coin_price = all_tickers.get_price(coin + self.config.BRIDGE)
 
             if coin_price is None:
                 self.logger.info("Skipping scouting... current coin {} not found".format(coin + self.config.BRIDGE))
