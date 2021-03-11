@@ -21,14 +21,11 @@ class ScoutHistory(Base):
 
     datetime = Column(DateTime)
 
-    executed = Column(Boolean)
-
-    def __init__(self, pair: Pair, current_coin_price: float, other_coin_price: float, executed=False):
+    def __init__(self, pair: Pair, current_coin_price: float, other_coin_price: float):
         self.pair = pair
         self.current_coin_price = current_coin_price
         self.other_coin_price = other_coin_price
         self.datetime = datetime.utcnow()
-        self.executed = executed
 
     def info(self):
         return {
