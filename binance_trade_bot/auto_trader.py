@@ -188,22 +188,19 @@ class AutoTrader:
 
                 if not skip_ratio:
                 # save ratio so we can pick the best option, not necessarily the first
-                    ls = self.db.log_scout(pair, current_coin_price, optional_coin_price)
-                    ratio_dict[pair] = []
-                    ratio_dict[pair].append(delta_percentage)
-                    ratio_dict[pair].append(ls)
+                    self.db.log_scout(pair, current_coin_price, optional_coin_price)
+                    ratio_dict[pair] = delta_percentage
 
         # keep only ratios bigger than zero
-        ratio_dict = {k: v for k, v in ratio_dict.items() if v[0] > 0}
+        ratio_dict = {k: v for k, v in ratio_dict.items() if v > 0}
 
         # if we have any viable options, pick the one with the biggest ratio
         if ratio_dict:
-            best_pair = max(ratio_dict.items(), key=lambda x : x[1][0])
+            best_pair = max(ratio_dict, key=ratio_dict.get)
             self.logger.info('Will be jumping from {0} to {1}'.format(
-                current_coin, best_pair[0].to_coin_id))
-            self.set_scout_executed(best_pair[1][1])
+                current_coin, best_pair.to_coin_id))
             self.transaction_through_bridge(
-                best_pair[0], all_tickers)
+                best_pair, all_tickers)
 
     def scout_bridge(self):
         '''
@@ -259,19 +256,18 @@ class AutoTrader:
                     if not skip_ratio:
                         # save ratio so we can pick the best option, not necessarily the first
     #                    ls = log_scout(pair, current_coin_price, optional_coin_price)
-                        ratio_dict[coin] = []
-                        ratio_dict[coin].append(delta_percentage)
-#                        ratio_dict[coin].append(ls)
+                        ratio_dict[coin] = delta_percentage
 
+            # keep only ratios bigger than zero
+            ratio_dict = {k: v for k, v in ratio_dict.items() if v > 0}
 
             # if we have any viable options, pick the one with the biggest expected target amount
             if ratio_dict:
-                best_coin = max(ratio_dict.items(), key=lambda x : x[1][0])
+                best_coin = max(ratio_dict, key=ratio_dict.get)
                 self.logger.info('Will be jumping from {0} to {1}'.format(
-                    self.config.BRIDGE, best_coin[0]))
-    #            set_scout_executed(best_pair[1][1])
+                    self.config.BRIDGE, best_coin))
                 self.transaction_to_coin(
-                    best_coin[0], all_tickers)
+                    best_coin, all_tickers)
 
     def update_values(self):
         '''

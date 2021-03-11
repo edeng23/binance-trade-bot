@@ -145,13 +145,6 @@ class Database:
             self.send_update(sh)
             return sh
 
-    def set_scout_executed(self, scout_history):
-        session: Session
-        with self.db_session() as session:
-            scout_history.executed = True
-            session.merge(scout_history)
-            self.send_update(sh)
-
     def get_previous_sell_trade(self, target_coin):
         session: Session
         with self.db_session() as session:
