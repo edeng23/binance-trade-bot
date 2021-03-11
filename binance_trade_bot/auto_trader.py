@@ -47,39 +47,44 @@ class AutoTrader:
 
         current_coin = self.db.get_current_coin()
         current_coin_balance = self.manager.get_currency_balance(current_coin.symbol)
-        current_coin_price = get_market_ticker_price_from_list(all_tickers, current_coin + self.config.BRIDGE)
 
-        previous_sell_trade = self.db.get_previous_sell_trade(current_coin)
-        if previous_sell_trade is None:
-            possible_bridge_amount = (current_coin_balance * current_coin_price) - ((current_coin_balance * current_coin_price) * self.config.SCOUT_TRANSACTION_FEE * self.config.SCOUT_MULTIPLIER)
-            trade_log = self.db.start_trade_log(current_coin, self.config.BRIDGE, True)
-            trade_log.set_initialized(current_coin_balance, possible_bridge_amount)
+        if (current_coin.symbol == self.config.BRIDGE.symbol):
+            exit('***\nERROR!\nCannot initialize the bot holding bridge coin. Code to be developped.\n***')
 
-        for pair in self.db.get_pairs_from(current_coin):
-            if not pair.to_coin.enabled:
-                continue
+        else:
+            current_coin_price = get_market_ticker_price_from_list(all_tickers, current_coin + self.config.BRIDGE)
 
-            previous_sell_trade = self.db.get_previous_sell_trade(pair.to_coin)
+            previous_sell_trade = self.db.get_previous_sell_trade(current_coin)
             if previous_sell_trade is None:
-                print("Initializing {0} vs {1}".format(current_coin, pair.to_coin))
+                possible_bridge_amount = (current_coin_balance * current_coin_price) - ((current_coin_balance * current_coin_price) * self.config.SCOUT_TRANSACTION_FEE * self.config.SCOUT_MULTIPLIER)
+                trade_log = self.db.start_trade_log(current_coin, self.config.BRIDGE, True)
+                trade_log.set_initialized(current_coin_balance, possible_bridge_amount)
 
-                from_coin_price = get_market_ticker_price_from_list(all_tickers, pair.from_coin + self.config.BRIDGE)
-                if from_coin_price is None:
-                    self.logger.info("Skipping initializing {0}, symbol not found".format(pair.from_coin + self.config.BRIDGE))
-                    continue
-
-                to_coin_price = get_market_ticker_price_from_list(all_tickers, pair.to_coin + self.config.BRIDGE)
-                if to_coin_price is None:
-                    self.logger.info("Skipping initializing {0}, symbol not found".format(pair.to_coin + self.config.BRIDGE))
+            for pair in self.db.get_pairs_from(current_coin):
+                if not pair.to_coin.enabled:
                     continue
 
                 previous_sell_trade = self.db.get_previous_sell_trade(pair.to_coin)
                 if previous_sell_trade is None:
-                    possible_bridge_amount = (current_coin_balance * current_coin_price) - ((current_coin_balance * current_coin_price) * self.config.SCOUT_TRANSACTION_FEE * self.config.SCOUT_MULTIPLIER)
-                    possible_to_amount = (possible_bridge_amount / to_coin_price) - ((possible_bridge_amount / to_coin_price) * self.config.SCOUT_TRANSACTION_FEE * self.config.SCOUT_MULTIPLIER)
+                    print("Initializing {0} vs {1}".format(current_coin, pair.to_coin))
 
-                    trade_log = self.db.start_trade_log(pair.to_coin, self.config.BRIDGE, True)
-                    trade_log.set_initialized(current_coin_balance, possible_bridge_amount)
+                    from_coin_price = get_market_ticker_price_from_list(all_tickers, pair.from_coin + self.config.BRIDGE)
+                    if from_coin_price is None:
+                        self.logger.info("Skipping initializing {0}, symbol not found".format(pair.from_coin + self.config.BRIDGE))
+                        continue
+
+                    to_coin_price = get_market_ticker_price_from_list(all_tickers, pair.to_coin + self.config.BRIDGE)
+                    if to_coin_price is None:
+                        self.logger.info("Skipping initializing {0}, symbol not found".format(pair.to_coin + self.config.BRIDGE))
+                        continue
+
+                    previous_sell_trade = self.db.get_previous_sell_trade(pair.to_coin)
+                    if previous_sell_trade is None:
+                        possible_bridge_amount = (current_coin_balance * current_coin_price) - ((current_coin_balance * current_coin_price) * self.config.SCOUT_TRANSACTION_FEE * self.config.SCOUT_MULTIPLIER)
+                        possible_to_amount = (possible_bridge_amount / to_coin_price) - ((possible_bridge_amount / to_coin_price) * self.config.SCOUT_TRANSACTION_FEE * self.config.SCOUT_MULTIPLIER)
+
+                        trade_log = self.db.start_trade_log(pair.to_coin, self.config.BRIDGE, True)
+                        trade_log.set_initialized(current_coin_balance, possible_bridge_amount)
 
     def initialize_current_coin(self):
         '''
