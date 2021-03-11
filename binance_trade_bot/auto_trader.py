@@ -99,6 +99,9 @@ class AutoTrader:
 
         current_coin_balance = self.manager.get_currency_balance(current_coin_symbol)
         if not current_coin_balance:
+            '''
+            TODO: check if current_coin_balance > minimum step size for this coin 
+            '''
             exit("***\nERROR!\nBinance account not holding any balance for current coin set in user.cfg\n***")
 
 
