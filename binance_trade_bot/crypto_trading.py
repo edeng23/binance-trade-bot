@@ -23,7 +23,6 @@ def main():
 
     db.set_coins(config.SUPPORTED_COIN_LIST)
     db.migrate_old_state()
-    db.set_bridge(config.BRIDGE)
 
     trader.initialize_step_sizes()
     trader.initialize_current_coin()
