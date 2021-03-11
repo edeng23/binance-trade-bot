@@ -290,7 +290,9 @@ class TradeLog:
         with self.db.db_session() as session:
             trade: Trade = session.merge(self.trade)
             trade.alt_starting_balance = alt_starting_balance
+            trade.alt_trade_amount = alt_starting_balance
             trade.crypto_starting_balance = crypto_starting_balance
+            trade.crypto_trade_amount = crypto_starting_balance
             trade.state = TradeState.INITIALIZED
             self.db.send_update(trade)
 

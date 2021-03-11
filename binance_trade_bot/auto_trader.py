@@ -84,7 +84,7 @@ class AutoTrader:
                         possible_to_amount = (possible_bridge_amount / to_coin_price) - ((possible_bridge_amount / to_coin_price) * self.config.SCOUT_TRANSACTION_FEE * self.config.SCOUT_MULTIPLIER)
 
                         trade_log = self.db.start_trade_log(pair.to_coin, self.config.BRIDGE, True)
-                        trade_log.set_initialized(current_coin_balance, possible_bridge_amount)
+                        trade_log.set_initialized(current_coin_balance, possible_to_amount)
 
     def initialize_current_coin(self):
         '''
