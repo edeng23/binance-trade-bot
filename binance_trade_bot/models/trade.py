@@ -43,6 +43,9 @@ class Trade(Base):
         self.selling = selling
         self.datetime = datetime.utcnow()
 
+    def __repr__(self):
+        return f"<{self.alt_coin}->{self.crypto_coin}, {self.state}>"
+
     def info(self):
         return {"id": self.id,
                 "alt_coin": self.alt_coin.info(),
