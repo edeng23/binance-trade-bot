@@ -2,7 +2,9 @@ import time
 from datetime import datetime, timedelta
 from multiprocessing import Process, Value
 from random import randint
+from typing import Dict
 
+import requests.exceptions
 from binance.exceptions import BinanceAPIException
 from diskcache import Cache
 
@@ -25,20 +27,30 @@ class FakeAllTickers(AllTickers):  # pylint: disable=too-few-public-methods
 
 
 class MockBinanceManager(BinanceAPIManager):
-    def __init__(self, config: Config, db: Database, logger: Logger):
+    def __init__(
+        self,
+        config: Config,
+        db: Database,
+        logger: Logger,
+        start_date: datetime = None,
+        start_balances: Dict[str, float] = None,
+    ):
         super().__init__(config, db, logger)
         self.config = config
-        self.datetime = datetime(2021, 1, 1)
-        self.balances = {config.BRIDGE.symbol: 100}
+        self.datetime = start_date or datetime(2021, 1, 1)
+        self.balances = start_balances or {config.BRIDGE.symbol: 100}
 
-    def increment(self):
-        self.datetime += timedelta(minutes=1)
+    def increment(self, interval=1):
+        self.datetime += timedelta(minutes=interval)
 
     def get_all_market_tickers(self):
         """
         Get ticker price of all coins
         """
         return FakeAllTickers(self)
+
+    def get_fee(self, origin_coin: Coin, target_coin: Coin, selling: bool):
+        return 0.0075
 
     def get_market_ticker_price(self, ticker_symbol: str):
         """
@@ -48,8 +60,15 @@ class MockBinanceManager(BinanceAPIManager):
         key = f"{ticker_symbol}_{dt}"
         val = cache.get(key, None)
         if val is None:
-            val = float(self.binance_client.get_historical_klines(ticker_symbol, "1m", dt, dt)[0][1])
-            cache.set(key, val)
+            try:
+                val = float(self.binance_client.get_historical_klines(ticker_symbol, "1m", dt, dt)[0][1])
+                cache.set(key, val)
+            except requests.exceptions.ConnectionError:
+                time.sleep(randint(5, 10))
+                return self.get_market_ticker_price(ticker_symbol)
+            except IndexError:
+                return None
+
         return val
 
     def get_currency_balance(self, currency_symbol: str):
@@ -89,36 +108,67 @@ class MockBinanceManager(BinanceAPIManager):
         return {"price": from_coin_price}
 
 
-def backtest():
-    config = Config()
+def backtest(
+    start_date: datetime = None,
+    end_date: datetime = None,
+    interval=1,
+    start_balances: Dict[str, float] = None,
+    starting_coin: str = None,
+    config: Config = None,
+) -> Dict[str, float]:
+    """
+
+    :param config: Configuration object to use
+    :param start_date: Date to  backtest from
+    :param end_date: Date to backtest up to
+    :param interval: Number of virtual minutes between each scout
+    :param start_balances: A dictionary of initial coin values. Default: {BRIDGE: 100}
+    :param starting_coin: The coin to start on. Default: first coin in coin list
+
+    :return: The final coin balances
+    """
+    config = config or Config()
     logger = Logger()
+
+    end_date = end_date or datetime.today()
 
     db = Database(logger, config, "sqlite://")
     db.create_database()
     db.set_coins(config.SUPPORTED_COIN_LIST)
 
-    manager = MockBinanceManager(config, db, logger)
+    manager = MockBinanceManager(config, db, logger, start_date, start_balances)
 
-    starting_coin = db.get_coin(config.SUPPORTED_COIN_LIST[0])
-    manager.buy_alt(starting_coin, config.BRIDGE, manager.get_all_market_tickers())
+    starting_coin = db.get_coin(starting_coin or config.SUPPORTED_COIN_LIST[0])
+    if manager.get_currency_balance(starting_coin.symbol) == 0:
+        manager.buy_alt(starting_coin, config.BRIDGE, manager.get_all_market_tickers())
     db.set_current_coin(starting_coin)
 
     trader = AutoTrader(manager, db, logger, config)
     trader.initialize_trade_thresholds()
 
-    while True:
-        print(manager.datetime)
-        trader.scout()
-        manager.increment()
+    try:
+        while manager.datetime < end_date:
+            print(manager.datetime)
+            trader.scout()
+            manager.increment(interval)
+    except KeyboardInterrupt:
+        pass
+    return manager.balances
 
 
-def download_market_data():
+def download_market_data(start_date: datetime = None, end_date: datetime = None, interval=1):
+    """
+    :param start_date: Date to  backtest from
+    :param end_date: Date to backtest up to
+    :param interval: Number of virtual minutes between each scout
+    """
+
     def _thread(symbol, counter: Value):
-        manager = MockBinanceManager(config, None, None)
-        while True:
+        manager = MockBinanceManager(config, None, None, start_date)
+        while manager.datetime < end_date:
             try:
                 manager.get_market_ticker_price(symbol)
-                manager.increment()
+                manager.increment(interval)
                 counter.value += 1
             except BinanceAPIException:
                 time.sleep(randint(10, 30))
