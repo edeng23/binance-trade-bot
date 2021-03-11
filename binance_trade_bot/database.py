@@ -127,10 +127,18 @@ class Database:
             if trade is None:
                 return self.get_coin(self.config.CURRENT_COIN_SYMBOL)
             coin = None
+
+            if trade.state == TradeState.ORDERED:
+                exit("***\nERROR!\nTrade ordered on Binance, but not confirmed in bot database. Code for this configuration is being developed.\n***")
+
             if trade.state == TradeState.COMPLETE:
-                coin = trade.alt_coin
-            else:
-                coin = trade.crypto_coin
+                if trade.selling == 1:
+                    '''
+                    The bot sold alt coin and we are currently holding bridge
+                    '''
+                    coin = trade.crypto_coin
+                else:
+                    coin = trade.alt_coin
             session.expunge(coin)
             return coin
 
