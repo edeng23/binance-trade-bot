@@ -4,6 +4,7 @@ from typing import Dict
 
 from binance.client import Client
 from binance.exceptions import BinanceAPIException
+from cachetools import cached, TTLCache
 
 from .config import Config
 from .database import Database
@@ -22,6 +23,7 @@ class BinanceAPIManager:
         self.db = db
         self.logger = logger
 
+    @cached(cache=TTLCache(maxsize=1, ttl=43200))
     def get_trade_fees(self) -> Dict[str, float]:
         return {ticker["symbol"]: ticker["taker"] for ticker in self.binance_client.get_trade_fee()["tradeFee"]}
 
@@ -62,6 +64,7 @@ class BinanceAPIManager:
                 attempts += 1
         return None
 
+    @cached(cache=TTLCache(maxsize=2000, ttl=43200))
     def get_alt_tick(self, origin_symbol: str, target_symbol: str):
         step_size = next(
             _filter["stepSize"]

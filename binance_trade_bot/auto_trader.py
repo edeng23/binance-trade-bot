@@ -19,7 +19,6 @@ class AutoTrader:
         self.db = database
         self.logger = logger
         self.config = config
-        self.trade_fees = self.manager.get_trade_fees()
 
     def transaction_through_bridge(self, pair: Pair, all_tickers):
         """
@@ -153,10 +152,8 @@ class AutoTrader:
             # Obtain (current coin)/(optional coin)
             coin_opt_coin_ratio = current_coin_price / optional_coin_price
 
-            transaction_fee = (
-                self.trade_fees[pair.from_coin + self.config.BRIDGE]
-                + self.trade_fees[pair.to_coin + self.config.BRIDGE]
-            )
+            transaction_fee = self.manager.get_trade_fees()[pair.from_coin + self.config.BRIDGE] + \
+                              self.manager.get_trade_fees()[pair.to_coin + self.config.BRIDGE]
 
             # save ratio so we can pick the best option, not necessarily the first
             ratio_dict[pair] = (
