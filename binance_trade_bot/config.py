@@ -64,5 +64,3 @@ class Config:  # pylint: disable=too-few-public-methods
                         continue
                     supported_coin_list.append(line)
         self.SUPPORTED_COIN_LIST = supported_coin_list
-
-        self.CURRENT_COIN_SYMBOL = os.environ.get("CURRENT_COIN_SYMBOL") or config.get(USER_CFG_SECTION, "current_coin")

@@ -3,7 +3,7 @@ import os
 import time
 from contextlib import contextmanager
 from datetime import datetime, timedelta
-from typing import List, Optional, Union
+from typing import List, Union
 
 from socketio import Client
 from socketio.exceptions import ConnectionError as SocketIOConnectionError
@@ -76,32 +76,22 @@ class Database:
                         if pair is None:
                             session.add(Pair(from_coin, to_coin))
 
+    def get_coins(self, only_enabled=True) -> List[Coin]:
+        session: Session
+        with self.db_session() as session:
+            if only_enabled:
+                coins = session.query(Coin).filter(Coin.enabled).all()
+            else:
+                coins = session.query(Coin).all()
+            session.expunge_all()
+            return coins
+
     def get_coin(self, coin: Union[Coin, str]) -> Coin:
         if isinstance(coin, Coin):
             return coin
         session: Session
         with self.db_session() as session:
             coin = session.query(Coin).get(coin)
-            session.expunge(coin)
-            return coin
-
-    def set_current_coin(self, coin: Union[Coin, str]):
-        coin = self.get_coin(coin)
-        session: Session
-        with self.db_session() as session:
-            if isinstance(coin, Coin):
-                coin = session.merge(coin)
-            cc = CurrentCoin(coin)
-            session.add(cc)
-            self.send_update(cc)
-
-    def get_current_coin(self) -> Optional[Coin]:
-        session: Session
-        with self.db_session() as session:
-            current_coin = session.query(CurrentCoin).order_by(CurrentCoin.datetime.desc()).first()
-            if current_coin is None:
-                return None
-            coin = current_coin.coin
             session.expunge(coin)
             return coin
 
@@ -121,13 +111,7 @@ class Database:
             pairs: List[Pair] = session.query(Pair).filter(Pair.from_coin == from_coin)
             return pairs
 
-    def log_scout(
-        self,
-        pair: Pair,
-        target_ratio: float,
-        current_coin_price: float,
-        other_coin_price: float,
-    ):
+    def log_scout(self, pair: Pair, target_ratio: float, current_coin_price: float, other_coin_price: float):
         session: Session
         with self.db_session() as session:
             pair = session.merge(pair)
@@ -158,16 +142,14 @@ class Database:
             for entry in daily_entries:
                 entry.interval = Interval.DAILY
 
-            # Sets the first entry for each coin for each month as 'weekly'
-            # (Sunday is the start of the week)
+            # Sets the first entry for each coin for each month as 'weekly' (Sunday is the start of the week)
             weekly_entries: List[CoinValue] = (
                 session.query(CoinValue).group_by(CoinValue.coin_id, func.strftime("%Y-%W", CoinValue.datetime)).all()
             )
             for entry in weekly_entries:
                 entry.interval = Interval.WEEKLY
 
-            # The last 24 hours worth of minutely entries will be kept, so
-            # count(coins) * 1440 entries
+            # The last 24 hours worth of minutely entries will be kept, so count(coins) * 1440 entries
             time_diff = datetime.now() - timedelta(hours=24)
             session.query(CoinValue).filter(
                 CoinValue.interval == Interval.MINUTELY, CoinValue.datetime < time_diff
@@ -197,28 +179,15 @@ class Database:
         if not self.socketio_connect():
             return
 
-        self.socketio_client.emit(
-            "update",
-            {"table": model.__tablename__, "data": model.info()},
-            namespace="/backend",
-        )
+        self.socketio_client.emit("update", {"table": model.__tablename__, "data": model.info()}, namespace="/backend")
 
     def migrate_old_state(self):
         """
-        For migrating from old dotfile format to SQL db. This method should be removed in
-        the future.
+        For migrating from old dotfile format to SQL db. This method should be removed in the future.
         """
-        if os.path.isfile(".current_coin"):
-            with open(".current_coin") as f:
-                coin = f.read().strip()
-                self.logger.info(f".current_coin file found, loading current coin {coin}")
-                self.set_current_coin(coin)
-            os.rename(".current_coin", ".current_coin.old")
-            self.logger.info(f".current_coin renamed to .current_coin.old - You can now delete this file")
-
         if os.path.isfile(".current_coin_table"):
             with open(".current_coin_table") as f:
-                self.logger.info(f".current_coin_table file found, loading into database")
+                self.logger.info(".current_coin_table file found, loading into database")
                 table: dict = json.load(f)
                 session: Session
                 with self.db_session() as session:
@@ -231,7 +200,7 @@ class Database:
                             session.add(pair)
 
             os.rename(".current_coin_table", ".current_coin_table.old")
-            self.logger.info(".current_coin_table renamed to .current_coin_table.old - " "You can now delete this file")
+            self.logger.info(".current_coin_table renamed to .current_coin_table.old - You can now delete this file")
 
 
 class TradeLog:

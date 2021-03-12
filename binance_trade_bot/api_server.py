@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from .config import Config
 from .database import Database
 from .logger import Logger
-from .models import Coin, CoinValue, CurrentCoin, Pair, ScoutHistory, Trade
+from .models import Coin, CoinValue, Pair, ScoutHistory, Trade
 
 app = Flask(__name__)
 cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
@@ -92,16 +92,9 @@ def trade_history():
 
 @app.route("/api/scouting_history")
 def scouting_history():
-    _current_coin = db.get_current_coin()
-    coin = _current_coin.symbol if _current_coin is not None else None
     session: Session
     with db.db_session() as session:
-        query = (
-            session.query(ScoutHistory)
-            .join(ScoutHistory.pair)
-            .filter(Pair.from_coin_id == coin)
-            .order_by(ScoutHistory.datetime.asc())
-        )
+        query = session.query(ScoutHistory).join(ScoutHistory.pair).order_by(ScoutHistory.datetime.asc())
 
         query = filter_period(query, ScoutHistory)
 
@@ -109,31 +102,12 @@ def scouting_history():
         return jsonify([scout.info() for scout in scouts])
 
 
-@app.route("/api/current_coin")
-def current_coin():
-    coin = db.get_current_coin()
-    return coin.info() if coin else None
-
-
-@app.route("/api/current_coin_history")
-def current_coin_history():
-    session: Session
-    with db.db_session() as session:
-        query = session.query(CurrentCoin)
-
-        query = filter_period(query, CurrentCoin)
-
-        current_coins: List[CurrentCoin] = query.all()
-        return jsonify([cc.info() for cc in current_coins])
-
-
 @app.route("/api/coins")
 def coins():
     session: Session
     with db.db_session() as session:
-        _current_coin = session.merge(db.get_current_coin())
         _coins: List[Coin] = session.query(Coin).all()
-        return jsonify([{**coin.info(), "is_current": coin == _current_coin} for coin in _coins])
+        return jsonify([coin.info() for coin in _coins])
 
 
 @app.route("/api/pairs")
