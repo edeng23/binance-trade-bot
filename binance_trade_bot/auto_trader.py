@@ -152,8 +152,9 @@ class AutoTrader:
             # Obtain (current coin)/(optional coin)
             coin_opt_coin_ratio = current_coin_price / optional_coin_price
 
-            transaction_fee = self.manager.get_trade_fees()[pair.from_coin + self.config.BRIDGE] + \
-                              self.manager.get_trade_fees()[pair.to_coin + self.config.BRIDGE]
+            transaction_fee = self.manager.get_fee(pair.from_coin, self.config.BRIDGE, True) + self.manager.get_fee(
+                pair.to_coin, self.config.BRIDGE, False
+            )
 
             # save ratio so we can pick the best option, not necessarily the first
             ratio_dict[pair] = (
