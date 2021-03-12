@@ -14,7 +14,6 @@ class Config:  # pylint: disable=too-few-public-methods
         config = configparser.ConfigParser()
         config["DEFAULT"] = {
             "bridge": "USDT",
-            "scout_transaction_fee": "0.001",
             "scout_multiplier": "5",
             "scout_sleep_time": "5",
             "hourToKeepScoutHistory": "1",
@@ -36,9 +35,6 @@ class Config:  # pylint: disable=too-few-public-methods
         )
 
         # Get config for scout
-        self.SCOUT_TRANSACTION_FEE = float(
-            os.environ.get("SCOUT_TRANSACTION_FEE") or config.get(USER_CFG_SECTION, "scout_transaction_fee")
-        )
         self.SCOUT_MULTIPLIER = float(
             os.environ.get("SCOUT_MULTIPLIER") or config.get(USER_CFG_SECTION, "scout_multiplier")
         )

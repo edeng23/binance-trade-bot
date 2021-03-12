@@ -1,5 +1,6 @@
 import math
 import time
+from typing import Dict
 
 from binance.client import Client
 from binance.exceptions import BinanceAPIException
@@ -20,6 +21,9 @@ class BinanceAPIManager:
         )
         self.db = db
         self.logger = logger
+
+    def get_trade_fees(self) -> Dict[str, float]:
+        return {ticker["symbol"]: ticker["taker"] for ticker in self.binance_client.get_trade_fee()["tradeFee"]}
 
     def get_all_market_tickers(self):
         """
