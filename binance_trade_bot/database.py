@@ -76,6 +76,19 @@ class Database:
                         if pair is None:
                             session.add(Pair(from_coin, to_coin))
 
+    def get_alt_step(self, alt: Coin, crypto: Coin) -> float:
+        session: Session
+        with self.db_session() as session:
+            pair = session.query(Pair).filter(Pair.from_coin == alt, Pair.to_coin == crypto).first()
+            session.expunge(pair)
+            return pair.step_size
+
+    def set_alt_step(self, alt: Coin, crypto: Coin, step_size: float):
+        session: Session
+        with self.db_session() as session:
+            pair = session.query(Pair).filter(Pair.from_coin == alt, Pair.to_coin == crypto).first()
+            pair.step_size = step_size
+
     def get_coin(self, coin: Union[Coin, str]) -> Coin:
         if type(coin) == Coin:
             return coin
@@ -85,23 +98,25 @@ class Database:
             session.expunge(coin)
             return coin
 
-    def set_current_coin(self, coin: Union[Coin, str]):
-        coin = self.get_coin(coin)
-        session: Session
-        with self.db_session() as session:
-            if type(coin) == Coin:
-                coin = session.merge(coin)
-            cc = CurrentCoin(coin)
-            session.add(cc)
-            self.send_update(cc)
-
     def get_current_coin(self) -> Optional[Coin]:
         session: Session
         with self.db_session() as session:
-            current_coin = session.query(CurrentCoin).order_by(CurrentCoin.datetime.desc()).first()
-            if current_coin is None:
-                return None
-            coin = current_coin.coin
+            trade = session.query(Trade).filter(Trade.state != TradeState.INITIALIZED).order_by(Trade.datetime.desc()).first()
+            if trade is None:
+                return self.get_coin(self.config.CURRENT_COIN_SYMBOL)
+            coin = None
+
+            if trade.state == TradeState.ORDERED:
+                exit("***\nERROR!\nTrade ordered on Binance, but not confirmed in bot database. Code for this configuration is being developed.\n***")
+
+            if trade.state == TradeState.COMPLETE:
+                if trade.selling == 1:
+                    '''
+                    The bot sold alt coin and we are currently holding bridge
+                    '''
+                    coin = trade.crypto_coin
+                else:
+                    coin = trade.alt_coin
             session.expunge(coin)
             return coin
 
@@ -121,13 +136,28 @@ class Database:
             pairs: List[Pair] = session.query(Pair).filter(Pair.from_coin == from_coin)
             return pairs
 
-    def log_scout(self, pair: Pair, target_ratio: float, current_coin_price: float, other_coin_price: float):
+    def log_scout(self, pair: Pair, current_coin_price: float, other_coin_price: float) -> ScoutHistory:
         session: Session
         with self.db_session() as session:
             pair = session.merge(pair)
-            sh = ScoutHistory(pair, target_ratio, current_coin_price, other_coin_price)
+            sh = ScoutHistory(pair, current_coin_price, other_coin_price)
             session.add(sh)
             self.send_update(sh)
+            return sh
+
+    def get_previous_sell_trade(self, target_coin):
+        session: Session
+        with self.db_session() as session:
+            previous_sell_trade = session.query(Trade) \
+                .filter(Trade.alt_coin_id == target_coin.symbol,
+                        Trade.selling == 1,
+                        (Trade.state == TradeState.COMPLETE) | (Trade.state == TradeState.INITIALIZED)) \
+                .order_by(Trade.datetime.desc()) \
+                .first()
+            if previous_sell_trade is None:
+                return None
+            session.expunge(previous_sell_trade)
+            return previous_sell_trade
 
     def prune_scout_history(self):
         time_diff = datetime.now() - timedelta(hours=self.config.SCOUT_HISTORY_PRUNE_TIME)
@@ -196,7 +226,6 @@ class Database:
             with open('.current_coin', 'r') as f:
                 coin = f.read().strip()
                 self.logger.info(f".current_coin file found, loading current coin {coin}")
-                self.set_current_coin(coin)
             os.rename('.current_coin', '.current_coin.old')
             self.logger.info(f".current_coin renamed to .current_coin.old - You can now delete this file")
 
@@ -247,6 +276,17 @@ class TradeLog:
             trade: Trade = session.merge(self.trade)
             trade.crypto_trade_amount = crypto_trade_amount
             trade.state = TradeState.COMPLETE
+            self.db.send_update(trade)
+
+    def set_initialized(self, alt_starting_balance, crypto_starting_balance):
+        session: Session
+        with self.db.db_session() as session:
+            trade: Trade = session.merge(self.trade)
+            trade.alt_starting_balance = alt_starting_balance
+            trade.alt_trade_amount = alt_starting_balance
+            trade.crypto_starting_balance = crypto_starting_balance
+            trade.crypto_trade_amount = crypto_starting_balance
+            trade.state = TradeState.INITIALIZED
             self.db.send_update(trade)
 
 
