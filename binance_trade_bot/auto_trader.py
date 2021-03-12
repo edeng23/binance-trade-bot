@@ -25,11 +25,14 @@ class AutoTrader:
         """
         if self.manager.sell_alt(pair.from_coin, self.config.BRIDGE) is None:
             self.logger.info("Couldn't sell, going back to scouting mode...")
-            return None
+            return False
 
         result = self.manager.buy_alt(pair.to_coin, self.config.BRIDGE, all_tickers)
         if result is not None:
-            self.update_trade_threshold(pair.to_coin, float(result[u'price']), all_tickers)
+            self.update_trade_threshold(pair.to_coin, float(result["price"]), all_tickers)
+            return True
+        self.logger.info("Couldn't buy, going back to scouting mode...")
+        return False
 
     def update_trade_threshold(self, current_coin: Coin, current_coin_price: float, all_tickers):
         """
@@ -144,8 +147,10 @@ class AutoTrader:
                 self.transaction_through_bridge(best_pair, all_tickers)
 
         if not tradeable_coin_exists:
-            self.logger.info("No tradeable coins exist: You do not have enough of any enabled coins to make a trade."
-                             "Attempting to buy some now")
+            self.logger.info(
+                "No tradeable coins exist: You do not have enough of any enabled coins to make a trade."
+                "Attempting to buy some now"
+            )
             self.buy_random_coin()
 
     def buy_random_coin(self):
