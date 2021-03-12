@@ -8,3 +8,4 @@ flask-cors==3.0.10
 flask-socketio==5.0.1
 eventlet==0.30.2
 python-socketio[client]==5.0.4
+cachetools==4.2.1
