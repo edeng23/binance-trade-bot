@@ -1,4 +1,5 @@
 from datetime import datetime
+from random import shuffle
 from typing import Dict, List
 
 from sqlalchemy.orm import Session
@@ -25,13 +26,10 @@ class AutoTrader:
         if self.manager.sell_alt(pair.from_coin, self.config.BRIDGE) is None:
             self.logger.info("Couldn't sell, going back to scouting mode...")
             return None
-        # This isn't pretty, but at the moment we don't have implemented logic to escape from a bridge coin...
-        # This'll do for now
-        result = None
-        while result is None:
-            result = self.manager.buy_alt(pair.to_coin, self.config.BRIDGE, all_tickers)
 
-        self.update_trade_threshold(pair.to_coin, float(result["price"]), all_tickers)
+        result = self.manager.buy_alt(pair.to_coin, self.config.BRIDGE, all_tickers)
+        if result is not None:
+            self.update_trade_threshold(pair.to_coin, float(result[u'price']), all_tickers)
 
     def update_trade_threshold(self, current_coin: Coin, current_coin_price: float, all_tickers):
         """
@@ -89,6 +87,7 @@ class AutoTrader:
         Scout for potential jumps from the current coin to another coin
         """
         all_tickers = self.manager.get_all_market_tickers()
+        tradeable_coin_exists = False
 
         for current_coin in self.db.get_coins():
             current_coin_balance = self.manager.get_currency_balance(current_coin.symbol)
@@ -106,6 +105,7 @@ class AutoTrader:
                 # See https://www.binance.com/en/trade-rule - 10 is the minimum order size for most bridge coins
                 continue
 
+            tradeable_coin_exists = True
             # Display on the console, the current coin+Bridge, so users can see *some* activity and not think the bot
             # has stopped. Not logging though to reduce log size.
             self.logger.info(f"Scouting for best trades. Current ticker: {current_coin + self.config.BRIDGE} ")
@@ -142,6 +142,23 @@ class AutoTrader:
                 best_pair = max(ratio_dict, key=ratio_dict.get)
                 self.logger.info(f"Will be jumping from {current_coin} to {best_pair.to_coin_id}")
                 self.transaction_through_bridge(best_pair, all_tickers)
+
+        if not tradeable_coin_exists:
+            self.logger.info("No tradeable coins exist: You do not have enough of any enabled coins to make a trade."
+                             "Attempting to buy some now")
+            self.buy_random_coin()
+
+    def buy_random_coin(self):
+        bridge_balance = self.manager.get_currency_balance(self.config.BRIDGE.symbol)
+        coins = self.db.get_coins()
+        shuffle(coins)
+
+        for coin in coins:
+            if bridge_balance > self.manager.get_min_notional(coin.symbol, self.config.BRIDGE.symbol):
+                self.manager.buy_alt(coin, self.config.BRIDGE.symbol)
+                return True
+        self.logger.info(f"Not enough {self.config.BRIDGE.symbol} ({bridge_balance}) to buy another coin")
+        return False
 
     def update_values(self):
         """
