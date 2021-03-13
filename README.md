@@ -102,6 +102,16 @@ if you only want to start the sqlitebrowser
 docker-compose up -d sqlitebrowser
 ```
 
+## Developing
+
+To make sure your code is properly formatted before making a pull request,
+remember to install [pre-commit](https://pre-commit.com/):
+
+```shell
+pip install pre-commit
+pre-commit install
+```
+
 ## Support the Project
 
 <a href="https://www.buymeacoffee.com/edeng" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="41" width="174"></a>
