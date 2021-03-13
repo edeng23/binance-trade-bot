@@ -2,8 +2,7 @@ import datetime
 import logging
 from traceback import format_exc
 
-from schedule import Job
-from schedule import Scheduler
+from schedule import Job, Scheduler
 
 
 class SafeScheduler(Scheduler):

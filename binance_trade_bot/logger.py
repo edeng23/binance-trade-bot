@@ -1,22 +1,20 @@
-import logging
 import logging.handlers
 
 from .notifications import NotificationHandler
+
 
 class Logger:
 
     Logger = None
     NotificationHandler = None
 
-    def __init__(self, loggingService = "crypto_trading"):
+    def __init__(self, logging_service="crypto_trading"):
         # Logger setup
-        self.Logger = logging.getLogger(f"{loggingService}_logger")
+        self.Logger = logging.getLogger(f"{logging_service}_logger")
         self.Logger.setLevel(logging.DEBUG)
-        formatter = logging.Formatter(
-            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-        )
+        formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
         # default is "logs/crypto_trading.log"
-        fh = logging.FileHandler(f"logs/{loggingService}.log")
+        fh = logging.FileHandler(f"logs/{logging_service}.log")
         fh.setLevel(logging.DEBUG)
         fh.setFormatter(formatter)
         self.Logger.addHandler(fh)
@@ -32,13 +30,13 @@ class Logger:
 
     def log(self, message, level="info", notification=True):
 
-        if "info" == level:
+        if level == "info":
             self.Logger.info(message)
-        elif "warning" == level:
+        elif level == "warning":
             self.Logger.warning(message)
-        elif "error" == level:
+        elif level == "error":
             self.Logger.error(message)
-        elif "debug" == level:
+        elif level == "debug":
             self.Logger.debug(message)
 
         if notification and self.NotificationHandler.enabled:

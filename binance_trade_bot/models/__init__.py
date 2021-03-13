@@ -1,9 +1,7 @@
 from .base import Base
 from .coin import Coin
-from .coin_value import CoinValue
-from .coin_value import Interval
+from .coin_value import CoinValue, Interval
 from .current_coin import CurrentCoin
 from .pair import Pair
 from .scout_history import ScoutHistory
-from .trade import Trade
-from .trade import TradeState
+from .trade import Trade, TradeState

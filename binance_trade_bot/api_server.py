@@ -1,28 +1,18 @@
 import re
-from datetime import datetime
-from datetime import timedelta
+from datetime import datetime, timedelta
 from itertools import groupby
-from typing import List
-from typing import Tuple
+from typing import List, Tuple
 
-from flask import Flask
-from flask import jsonify
-from flask import request
+from flask import Flask, jsonify, request
 from flask_cors import CORS
-from flask_socketio import emit
-from flask_socketio import SocketIO
+from flask_socketio import SocketIO, emit
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from .config import Config
 from .database import Database
 from .logger import Logger
-from .models import Coin
-from .models import CoinValue
-from .models import CurrentCoin
-from .models import Pair
-from .models import ScoutHistory
-from .models import Trade
+from .models import Coin, CoinValue, CurrentCoin, Pair, ScoutHistory, Trade
 
 app = Flask(__name__)
 cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
@@ -69,9 +59,7 @@ def value_history(coin: str = None):
             return jsonify([entry.info() for entry in values])
 
         coin_values = groupby(query.all(), key=lambda cv: cv.coin)
-        return jsonify(
-            {coin.symbol: [entry.info() for entry in history] for coin, history in coin_values}
-        )
+        return jsonify({coin.symbol: [entry.info() for entry in history] for coin, history in coin_values})
 
 
 @app.route("/api/total_value_history")
