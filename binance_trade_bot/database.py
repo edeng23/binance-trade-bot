@@ -2,19 +2,13 @@ import json
 import os
 import time
 from contextlib import contextmanager
-from datetime import datetime
-from datetime import timedelta
-from typing import List
-from typing import Optional
-from typing import Union
+from datetime import datetime, timedelta
+from typing import List, Optional, Union
 
 from socketio import Client
 from socketio.exceptions import ConnectionError as SocketIOConnectionError
-from sqlalchemy import create_engine
-from sqlalchemy import func
-from sqlalchemy.orm import scoped_session
-from sqlalchemy.orm import Session
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine, func
+from sqlalchemy.orm import Session, scoped_session, sessionmaker
 
 from .config import Config
 from .logger import Logger
@@ -78,11 +72,7 @@ class Database:
             for from_coin in coins:
                 for to_coin in coins:
                     if from_coin != to_coin:
-                        pair = (
-                            session.query(Pair)
-                            .filter(Pair.from_coin == from_coin, Pair.to_coin == to_coin)
-                            .first()
-                        )
+                        pair = session.query(Pair).filter(Pair.from_coin == from_coin, Pair.to_coin == to_coin).first()
                         if pair is None:
                             session.add(Pair(from_coin, to_coin))
 
@@ -120,11 +110,7 @@ class Database:
         to_coin = self.get_coin(to_coin)
         session: Session
         with self.db_session() as session:
-            pair: Pair = (
-                session.query(Pair)
-                .filter(Pair.from_coin == from_coin, Pair.to_coin == to_coin)
-                .first()
-            )
+            pair: Pair = session.query(Pair).filter(Pair.from_coin == from_coin, Pair.to_coin == to_coin).first()
             session.expunge(pair)
             return pair
 
@@ -160,18 +146,14 @@ class Database:
         with self.db_session() as session:
             # Sets the first entry for each coin for each hour as 'hourly'
             hourly_entries: List[CoinValue] = (
-                session.query(CoinValue)
-                .group_by(CoinValue.coin_id, func.strftime("%H", CoinValue.datetime))
-                .all()
+                session.query(CoinValue).group_by(CoinValue.coin_id, func.strftime("%H", CoinValue.datetime)).all()
             )
             for entry in hourly_entries:
                 entry.interval = Interval.HOURLY
 
             # Sets the first entry for each coin for each day as 'daily'
             daily_entries: List[CoinValue] = (
-                session.query(CoinValue)
-                .group_by(CoinValue.coin_id, func.date(CoinValue.datetime))
-                .all()
+                session.query(CoinValue).group_by(CoinValue.coin_id, func.date(CoinValue.datetime)).all()
             )
             for entry in daily_entries:
                 entry.interval = Interval.DAILY
@@ -179,9 +161,7 @@ class Database:
             # Sets the first entry for each coin for each month as 'weekly'
             # (Sunday is the start of the week)
             weekly_entries: List[CoinValue] = (
-                session.query(CoinValue)
-                .group_by(CoinValue.coin_id, func.strftime("%Y-%W", CoinValue.datetime))
-                .all()
+                session.query(CoinValue).group_by(CoinValue.coin_id, func.strftime("%Y-%W", CoinValue.datetime)).all()
             )
             for entry in weekly_entries:
                 entry.interval = Interval.WEEKLY
@@ -234,9 +214,7 @@ class Database:
                 self.logger.info(f".current_coin file found, loading current coin {coin}")
                 self.set_current_coin(coin)
             os.rename(".current_coin", ".current_coin.old")
-            self.logger.info(
-                f".current_coin renamed to .current_coin.old - You can now delete this file"
-            )
+            self.logger.info(f".current_coin renamed to .current_coin.old - You can now delete this file")
 
         if os.path.isfile(".current_coin_table"):
             with open(".current_coin_table") as f:
@@ -253,10 +231,7 @@ class Database:
                             session.add(pair)
 
             os.rename(".current_coin_table", ".current_coin_table.old")
-            self.logger.info(
-                ".current_coin_table renamed to .current_coin_table.old - "
-                "You can now delete this file"
-            )
+            self.logger.info(".current_coin_table renamed to .current_coin_table.old - " "You can now delete this file")
 
 
 class TradeLog:

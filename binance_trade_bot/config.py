@@ -27,21 +27,17 @@ class Config:  # pylint: disable=too-few-public-methods
         else:
             config.read(CFG_FL_NAME)
 
-        self.BRIDGE_SYMBOL = os.environ.get("BRIDGE_SYMBOL") or config.get(
-            USER_CFG_SECTION, "bridge"
-        )
+        self.BRIDGE_SYMBOL = os.environ.get("BRIDGE_SYMBOL") or config.get(USER_CFG_SECTION, "bridge")
         self.BRIDGE = Coin(self.BRIDGE_SYMBOL, False)
 
         # Prune settings
         self.SCOUT_HISTORY_PRUNE_TIME = float(
-            os.environ.get("HOURS_TO_KEEP_SCOUTING_HISTORY")
-            or config.get(USER_CFG_SECTION, "hourToKeepScoutHistory")
+            os.environ.get("HOURS_TO_KEEP_SCOUTING_HISTORY") or config.get(USER_CFG_SECTION, "hourToKeepScoutHistory")
         )
 
         # Get config for scout
         self.SCOUT_TRANSACTION_FEE = float(
-            os.environ.get("SCOUT_TRANSACTION_FEE")
-            or config.get(USER_CFG_SECTION, "scout_transaction_fee")
+            os.environ.get("SCOUT_TRANSACTION_FEE") or config.get(USER_CFG_SECTION, "scout_transaction_fee")
         )
         self.SCOUT_MULTIPLIER = float(
             os.environ.get("SCOUT_MULTIPLIER") or config.get(USER_CFG_SECTION, "scout_multiplier")
@@ -52,16 +48,12 @@ class Config:  # pylint: disable=too-few-public-methods
 
         # Get config for binance
         self.BINANCE_API_KEY = os.environ.get("API_KEY") or config.get(USER_CFG_SECTION, "api_key")
-        self.BINANCE_API_SECRET_KEY = os.environ.get("API_SECRET_KEY") or config.get(
-            USER_CFG_SECTION, "api_secret_key"
-        )
+        self.BINANCE_API_SECRET_KEY = os.environ.get("API_SECRET_KEY") or config.get(USER_CFG_SECTION, "api_secret_key")
         self.BINANCE_TLD = os.environ.get("TLD") or config.get(USER_CFG_SECTION, "tld")
 
         # Get supported coin list from the environment
         supported_coin_list = [
-            coin.strip()
-            for coin in os.environ.get("SUPPORTED_COIN_LIST", "").split()
-            if coin.strip()
+            coin.strip() for coin in os.environ.get("SUPPORTED_COIN_LIST", "").split() if coin.strip()
         ]
         # Get supported coin list from supported_coin_list file
         if not supported_coin_list and os.path.exists("supported_coin_list"):
@@ -73,6 +65,4 @@ class Config:  # pylint: disable=too-few-public-methods
                     supported_coin_list.append(line)
         self.SUPPORTED_COIN_LIST = supported_coin_list
 
-        self.CURRENT_COIN_SYMBOL = os.environ.get("CURRENT_COIN_SYMBOL") or config.get(
-            USER_CFG_SECTION, "current_coin"
-        )
+        self.CURRENT_COIN_SYMBOL = os.environ.get("CURRENT_COIN_SYMBOL") or config.get(USER_CFG_SECTION, "current_coin")

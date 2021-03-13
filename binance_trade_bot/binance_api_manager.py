@@ -13,7 +13,7 @@ from .utils import get_market_ticker_price_from_list
 
 class BinanceAPIManager:
     def __init__(self, config: Config, db: Database, logger: Logger):
-        self.BinanceClient = Client(
+        self.binance_client = Client(
             config.BINANCE_API_KEY,
             config.BINANCE_API_SECRET_KEY,
             tld=config.BINANCE_TLD,
@@ -25,13 +25,13 @@ class BinanceAPIManager:
         """
         Get ticker price of all coins
         """
-        return self.BinanceClient.get_all_tickers()
+        return self.binance_client.get_all_tickers()
 
     def get_market_ticker_price(self, ticker_symbol: str):
         """
         Get ticker price of a specific coin
         """
-        for ticker in self.BinanceClient.get_symbol_ticker():
+        for ticker in self.binance_client.get_symbol_ticker():
             if ticker["symbol"] == ticker_symbol:
                 return float(ticker["price"])
         return None
@@ -40,7 +40,7 @@ class BinanceAPIManager:
         """
         Get balance of a specific coin
         """
-        for currency_balance in self.BinanceClient.get_account()["balances"]:
+        for currency_balance in self.binance_client.get_account()["balances"]:
             if currency_balance["asset"] == currency_symbol:
                 return float(currency_balance["free"])
         return None
@@ -61,9 +61,7 @@ class BinanceAPIManager:
     def get_alt_tick(self, origin_symbol: str, target_symbol: str):
         step_size = next(
             _filter["stepSize"]
-            for _filter in self.BinanceClient.get_symbol_info(origin_symbol + target_symbol)[
-                "filters"
-            ]
+            for _filter in self.binance_client.get_symbol_info(origin_symbol + target_symbol)["filters"]
             if _filter["filterType"] == "LOT_SIZE"
         )
         if step_size.find("1") == 0:
@@ -73,9 +71,7 @@ class BinanceAPIManager:
     def wait_for_order(self, origin_symbol, target_symbol, order_id):
         while True:
             try:
-                order_status = self.BinanceClient.get_order(
-                    symbol=origin_symbol + target_symbol, orderId=order_id
-                )
+                order_status = self.binance_client.get_order(symbol=origin_symbol + target_symbol, orderId=order_id)
                 break
             except BinanceAPIException as e:
                 self.logger.info(e)
@@ -88,9 +84,7 @@ class BinanceAPIManager:
 
         while order_status["status"] != "FILLED":
             try:
-                order_status = self.BinanceClient.get_order(
-                    symbol=origin_symbol + target_symbol, orderId=order_id
-                )
+                order_status = self.binance_client.get_order(symbol=origin_symbol + target_symbol, orderId=order_id)
             except BinanceAPIException as e:
                 self.logger.info(e)
                 time.sleep(1)
@@ -115,20 +109,16 @@ class BinanceAPIManager:
 
         origin_balance = self.get_currency_balance(origin_symbol)
         target_balance = self.get_currency_balance(target_symbol)
-        from_coin_price = get_market_ticker_price_from_list(
-            all_tickers, origin_symbol + target_symbol
-        )
+        from_coin_price = get_market_ticker_price_from_list(all_tickers, origin_symbol + target_symbol)
 
-        order_quantity = math.floor(target_balance * 10 ** origin_tick / from_coin_price) / float(
-            10 ** origin_tick
-        )
+        order_quantity = math.floor(target_balance * 10 ** origin_tick / from_coin_price) / float(10 ** origin_tick)
         self.logger.info(f"BUY QTY {order_quantity}")
 
         # Try to buy until successful
         order = None
         while order is None:
             try:
-                order = self.BinanceClient.order_limit_buy(
+                order = self.binance_client.order_limit_buy(
                     symbol=origin_symbol + target_symbol,
                     quantity=order_quantity,
                     price=from_coin_price,
@@ -163,9 +153,9 @@ class BinanceAPIManager:
 
         origin_tick = self.get_alt_tick(origin_symbol, target_symbol)
 
-        order_quantity = math.floor(
-            self.get_currency_balance(origin_symbol) * 10 ** origin_tick
-        ) / float(10 ** origin_tick)
+        order_quantity = math.floor(self.get_currency_balance(origin_symbol) * 10 ** origin_tick) / float(
+            10 ** origin_tick
+        )
         self.logger.info(f"Selling {order_quantity} of {origin_symbol}")
 
         origin_balance = self.get_currency_balance(origin_symbol)
@@ -173,7 +163,7 @@ class BinanceAPIManager:
         self.logger.info(f"Balance is {origin_balance}")
         order = None
         while order is None:
-            order = self.BinanceClient.order_market_sell(
+            order = self.binance_client.order_market_sell(
                 symbol=origin_symbol + target_symbol, quantity=(order_quantity)
             )
 
