@@ -135,6 +135,18 @@ def coins():
         } for coin in coins])
 
 
+@app.route('/api/coins/<symbol>')
+def enable_coin(symbol):
+    session: Session
+    enabled = request.args.get("enable") == 'True'
+    print(enabled)
+    with db.db_session() as session:
+        coin: Coin = session.query(Coin).get(symbol)
+        coin.enabled = enabled
+        session.commit()
+    return jsonify("stolen")
+
+
 @app.route('/api/pairs')
 def pairs():
     session: Session
