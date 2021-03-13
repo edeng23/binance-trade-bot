@@ -54,19 +54,19 @@ class BinanceAPIManager:
                 attempts += 1
         return None
 
-    def get_alt_tick(self, origin_symbol: str, target_symbol: str):
+    def get_alt_tick(self, alt_symbol: str, crypto_symbol: str):
         step_size = next(
-            _filter['stepSize'] for _filter in self.BinanceClient.get_symbol_info(origin_symbol + target_symbol)['filters']
+            _filter['stepSize'] for _filter in self.BinanceClient.get_symbol_info(alt_symbol + crypto_symbol)['filters']
             if _filter['filterType'] == 'LOT_SIZE')
         if step_size.find('1') == 0:
             return 1 - step_size.find('.')
         else:
             return step_size.find('1') - 1
 
-    def wait_for_order(self, origin_symbol, target_symbol, order_id):
+    def wait_for_order(self, alt_symbol, crypto_symbol, order_id):
         while True:
             try:
-                order_status = self.BinanceClient.get_order(symbol=origin_symbol + target_symbol, orderId=order_id)
+                order_status = self.BinanceClient.get_order(symbol=alt_symbol + crypto_symbol, orderId=order_id)
                 break
             except BinanceAPIException as e:
                 self.logger.info(e)
@@ -80,7 +80,7 @@ class BinanceAPIManager:
         while order_status[u'status'] != 'FILLED':
             try:
                 order_status = self.BinanceClient.get_order(
-                    symbol=origin_symbol + target_symbol, orderId=order_id)
+                    symbol=alt_symbol + crypto_symbol, orderId=order_id)
             except BinanceAPIException as e:
                 self.logger.info(e)
                 time.sleep(1)
@@ -90,27 +90,27 @@ class BinanceAPIManager:
 
         return order_status
 
-    def buy_alt(self, origin_coin: Coin, target_coin: Coin, all_tickers):
-        return self.retry(self._buy_alt, origin_coin, target_coin, all_tickers)
+    def buy_alt(self, alt_coin: Coin, crypto_coin: Coin, all_tickers):
+        return self.retry(self._buy_alt, alt_coin, crypto_coin, all_tickers)
 
-    def _buy_alt(self, origin_coin: Coin, target_coin: Coin, all_tickers):
+    def _buy_alt(self, alt_coin: Coin, crypto_coin: Coin, all_tickers):
         """
         Buy altcoin
         """
-        trade_log = self.db.start_trade_log(origin_coin, target_coin, False)
-        origin_symbol = origin_coin.symbol
-        target_symbol = target_coin.symbol
+        trade_log = self.db.start_trade_log(alt_coin, crypto_coin, False)
+        alt_symbol = alt_coin.symbol
+        crypto_symbol = crypto_coin.symbol
 
-        origin_tick = self.get_alt_tick(origin_symbol, target_symbol)
+        origin_tick = self.get_alt_tick(alt_symbol, crypto_symbol)
 
-        origin_balance = self.get_currency_balance(origin_symbol)
-        target_balance = self.get_currency_balance(target_symbol)
-        from_coin_price = get_market_ticker_price_from_list(all_tickers, origin_symbol + target_symbol)
+        origin_balance = self.get_currency_balance(alt_symbol)
+        target_balance = self.get_currency_balance(crypto_symbol)
+        ticker_price = get_market_ticker_price_from_list(all_tickers, alt_symbol + crypto_symbol)
 
         order_quantity = math.floor(
             target_balance
             * 10 ** origin_tick
-            / from_coin_price
+            / ticker_price
         ) / float(10 ** origin_tick)
         self.logger.info("BUY QTY {0}".format(order_quantity))
 
@@ -119,9 +119,9 @@ class BinanceAPIManager:
         while order is None:
             try:
                 order = self.BinanceClient.order_limit_buy(
-                    symbol=origin_symbol + target_symbol,
+                    symbol=alt_symbol + crypto_symbol,
                     quantity=order_quantity,
-                    price=from_coin_price,
+                    price=ticker_price,
                 )
                 self.logger.info(order)
             except BinanceAPIException as e:
@@ -132,39 +132,39 @@ class BinanceAPIManager:
 
         trade_log.set_ordered(origin_balance, target_balance, order_quantity)
 
-        stat = self.wait_for_order(origin_symbol, target_symbol, order[u'orderId'])
+        stat = self.wait_for_order(alt_symbol, crypto_symbol, order[u'orderId'])
 
-        self.logger.info("Bought {0}".format(origin_symbol))
+        self.logger.info("Bought {0}".format(alt_symbol))
 
         trade_log.set_complete(stat["cummulativeQuoteQty"])
 
         return order
 
-    def sell_alt(self, origin_coin: Coin, target_coin: Coin):
-        return self.retry(self._sell_alt, origin_coin, target_coin)
+    def sell_alt(self, alt_coin: Coin, crypto_coin: Coin):
+        return self.retry(self._sell_alt, alt_coin, crypto_coin)
 
-    def _sell_alt(self, origin_coin: Coin, target_coin: Coin):
+    def _sell_alt(self, alt_coin: Coin, crypto_coin: Coin):
         """
         Sell altcoin
         """
-        trade_log = self.db.start_trade_log(origin_coin, target_coin, True)
-        origin_symbol = origin_coin.symbol
-        target_symbol = target_coin.symbol
+        trade_log = self.db.start_trade_log(alt_coin, crypto_coin, True)
+        alt_symbol = alt_coin.symbol
+        crypto_symbol = crypto_coin.symbol
 
-        origin_tick = self.get_alt_tick(origin_symbol, target_symbol)
+        origin_tick = self.get_alt_tick(alt_symbol, crypto_symbol)
 
         order_quantity = math.floor(
-            self.get_currency_balance(origin_symbol) * 10 ** origin_tick
+            self.get_currency_balance(alt_symbol) * 10 ** origin_tick
         ) / float(10 ** origin_tick)
-        self.logger.info("Selling {0} of {1}".format(order_quantity, origin_symbol))
+        self.logger.info("Selling {0} of {1}".format(order_quantity, alt_symbol))
 
-        origin_balance = self.get_currency_balance(origin_symbol)
-        target_balance = self.get_currency_balance(target_symbol)
+        origin_balance = self.get_currency_balance(alt_symbol)
+        target_balance = self.get_currency_balance(crypto_symbol)
         self.logger.info("Balance is {0}".format(origin_balance))
         order = None
         while order is None:
             order = self.BinanceClient.order_market_sell(
-                symbol=origin_symbol + target_symbol, quantity=(order_quantity)
+                symbol=alt_symbol + crypto_symbol, quantity=(order_quantity)
             )
 
         self.logger.info("order")
@@ -175,13 +175,13 @@ class BinanceAPIManager:
         # Binance server can take some time to save the order
         self.logger.info("Waiting for Binance")
 
-        stat = self.wait_for_order(origin_symbol, target_symbol, order[u'orderId'])
+        stat = self.wait_for_order(alt_symbol, crypto_symbol, order[u'orderId'])
 
-        new_balance = self.get_currency_balance(origin_symbol)
+        new_balance = self.get_currency_balance(alt_symbol)
         while new_balance >= origin_balance:
-            new_balance = self.get_currency_balance(origin_symbol)
+            new_balance = self.get_currency_balance(alt_symbol)
 
-        self.logger.info("Sold {0}".format(origin_symbol))
+        self.logger.info("Sold {0}".format(alt_symbol))
 
         trade_log.set_complete(stat["cummulativeQuoteQty"])
 
