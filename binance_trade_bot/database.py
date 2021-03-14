@@ -104,11 +104,25 @@ class Database:
             session.expunge(pair)
             return pair
 
-    def get_pairs_from(self, from_coin: Union[Coin, str]):
+    def get_pairs_from(self, from_coin: Union[Coin, str], only_enabled=True) -> List[Pair]:
         from_coin = self.get_coin(from_coin)
         session: Session
         with self.db_session() as session:
-            pairs: List[Pair] = session.query(Pair).filter(Pair.from_coin == from_coin)
+            pairs = session.query(Pair).filter(Pair.from_coin == from_coin)
+            if only_enabled:
+                pairs = pairs.filter(Pair.enabled.is_(True))
+            pairs = pairs.all()
+            session.expunge_all()
+            return pairs
+
+    def get_pairs(self, only_enabled=True) -> List[Pair]:
+        session: Session
+        with self.db_session() as session:
+            pairs = session.query(Pair)
+            if only_enabled:
+                pairs = pairs.filter(Pair.enabled.is_(True))
+            pairs = pairs.all()
+            session.expunge_all()
             return pairs
 
     def log_scout(self, pair: Pair, target_ratio: float, current_coin_price: float, other_coin_price: float):

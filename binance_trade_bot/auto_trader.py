@@ -1,5 +1,4 @@
 from datetime import datetime
-from random import shuffle
 from typing import Dict, List
 
 from sqlalchemy.orm import Session
@@ -90,52 +89,26 @@ class AutoTrader:
         Scout for potential jumps from the current coin to another coin
         """
         all_tickers = self.manager.get_all_market_tickers()
-        tradeable_coin_exists = False
 
-        for current_coin in self.db.get_coins():
-            current_coin_balance = self.manager.get_currency_balance(current_coin.symbol)
-            current_coin_price = get_market_ticker_price_from_list(all_tickers, current_coin + self.config.BRIDGE)
+        for coin in self.db.get_coins():
+            current_coin_balance = self.manager.get_currency_balance(coin.symbol)
+            coin_price = get_market_ticker_price_from_list(all_tickers, coin + self.config.BRIDGE)
 
-            if current_coin_price is None:
-                self.logger.info(
-                    "Skipping scouting... current coin {} not found".format(current_coin + self.config.BRIDGE)
-                )
+            if coin_price is None:
+                self.logger.info("Skipping scouting... current coin {} not found".format(coin + self.config.BRIDGE))
                 return
 
-            if current_coin_price * current_coin_balance < self.manager.get_min_notional(
-                current_coin.symbol, self.config.BRIDGE.symbol
+            if coin_price * current_coin_balance < self.manager.get_min_notional(
+                coin.symbol, self.config.BRIDGE.symbol
             ):
-                # See https://www.binance.com/en/trade-rule - 10 is the minimum order size for most bridge coins
                 continue
 
-            tradeable_coin_exists = True
             # Display on the console, the current coin+Bridge, so users can see *some* activity and not think the bot
             # has stopped. Not logging though to reduce log size.
-            self.logger.info(f"Scouting for best trades. Current ticker: {current_coin + self.config.BRIDGE} ")
+            self.logger.info(f"Scouting for best trades. Current ticker: {coin + self.config.BRIDGE} ")
 
-            ratio_dict: Dict[Pair, float] = {}
-
-            for pair in self.db.get_pairs_from(current_coin):
-                if not pair.to_coin.enabled:
-                    continue
-                optional_coin_price = get_market_ticker_price_from_list(all_tickers, pair.to_coin + self.config.BRIDGE)
-
-                if optional_coin_price is None:
-                    self.logger.info(
-                        "Skipping scouting... optional coin {} not found".format(pair.to_coin + self.config.BRIDGE)
-                    )
-                    continue
-
-                self.db.log_scout(pair, pair.ratio, current_coin_price, optional_coin_price)
-
-                # Obtain (current coin)/(optional coin)
-                coin_opt_coin_ratio = current_coin_price / optional_coin_price
-
-                # save ratio so we can pick the best option, not necessarily the first
-                ratio_dict[pair] = (
-                    coin_opt_coin_ratio
-                    - self.config.SCOUT_TRANSACTION_FEE * self.config.SCOUT_MULTIPLIER * coin_opt_coin_ratio
-                ) - pair.ratio
+            # save ratio so we can pick the best option, not necessarily the first
+            ratio_dict = self._get_ratios(coin, coin_price, all_tickers)
 
             # keep only ratios bigger than zero
             ratio_dict = {k: v for k, v in ratio_dict.items() if v > 0}
@@ -143,27 +116,51 @@ class AutoTrader:
             # if we have any viable options, pick the one with the biggest ratio
             if ratio_dict:
                 best_pair = max(ratio_dict, key=ratio_dict.get)
-                self.logger.info(f"Will be jumping from {current_coin} to {best_pair.to_coin_id}")
+                self.logger.info(f"Will be jumping from {coin} to {best_pair.to_coin_id}")
                 self.transaction_through_bridge(best_pair, all_tickers)
 
-        if not tradeable_coin_exists:
-            self.logger.info(
-                "No tradeable coins exist: You do not have enough of any enabled coins to make a trade."
-                "Attempting to buy some now"
-            )
-            self.buy_random_coin()
+        self.bridge_scout()
 
-    def buy_random_coin(self):
+    def _get_ratios(self, coin: Coin, coin_price, all_tickers):
+        ratio_dict: Dict[Pair, float] = {}
+
+        for pair in self.db.get_pairs_from(coin):
+            optional_coin_price = get_market_ticker_price_from_list(all_tickers, pair.to_coin + self.config.BRIDGE)
+
+            if optional_coin_price is None:
+                self.logger.info(
+                    "Skipping scouting... optional coin {} not found".format(pair.to_coin + self.config.BRIDGE)
+                )
+                continue
+
+            self.db.log_scout(pair, pair.ratio, coin_price, optional_coin_price)
+
+            # Obtain (current coin)/(optional coin)
+            coin_opt_coin_ratio = coin_price / optional_coin_price
+
+            ratio_dict[pair] = (
+                coin_opt_coin_ratio
+                - self.config.SCOUT_TRANSACTION_FEE * self.config.SCOUT_MULTIPLIER * coin_opt_coin_ratio
+            ) - pair.ratio
+        return ratio_dict
+
+    def bridge_scout(self):
         bridge_balance = self.manager.get_currency_balance(self.config.BRIDGE.symbol)
-        coins = self.db.get_coins()
-        shuffle(coins)
+        all_tickers = self.manager.get_all_market_tickers()
 
-        for coin in coins:
-            if bridge_balance > self.manager.get_min_notional(coin.symbol, self.config.BRIDGE.symbol):
-                self.manager.buy_alt(coin, self.config.BRIDGE.symbol)
-                return True
-        self.logger.info(f"Not enough {self.config.BRIDGE.symbol} ({bridge_balance}) to buy another coin")
-        return False
+        for coin in self.db.get_coins():
+            current_coin_price = get_market_ticker_price_from_list(all_tickers, coin + self.config.BRIDGE)
+
+            if current_coin_price is None:
+                return
+
+            ratio_dict = self._get_ratios(coin, current_coin_price, all_tickers)
+            if not any(v > 0 for v in ratio_dict.values()):
+                # There will only be one coin where all the ratios are negative. When we find it, buy it if we can
+                if bridge_balance > self.manager.get_min_notional(coin.symbol, self.config.BRIDGE.symbol):
+                    self.logger.info(f"Will be purchasing {coin} using bridge coin")
+                    self.manager.buy_alt(coin, self.config.BRIDGE, all_tickers)
+                return
 
     def update_values(self):
         """
