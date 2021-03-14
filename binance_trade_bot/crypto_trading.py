@@ -16,7 +16,6 @@ def main():
     config = Config()
     db = Database(logger, config)
     manager = BinanceAPIManager(config, db, logger)
-
     trader = AutoTrader(manager, db, logger, config)
 
     logger.info("Creating database schema if it doesn't already exist")
