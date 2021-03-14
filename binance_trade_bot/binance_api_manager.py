@@ -21,7 +21,7 @@ class BinanceAPIManager:
         )
         self.db = db
         self.logger = logger
-        self.cache = []
+        self.ticker_prices = []
         self.bm = BinanceSocketManager(self.binance_client)
         self.bm.start_all_mark_price_socket(self._process_all_mark_price_socket)
         self.bm.start()
@@ -30,17 +30,23 @@ class BinanceAPIManager:
         if msg["data"]:
             data = msg["data"]
             for ticker in data:
-                existing_idx = next((i for i, item in enumerate(self.cache) if item["symbol"] == ticker["s"]), None)
+                existing_idx = next(
+                    (i for i, item in enumerate(self.ticker_prices) if item["symbol"] == ticker["s"]), None
+                )
                 if existing_idx is None:
-                    self.cache.append({"symbol": ticker["s"], "price": ticker["p"]})
+                    self.ticker_prices.append({"symbol": ticker["s"], "price": ticker["p"]})
                 else:
-                    self.cache[existing_idx] = {"symbol": ticker["s"], "price": ticker["p"]}
+                    self.ticker_prices[existing_idx] = {"symbol": ticker["s"], "price": ticker["p"]}
 
     def get_all_market_tickers(self):
         """
         Get ticker price of all coins
         """
-        return self.cache
+        while len(self.ticker_prices) == 0:
+            self.logger.info("Waiting for ticker prices to update in memory, sleeping for 2 seconds")
+            time.sleep(2)
+
+        return self.ticker_prices
 
     def get_market_ticker_price(self, ticker_symbol: str):
         """

@@ -17,10 +17,6 @@ def main():
     db = Database(logger, config)
     manager = BinanceAPIManager(config, db, logger)
 
-    while len(manager.cache) == 0:
-        logger.info("Waiting for ticker prices to update in memory, sleeping for 2 seconds")
-        time.sleep(2)
-
     trader = AutoTrader(manager, db, logger, config)
 
     logger.info("Creating database schema if it doesn't already exist")
