@@ -3,6 +3,7 @@ import time
 
 from binance.client import Client
 from binance.exceptions import BinanceAPIException
+from binance.websockets import BinanceSocketManager
 
 from .config import Config
 from .database import Database
@@ -20,12 +21,26 @@ class BinanceAPIManager:
         )
         self.db = db
         self.logger = logger
+        self.cache = []
+        self.bm = BinanceSocketManager(self.binance_client)
+        self.bm.start_all_mark_price_socket(self._process_all_mark_price_socket)
+        self.bm.start()
+
+    def _process_all_mark_price_socket(self, msg):
+        if msg["data"]:
+            data = msg["data"]
+            for ticker in data:
+                existing_idx = next((i for i, item in enumerate(self.cache) if item["symbol"] == ticker["s"]), None)
+                if existing_idx is None:
+                    self.cache.append({"symbol": ticker["s"], "price": ticker["p"]})
+                else:
+                    self.cache[existing_idx] = {"symbol": ticker["s"], "price": ticker["p"]}
 
     def get_all_market_tickers(self):
         """
         Get ticker price of all coins
         """
-        return self.binance_client.get_all_tickers()
+        return self.cache
 
     def get_market_ticker_price(self, ticker_symbol: str):
         """
