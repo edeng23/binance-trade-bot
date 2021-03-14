@@ -7,9 +7,9 @@ from binance_trade_bot.models import Pair
 from binance_trade_bot.utils import get_market_ticker_price_from_list
 
 
-class DefaultStrategy(AutoTrader):
-    def initialise(self):
-        super().initialise()
+class Strategy(AutoTrader):
+    def initialize(self):
+        super().initialize()
         self.initialize_current_coin()
 
     def transaction_through_bridge(self, pair: Pair, all_tickers):

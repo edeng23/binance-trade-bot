@@ -2,7 +2,7 @@ from binance_trade_bot.auto_trader import AutoTrader
 from binance_trade_bot.utils import get_market_ticker_price_from_list
 
 
-class MultipleActiveCoinsStrategy(AutoTrader):
+class Strategy(AutoTrader):
     def scout(self):
         """
         Scout for potential jumps from the current coin to another coin

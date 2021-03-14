@@ -18,7 +18,7 @@ class AutoTrader:
         self.logger = logger
         self.config = config
 
-    def initialise(self):
+    def initialize(self):
         self.initialize_trade_thresholds()
 
     def transaction_through_bridge(self, pair: Pair, all_tickers):
