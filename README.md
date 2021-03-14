@@ -56,6 +56,7 @@ Create a .cfg file named `user.cfg` based off `.user.cfg.example`, then add your
 -   **tld** - 'com' or 'us', depending on your region. Default is 'com'.
 -   **hourToKeepScoutHistory** - Controls how many hours of scouting values are kept in the database. After the amount of time specified has passed, the information will be deleted.
 -   **scout_multiplier** - Controls the value by which the difference between the current state of coin ratios and previous state of ratios is multiplied. For bigger values, the bot will wait for bigger margins to arrive before making a trade.
+-   **strategy** - The trading strategy to use. See `binance_trade_bot/strategies` for a list of strategies
 
 #### Environment Variables
 

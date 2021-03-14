@@ -18,6 +18,7 @@ class Config:  # pylint: disable=too-few-public-methods
             "scout_sleep_time": "5",
             "hourToKeepScoutHistory": "1",
             "tld": "com",
+            "strategy": "DefaultStrategy",
         }
 
         if not os.path.exists(CFG_FL_NAME):
@@ -62,3 +63,5 @@ class Config:  # pylint: disable=too-few-public-methods
         self.SUPPORTED_COIN_LIST = supported_coin_list
 
         self.CURRENT_COIN_SYMBOL = os.environ.get("CURRENT_COIN_SYMBOL") or config.get(USER_CFG_SECTION, "current_coin")
+
+        self.STRATEGY = os.environ.get("STRATEGY") or config.get(USER_CFG_SECTION, "strategy")
