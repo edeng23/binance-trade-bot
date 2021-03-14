@@ -28,7 +28,7 @@ def main():
     db.set_coins(config.SUPPORTED_COIN_LIST)
     db.migrate_old_state()
 
-    trader.initialise()
+    trader.initialize()
 
     schedule = SafeScheduler(logger)
     schedule.every(config.SCOUT_SLEEP_TIME).seconds.do(trader.scout).tag("scouting")
