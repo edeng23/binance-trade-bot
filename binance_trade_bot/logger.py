@@ -2,6 +2,7 @@ import logging
 import logging.handlers
 
 from .notifications import NotificationHandler
+from .config import Config
 
 class Logger:
 
@@ -10,13 +11,14 @@ class Logger:
 
     def __init__(self, loggingService = "crypto_trading"):
         # Logger setup
+        self.config = Config()
         self.Logger = logging.getLogger(f"{loggingService}_logger")
         self.Logger.setLevel(logging.DEBUG)
         formatter = logging.Formatter(
             "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
         )
         # default is "logs/crypto_trading.log"
-        fh = logging.FileHandler(f"logs/{loggingService}.log")
+        fh = logging.FileHandler(f"{self.config.LOG_FILE_PATH}/{loggingService}.log")
         fh.setLevel(logging.DEBUG)
         fh.setFormatter(formatter)
         self.Logger.addHandler(fh)

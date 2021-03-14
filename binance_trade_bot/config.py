@@ -19,6 +19,7 @@ class Config:  # pylint: disable=too-few-public-methods
             "scout_sleep_time": "5",
             "hourToKeepScoutHistory": "1",
             "tld": "com",
+            "log_file_path": "logs",
         }
 
         if not os.path.exists(CFG_FL_NAME):
@@ -75,4 +76,8 @@ class Config:  # pylint: disable=too-few-public-methods
 
         self.CURRENT_COIN_SYMBOL = os.environ.get("CURRENT_COIN_SYMBOL") or config.get(
             USER_CFG_SECTION, "current_coin"
+        )
+
+        self.LOG_FILE_PATH =  os.environ.get("LOG_FILE_PATH") or config.get(
+            USER_CFG_SECTION, "log_file_path"
         )
