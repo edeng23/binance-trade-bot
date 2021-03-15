@@ -22,8 +22,9 @@ class BinanceAPIManager:
         self.db = db
         self.logger = logger
         self.ticker_prices = []
+        self.all_price_socket_conn_key = False
         self.bm = BinanceSocketManager(self.binance_client)
-        self.bm.start_all_mark_price_socket(self._process_all_mark_price_socket)
+        self._start_all_mark_price_socket()
         self.bm.start()
 
     def _process_all_mark_price_socket(self, msg):
@@ -37,6 +38,14 @@ class BinanceAPIManager:
                     self.ticker_prices.append({"symbol": ticker["s"], "price": ticker["p"]})
                 else:
                     self.ticker_prices[existing_idx] = {"symbol": ticker["s"], "price": ticker["p"]}
+
+    def _start_all_mark_price_socket(self):
+        conn = self.bm.start_all_mark_price_socket(self._process_all_mark_price_socket)
+        if conn:
+            self.all_price_socket_conn_key = conn
+        else:
+            self.logger.log("Starting all mark price socket failed, retrying")
+            self.retry(self._start_all_mark_price_socket)
 
     def get_all_market_tickers(self):
         """
