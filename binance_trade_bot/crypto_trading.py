@@ -1,6 +1,8 @@
 #!python3
 import time
 
+from twisted.internet import reactor
+
 from .auto_trader import AutoTrader
 from .binance_api_manager import BinanceAPIManager
 from .config import Config
@@ -32,7 +34,10 @@ def main():
     schedule.every(1).minutes.do(trader.update_values).tag("updating value history")
     schedule.every(1).minutes.do(db.prune_scout_history).tag("pruning scout history")
     schedule.every(1).hours.do(db.prune_value_history).tag("pruning value history")
-
-    while True:
-        schedule.run_pending()
-        time.sleep(1)
+    try:
+        while True:
+            schedule.run_pending()
+            time.sleep(1)
+    finally:
+        manager.bm.close()
+        reactor.stop()
