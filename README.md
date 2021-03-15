@@ -74,9 +74,9 @@ TLD: com
 
 ### Paying Fees with BNB
 You can [use BNB to pay for any fees on the Binance platform](https://www.binance.com/en/support/faq/115000583311-Using-BNB-to-Pay-for-Fees), which will reduce all fees by 25%. In order to support this benefit, the bot will always perform the following operations:
-- Automatically detect that you have BNB fee payment enabled.
-- Make sure that you have enough BNB in your account to pay the fee of the inspected trade. 
-- Take into consideration the discount when calculating the trade threshold. 
+-   Automatically detect that you have BNB fee payment enabled.
+-   Make sure that you have enough BNB in your account to pay the fee of the inspected trade. 
+-   Take into consideration the discount when calculating the trade threshold. 
 
 ### Notifications with Apprise
 
