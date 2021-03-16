@@ -1,17 +1,19 @@
 # Config consts
 import configparser
-import os
 import enum
+import os
 
 from .models import Coin
 
 CFG_FL_NAME = "user.cfg"
 USER_CFG_SECTION = "binance_user_config"
 
+
 class TRADE_FEE_OPTION(enum.Enum):
     AUTO = "auto"
     BNB_DISABLED = "bnb_disabled"
     BNB_ENABLED = "bnb_enabled"
+
 
 class Config:  # pylint: disable=too-few-public-methods
     def __init__(self):
@@ -22,8 +24,8 @@ class Config:  # pylint: disable=too-few-public-methods
             "scout_multiplier": "5",
             "scout_sleep_time": "5",
             "hourToKeepScoutHistory": "1",
-            'tld': 'com',
-            'trade_fee': 'auto',
+            "tld": "com",
+            "trade_fee": "auto",
             "strategy": "default",
         }
 
