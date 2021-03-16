@@ -1,18 +1,11 @@
 # Config consts
 import configparser
-import enum
 import os
 
 from .models import Coin
 
 CFG_FL_NAME = "user.cfg"
 USER_CFG_SECTION = "binance_user_config"
-
-
-class TRADE_FEE_OPTION(enum.Enum):
-    AUTO = "auto"
-    BNB_DISABLED = "bnb_disabled"
-    BNB_ENABLED = "bnb_enabled"
 
 
 class Config:  # pylint: disable=too-few-public-methods
@@ -62,7 +55,7 @@ class Config:  # pylint: disable=too-few-public-methods
         ]
 
         self.TRADE_FEE = os.environ.get("TRADE_FEE") or config.get(USER_CFG_SECTION, "trade_fee")
-        
+
         # Get supported coin list from supported_coin_list file
         if not supported_coin_list and os.path.exists("supported_coin_list"):
             with open("supported_coin_list") as rfh:
