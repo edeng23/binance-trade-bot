@@ -20,11 +20,7 @@ class BinanceAPIManager:
             config.BINANCE_API_SECRET_KEY,
             tld=config.BINANCE_TLD,
         )
-
-        try:
-            self.TRADE_FEE = float(config.TRADE_FEE)
-        except ValueError:
-            self.TRADE_FEE = None
+        self.config = config
         self.db = db
         self.logger = logger
 
@@ -37,8 +33,8 @@ class BinanceAPIManager:
         return self.binance_client.get_bnb_burn_spot_margin()
 
     def get_fee(self, origin_coin: Coin, target_coin: Coin, selling: bool):
-        if self.TRADE_FEE:
-            return self.TRADE_FEE
+        if self.config.TRADE_FEE != "auto":
+            return float(self.config.TRADE_FEE)
 
         base_fee = self.get_trade_fees()[origin_coin + target_coin]
         if not self.get_using_bnb_for_fees():
