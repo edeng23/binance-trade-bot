@@ -11,40 +11,51 @@ jobs:
   Lint:
     runs-on: ubuntu-20.04
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.7
-    - id: changed-files
-      name: Get Changed Files
-      uses: dorny/paths-filter@v2
-      with:
-        token: ${{ github.token }}
-        list-files: shell
-        filters: |
-          repo:
-            - added|modified:
-              - '**'
-    - name: Set Cache Key
-      run: echo "PY=$(python --version --version | sha256sum | cut -d' ' -f1)" >> $GITHUB_ENV
-    - uses: actions/cache@v2
-      with:
-        path: ~/.cache/pre-commit
-        key: pre-commit|${{ env.PY }}|${{ hashFiles('.pre-commit-config.yaml') }}
-    - name: Check ALL Files On Branch
-      uses: pre-commit/action@v2.0.0
-      if: github.event_name != 'pull_request'
-    - name: Check Changed Files On PR
-      uses: pre-commit/action@v2.0.0
-      if: github.event_name == 'pull_request'
-      with:
-        extra_args: --files ${{ steps.changed-files.outputs.repo_files }}
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - id: changed-files
+        name: Get Changed Files
+        uses: dorny/paths-filter@v2
+        with:
+          token: ${{ github.token }}
+          list-files: shell
+          filters: |
+            repo:
+              - added|modified:
+                - '**'
+      - name: Set Cache Key
+        run: echo "PY=$(python --version --version | sha256sum | cut -d' ' -f1)" >> $GITHUB_ENV
+      - uses: actions/cache@v2
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit|${{ env.PY }}|${{ hashFiles('.pre-commit-config.yaml') }}
+      - name: Check ALL Files On Branch
+        uses: pre-commit/action@v2.0.0
+        if: github.event_name != 'pull_request'
+      - name: Check Changed Files On PR
+        uses: pre-commit/action@v2.0.0
+        if: github.event_name == 'pull_request'
+        with:
+          extra_args: --files ${{ steps.changed-files.outputs.repo_files }}
 
   Docker:
     runs-on: ubuntu-latest
     needs: Lint
     steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Install GitVersion
+        uses: gittools/actions/gitversion/setup@v0.9.9
+        with:
+          versionSpec: "5.5.x"
+      - name: Version with GitVersion # https://github.com/marketplace/actions/use-actions
+        id: gitversion
+        uses: gittools/actions/gitversion/execute@v0.9.9
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx
@@ -57,10 +68,13 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Build and push
         id: docker_build
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v2 # https://github.com/marketplace/actions/build-and-push-docker-images
         with:
           platforms: linux/amd64,linux/arm64,linux/arm/v6,linux/arm/v7
           push: ${{ github.event_name == 'push' }}
-          tags: ${{ github.repository }}:latest
-      - name: Image digest
-        run: echo ${{ steps.docker_build.outputs.digest }}
+          tags: |
+            ${{ github.repository }}:latest
+            ${{ github.repository }}:${{ steps.gitversion.outputs.shortsha }}
+            ${{ github.repository }}:${{ steps.gitversion.outputs.major }}
+            ${{ github.repository }}:${{ steps.gitversion.outputs.major }}.${{ steps.gitversion.outputs.minor }}
+            ${{ github.repository }}:${{ steps.gitversion.outputs.semVer }}
