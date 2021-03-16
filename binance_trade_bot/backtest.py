@@ -1,11 +1,6 @@
-import time
 from datetime import datetime, timedelta
-from multiprocessing import Process, Value
-from random import randint
 from typing import Dict
 
-import requests.exceptions
-from binance.exceptions import BinanceAPIException
 from diskcache import Cache
 
 from .auto_trader import AutoTrader
@@ -13,7 +8,7 @@ from .binance_api_manager import AllTickers, BinanceAPIManager
 from .config import Config
 from .database import Database
 from .logger import Logger
-from .models import Coin
+from .models import Coin, Pair
 
 cache = Cache(".cache")
 
@@ -56,20 +51,19 @@ class MockBinanceManager(BinanceAPIManager):
         """
         Get ticker price of a specific coin
         """
-        dt = self.datetime.strftime("%d %b %Y %H:%M:%S")
-        key = f"{ticker_symbol}_{dt}"
+        target_date = self.datetime.strftime("%d %b %Y %H:%M:%S")
+        key = f"{ticker_symbol}_{target_date}"
         val = cache.get(key, None)
         if val is None:
-            try:
-                val = float(self.binance_client.get_historical_klines(ticker_symbol, "1m", dt, dt)[0][1])
-                cache.set(key, val)
-            except requests.exceptions.ConnectionError:
-                time.sleep(randint(5, 10))
-                return self.get_market_ticker_price(ticker_symbol)
-            except IndexError:
-                return None
-
-        return val
+            end_date = self.datetime + timedelta(hours=4)
+            if end_date > datetime.now():
+                end_date = datetime.now()
+            end_date = end_date.strftime("%d %b %Y %H:%M:%S")
+            for result in self.binance_client.get_historical_klines(ticker_symbol, "1m", target_date, end_date):
+                date = datetime.utcfromtimestamp(result[0] / 1000).strftime("%d %b %Y %H:%M:%S")
+                price = float(result[1])
+                cache.set(f"{ticker_symbol}_{date}", price)
+        return cache.get(key)
 
     def get_currency_balance(self, currency_symbol: str):
         """
@@ -108,6 +102,14 @@ class MockBinanceManager(BinanceAPIManager):
         return {"price": from_coin_price}
 
 
+class MockDatabase(Database):
+    def __init__(self, logger: Logger, config: Config):
+        super().__init__(logger, config, "sqlite:///")
+
+    def log_scout(self, pair: Pair, target_ratio: float, current_coin_price: float, other_coin_price: float):
+        pass
+
+
 def backtest(
     start_date: datetime = None,
     end_date: datetime = None,
@@ -132,10 +134,9 @@ def backtest(
 
     end_date = end_date or datetime.today()
 
-    db = Database(logger, config, "sqlite://")
+    db = MockDatabase(logger, config)
     db.create_database()
     db.set_coins(config.SUPPORTED_COIN_LIST)
-
     manager = MockBinanceManager(config, db, logger, start_date, start_balances)
 
     starting_coin = db.get_coin(starting_coin or config.SUPPORTED_COIN_LIST[0])
@@ -154,38 +155,3 @@ def backtest(
     except KeyboardInterrupt:
         pass
     return manager.balances
-
-
-def download_market_data(start_date: datetime = None, end_date: datetime = None, interval=1):
-    """
-    :param start_date: Date to  backtest from
-    :param end_date: Date to backtest up to
-    :param interval: Number of virtual minutes between each scout
-    """
-
-    def _thread(symbol, counter: Value):
-        manager = MockBinanceManager(config, None, None, start_date)
-        while manager.datetime < end_date:
-            try:
-                manager.get_market_ticker_price(symbol)
-                manager.increment(interval)
-                counter.value += 1
-            except BinanceAPIException:
-                time.sleep(randint(10, 30))
-
-    config = Config()
-    processes = []
-    for coin in config.SUPPORTED_COIN_LIST:
-        v = Value("i", 0)
-        p = Process(target=_thread, args=(coin + config.BRIDGE.symbol, v))
-        processes.append((coin, v, p))
-        p.start()
-
-    while True:
-        total = sum(p[1].value for p in processes)
-        avg = int(total / len(processes))
-        print("Total datapoint count:", total)
-        print("Average fetched per symbol:", avg)
-        print("Average datetime:", datetime(2021, 1, 1) + timedelta(minutes=avg))
-        time.sleep(5)
-        print("")
