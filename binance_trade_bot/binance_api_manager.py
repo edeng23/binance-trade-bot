@@ -42,7 +42,13 @@ class BinanceAPIManager:
             else self._buy_quantity(origin_coin.symbol, target_coin.symbol)
         )
         fee_amount = amount_trading * base_fee * 0.75
-        fee_amount_bnb = fee_amount * self.get_market_ticker_price(origin_coin + Coin("BNB"))
+        if origin_coin.symbol == "BNB":
+            fee_amount_bnb = fee_amount
+        else:
+            origin_price = self.get_market_ticker_price(origin_coin + Coin("BNB"))
+            if origin_price is None:
+                return base_fee
+            fee_amount_bnb = fee_amount * origin_price
         bnb_balance = self.get_currency_balance("BNB")
         if bnb_balance >= fee_amount_bnb:
             return base_fee * 0.75
