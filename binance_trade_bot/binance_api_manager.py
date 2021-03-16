@@ -6,7 +6,7 @@ from binance.client import Client
 from binance.exceptions import BinanceAPIException
 from cachetools import TTLCache, cached
 
-from .config import Config
+from .config import Config, TRADE_FEE_OPTION
 from .database import Database
 from .logger import Logger
 from .models import Coin
@@ -20,6 +20,7 @@ class BinanceAPIManager:
             config.BINANCE_API_SECRET_KEY,
             tld=config.BINANCE_TLD,
         )
+        self.TRADE_FEE = config.TRADE_FEE
         self.db = db
         self.logger = logger
 
@@ -32,6 +33,11 @@ class BinanceAPIManager:
         return self.binance_client.get_bnb_burn_spot_margin()
 
     def get_fee(self, origin_coin: Coin, target_coin: Coin, selling: bool):
+        if self.TRADE_FEE == TRADE_FEE_OPTION.BNB_ENABLED:
+            return 0.00075
+        if self.TRADE_FEE == TRADE_FEE_OPTION.BNB_DISABLED:
+            return 0.001
+
         base_fee = self.get_trade_fees()[origin_coin + target_coin]
         if not self.get_using_bnb_for_fees():
             return base_fee
