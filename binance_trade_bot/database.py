@@ -76,6 +76,16 @@ class Database:
                         if pair is None:
                             session.add(Pair(from_coin, to_coin))
 
+    def get_coins(self, only_enabled=True) -> List[Coin]:
+        session: Session
+        with self.db_session() as session:
+            if only_enabled:
+                coins = session.query(Coin).filter(Coin.enabled).all()
+            else:
+                coins = session.query(Coin).all()
+            session.expunge_all()
+            return coins
+
     def get_coin(self, coin: Union[Coin, str]) -> Coin:
         if isinstance(coin, Coin):
             return coin
@@ -114,11 +124,25 @@ class Database:
             session.expunge(pair)
             return pair
 
-    def get_pairs_from(self, from_coin: Union[Coin, str]):
+    def get_pairs_from(self, from_coin: Union[Coin, str], only_enabled=True) -> List[Pair]:
         from_coin = self.get_coin(from_coin)
         session: Session
         with self.db_session() as session:
-            pairs: List[Pair] = session.query(Pair).filter(Pair.from_coin == from_coin)
+            pairs = session.query(Pair).filter(Pair.from_coin == from_coin)
+            if only_enabled:
+                pairs = pairs.filter(Pair.enabled.is_(True))
+            pairs = pairs.all()
+            session.expunge_all()
+            return pairs
+
+    def get_pairs(self, only_enabled=True) -> List[Pair]:
+        session: Session
+        with self.db_session() as session:
+            pairs = session.query(Pair)
+            if only_enabled:
+                pairs = pairs.filter(Pair.enabled.is_(True))
+            pairs = pairs.all()
+            session.expunge_all()
             return pairs
 
     def log_scout(

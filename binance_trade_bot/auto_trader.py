@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List
+from typing import Dict, List
 
 from sqlalchemy.orm import Session
 
@@ -28,13 +28,13 @@ class AutoTrader:
         if self.manager.sell_alt(pair.from_coin, self.config.BRIDGE) is None:
             self.logger.info("Couldn't sell, going back to scouting mode...")
             return None
-        # This isn't pretty, but at the moment we don't have implemented logic to escape from a bridge coin...
-        # This'll do for now
-        result = None
-        while result is None:
-            result = self.manager.buy_alt(pair.to_coin, self.config.BRIDGE, all_tickers)
 
-        return result
+        result = self.manager.buy_alt(pair.to_coin, self.config.BRIDGE, all_tickers)
+        if result is not None:
+            self.update_trade_threshold(pair.to_coin, float(result["price"]), all_tickers)
+            return result
+        self.logger.info("Couldn't buy, going back to scouting mode...")
+        return None
 
     def update_trade_threshold(self, coin: Coin, coin_price: float, all_tickers):
         """
@@ -92,6 +92,71 @@ class AutoTrader:
         Scout for potential jumps from the current coin to another coin
         """
         raise NotImplementedError()
+
+    def _get_ratios(self, coin: Coin, coin_price, all_tickers):
+        """
+        Given a coin, get the current price ratio for every other enabled coin
+        """
+        ratio_dict: Dict[Pair, float] = {}
+
+        for pair in self.db.get_pairs_from(coin):
+            optional_coin_price = get_market_ticker_price_from_list(all_tickers, pair.to_coin + self.config.BRIDGE)
+
+            if optional_coin_price is None:
+                self.logger.info(
+                    "Skipping scouting... optional coin {} not found".format(pair.to_coin + self.config.BRIDGE)
+                )
+                continue
+
+            self.db.log_scout(pair, pair.ratio, coin_price, optional_coin_price)
+
+            # Obtain (current coin)/(optional coin)
+            coin_opt_coin_ratio = coin_price / optional_coin_price
+
+            transaction_fee = self.manager.get_fee(pair.from_coin, self.config.BRIDGE, True) + self.manager.get_fee(
+                pair.to_coin, self.config.BRIDGE, False
+            )
+
+            ratio_dict[pair] = (
+                coin_opt_coin_ratio - transaction_fee * self.config.SCOUT_MULTIPLIER * coin_opt_coin_ratio
+            ) - pair.ratio
+        return ratio_dict
+
+    def _jump_to_best_coin(self, coin: Coin, coin_price: float, all_tickers):
+        """
+        Given a coin, search for a coin to jump to
+        """
+        ratio_dict = self._get_ratios(coin, coin_price, all_tickers)
+
+        # keep only ratios bigger than zero
+        ratio_dict = {k: v for k, v in ratio_dict.items() if v > 0}
+
+        # if we have any viable options, pick the one with the biggest ratio
+        if ratio_dict:
+            best_pair = max(ratio_dict, key=ratio_dict.get)
+            self.logger.info(f"Will be jumping from {coin} to {best_pair.to_coin_id}")
+            self.transaction_through_bridge(best_pair, all_tickers)
+
+    def bridge_scout(self):
+        """
+        If we have any bridge coin leftover, buy a coin with it that we won't immediately trade out of
+        """
+        bridge_balance = self.manager.get_currency_balance(self.config.BRIDGE.symbol)
+        all_tickers = self.manager.get_all_market_tickers()
+
+        for coin in self.db.get_coins():
+            current_coin_price = get_market_ticker_price_from_list(all_tickers, coin + self.config.BRIDGE)
+
+            if current_coin_price is None:
+                continue
+
+            ratio_dict = self._get_ratios(coin, current_coin_price, all_tickers)
+            if not any(v > 0 for v in ratio_dict.values()):
+                # There will only be one coin where all the ratios are negative. When we find it, buy it if we can
+                if bridge_balance > self.manager.get_min_notional(coin.symbol, self.config.BRIDGE.symbol):
+                    self.logger.info(f"Will be purchasing {coin} using bridge coin")
+                    self.manager.buy_alt(coin, self.config.BRIDGE, all_tickers)
+                return
 
     def update_values(self):
         """
