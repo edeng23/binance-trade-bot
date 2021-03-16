@@ -91,16 +91,23 @@ class BinanceAPIManager:
                 attempts += 1
         return None
 
+    def get_symbol_filter(self, origin_symbol: str, target_symbol: str, filter_type: str):
+        return next(
+            _filter
+            for _filter in self.binance_client.get_symbol_info(origin_symbol + target_symbol)["filters"]
+            if _filter["filterType"] == filter_type
+        )
+
     @cached(cache=TTLCache(maxsize=2000, ttl=43200))
     def get_alt_tick(self, origin_symbol: str, target_symbol: str):
-        step_size = next(
-            _filter["stepSize"]
-            for _filter in self.binance_client.get_symbol_info(origin_symbol + target_symbol)["filters"]
-            if _filter["filterType"] == "LOT_SIZE"
-        )
+        step_size = self.get_symbol_filter(origin_symbol, target_symbol, "LOT_SIZE")["stepSize"]
         if step_size.find("1") == 0:
             return 1 - step_size.find(".")
         return step_size.find("1") - 1
+
+    @cached(cache=TTLCache(maxsize=2000, ttl=43200))
+    def get_min_notional(self, origin_symbol: str, target_symbol: str):
+        return float(self.get_symbol_filter(origin_symbol, target_symbol, "MIN_NOTIONAL")["minNotional"])
 
     def wait_for_order(self, origin_symbol, target_symbol, order_id):
         while True:
