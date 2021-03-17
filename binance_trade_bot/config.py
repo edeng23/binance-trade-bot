@@ -63,4 +63,4 @@ class Config:  # pylint: disable=too-few-public-methods
         self.SUPPORTED_COIN_LIST = supported_coin_list
 
         self.CURRENT_COIN_SYMBOL = os.environ.get("CURRENT_COIN_SYMBOL") or config.get(USER_CFG_SECTION, "current_coin")
-        self.LOG_FILE_PATH =  os.environ.get("LOG_FILE_PATH") or config.get(USER_CFG_SECTION, "log_file_path")
+        self.LOG_FILE_PATH = os.environ.get("LOG_FILE_PATH") or config.get(USER_CFG_SECTION, "log_file_path")

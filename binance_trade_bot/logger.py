@@ -1,7 +1,7 @@
 import logging.handlers
 
-from .notifications import NotificationHandler
 from .config import Config
+from .notifications import NotificationHandler
 
 
 class Logger:
