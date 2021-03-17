@@ -12,3 +12,4 @@ venv/
 crypto_trading.db
 apprise.yml
 .DS_Store
+.backtest_cache.db

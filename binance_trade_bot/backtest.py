@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from typing import Dict
 
-from diskcache import Cache
+import pickledb
 
 from .auto_trader import AutoTrader
 from .binance_api_manager import AllTickers, BinanceAPIManager
@@ -10,7 +10,7 @@ from .database import Database
 from .logger import Logger
 from .models import Coin, Pair
 
-cache = Cache(".cache")
+cache = pickledb.load(".backtest_cache.db", False)
 
 
 class FakeAllTickers(AllTickers):  # pylint: disable=too-few-public-methods
@@ -53,8 +53,8 @@ class MockBinanceManager(BinanceAPIManager):
         """
         target_date = self.datetime.strftime("%d %b %Y %H:%M:%S")
         key = f"{ticker_symbol}_{target_date}"
-        val = cache.get(key, None)
-        if val is None:
+        val = cache.get(key)
+        if not val:
             end_date = self.datetime + timedelta(hours=4)
             if end_date > datetime.now():
                 end_date = datetime.now()
@@ -84,6 +84,10 @@ class MockBinanceManager(BinanceAPIManager):
         self.balances[origin_symbol] = self.balances.get(origin_symbol, 0) + order_quantity * (
             1 - self.get_fee(origin_coin, target_coin, False)
         )
+        self.logger.info(
+            f"Bought {origin_symbol}, balance now: {self.balances[origin_symbol]} - bridge: "
+            f"{self.balances[target_symbol]}"
+        )
         return {"price": from_coin_price}
 
     def sell_alt(self, origin_coin: Coin, target_coin: Coin):
@@ -99,7 +103,23 @@ class MockBinanceManager(BinanceAPIManager):
             1 - self.get_fee(origin_coin, target_coin, True)
         )
         self.balances[origin_symbol] -= order_quantity
+        self.logger.info(
+            f"Sold {origin_symbol}, balance now: {self.balances[origin_symbol]} - bridge: "
+            f"{self.balances[target_symbol]}"
+        )
         return {"price": from_coin_price}
+
+    def collate_coins(self, target_symbol: str):
+        total = 0
+        for coin, balance in self.balances.items():
+            if coin == self.config.BRIDGE.symbol:
+                if coin == target_symbol:
+                    total += balance
+                else:
+                    total += balance / self.get_market_ticker_price(target_symbol + coin)
+            else:
+                total += self.get_market_ticker_price(coin + target_symbol) * balance
+        return total
 
 
 class MockDatabase(Database):
@@ -117,7 +137,7 @@ def backtest(
     start_balances: Dict[str, float] = None,
     starting_coin: str = None,
     config: Config = None,
-) -> Dict[str, float]:
+):
     """
 
     :param config: Configuration object to use
@@ -147,11 +167,19 @@ def backtest(
     trader = AutoTrader(manager, db, logger, config)
     trader.initialize_trade_thresholds()
 
+    yield manager
+
+    n = 1
     try:
         while manager.datetime < end_date:
             print(manager.datetime)
             trader.scout()
             manager.increment(interval)
+            if n % 100 == 0:
+                yield manager
+            if n % 1000 == 0:
+                cache.dump()
+            n += 1
     except KeyboardInterrupt:
-        pass
-    return manager.balances
+        cache.dump()
+    return manager
