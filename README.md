@@ -55,9 +55,8 @@ Create a .cfg file named `user.cfg` based off `.user.cfg.example`, then add your
 -   **bridge** - Your bridge currency of choice. Notice that different bridges will allow different sets of supported coins. For example, there may be a Binance particular-coin/USDT pair but no particular-coin/BUSD pair.
 -   **tld** - 'com' or 'us', depending on your region. Default is 'com'.
 -   **hourToKeepScoutHistory** - Controls how many hours of scouting values are kept in the database. After the amount of time specified has passed, the information will be deleted.
--   **scout_transaction_fee** - The transaction fee percentage. This value should be changed, for example, if you are [using BNB to pay for fees](https://www.binance.com/en/support/faq/115000583311-Using-BNB-to-Pay-for-Fees).
 -   **scout_multiplier** - Controls the value by which the difference between the current state of coin ratios and previous state of ratios is multiplied. For bigger values, the bot will wait for bigger margins to arrive before making a trade.
-
+-   **log_file_path** - This is the path where log files will be created. Default is 'log'.
 #### Environment Variables
 
 All of the options provided in `user.cfg` can also be configured using environment variables.
@@ -68,11 +67,17 @@ SUPPORTED_COIN_LIST: "XLM TRX ICX EOS IOTA ONT QTUM ETC ADA XMR DASH NEO ATOM DO
 BRIDGE_SYMBOL: USDT
 API_KEY: vmPUZE6mv9SD5VNHk4HlWFsOr6aKE2zvsw0MuIgwCIPy6utIco14y7Ju91duEh8A
 API_SECRET_KEY: NhqPtmdSJYdKjVHjA7PZj4Mge3R5YNiP1e3UZjInClVN65XAbvqqM6A7H5fATj0j
-SCOUT_TRANSACTION_FEE: 0.001
 SCOUT_MULTIPLIER: 5
 SCOUT_SLEEP_TIME: 5
 TLD: com
+LOG_FILE_PATH: log
 ```
+
+### Paying Fees with BNB
+You can [use BNB to pay for any fees on the Binance platform](https://www.binance.com/en/support/faq/115000583311-Using-BNB-to-Pay-for-Fees), which will reduce all fees by 25%. In order to support this benefit, the bot will always perform the following operations:
+-   Automatically detect that you have BNB fee payment enabled.
+-   Make sure that you have enough BNB in your account to pay the fee of the inspected trade.
+-   Take into consideration the discount when calculating the trade threshold.
 
 ### Notifications with Apprise
 
@@ -100,6 +105,16 @@ if you only want to start the sqlitebrowser
 
 ```shell
 docker-compose up -d sqlitebrowser
+```
+
+## Developing
+
+To make sure your code is properly formatted before making a pull request,
+remember to install [pre-commit](https://pre-commit.com/):
+
+```shell
+pip install pre-commit
+pre-commit install
 ```
 
 ## Support the Project

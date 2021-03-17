@@ -1,7 +1,7 @@
 import enum
 from datetime import datetime as _datetime
 
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Float, Enum
+from sqlalchemy import Column, DateTime, Enum, Float, ForeignKey, Integer, String
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 
@@ -21,7 +21,7 @@ class CoinValue(Base):
 
     id = Column(Integer, primary_key=True)
 
-    coin_id = Column(String, ForeignKey('coins.symbol'))
+    coin_id = Column(String, ForeignKey("coins.symbol"))
     coin = relationship("Coin")
 
     balance = Column(Float)
@@ -32,8 +32,15 @@ class CoinValue(Base):
 
     datetime = Column(DateTime)
 
-    def __init__(self, coin: Coin, balance: float, usd_price: float, btc_price: float, interval=Interval.MINUTELY,
-                 datetime: _datetime = None):
+    def __init__(
+        self,
+        coin: Coin,
+        balance: float,
+        usd_price: float,
+        btc_price: float,
+        interval=Interval.MINUTELY,
+        datetime: _datetime = None,
+    ):
         self.coin = coin
         self.balance = balance
         self.usd_price = usd_price
@@ -48,8 +55,8 @@ class CoinValue(Base):
         return self.balance * self.usd_price
 
     @usd_value.expression
-    def usd_value(cls):
-        return cls.balance * cls.usd_price
+    def usd_value(self):
+        return self.balance * self.usd_price
 
     @hybrid_property
     def btc_value(self):
@@ -58,11 +65,13 @@ class CoinValue(Base):
         return self.balance * self.btc_price
 
     @btc_value.expression
-    def btc_value(cls):
-        return cls.balance * cls.btc_price
+    def btc_value(self):
+        return self.balance * self.btc_price
 
     def info(self):
-        return {"balance": self.balance,
-                "usd_value": self.usd_value,
-                "btc_value": self.btc_value,
-                "datetime": self.datetime.isoformat()}
+        return {
+            "balance": self.balance,
+            "usd_value": self.usd_value,
+            "btc_value": self.btc_value,
+            "datetime": self.datetime.isoformat(),
+        }

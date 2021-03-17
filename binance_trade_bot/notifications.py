@@ -33,6 +33,6 @@ class NotificationHandler:
                 self.apobj.notify(body=message)
             self.queue.task_done()
 
-    def send_notification(self, message, attachments=[]):
+    def send_notification(self, message, attachments=None):
         if self.enabled:
-            self.queue.put((message, attachments))
+            self.queue.put((message, attachments or []))
