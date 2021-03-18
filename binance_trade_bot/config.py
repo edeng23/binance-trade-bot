@@ -18,7 +18,7 @@ class Config:  # pylint: disable=too-few-public-methods
             "scout_sleep_time": "5",
             "hourToKeepScoutHistory": "1",
             "tld": "com",
-            "strategy": "DefaultStrategy",
+            "strategy": "default",
         }
 
         if not os.path.exists(CFG_FL_NAME):

@@ -7,4 +7,4 @@ tld=com
 hourToKeepScoutHistory=1
 scout_multiplier=5
 scout_sleep_time=5
-strategy=DefaultStrategy
+strategy=default
