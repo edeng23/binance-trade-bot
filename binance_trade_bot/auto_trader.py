@@ -9,7 +9,7 @@ from .binance_api_manager import BinanceAPIManager
 from .config import Config
 from .database import Database
 from .logger import Logger
-from .models import Pair, Coin, CoinValue, ScoutHistory
+from .models import Coin, CoinValue, Pair, ScoutHistory
 from .utils import get_market_ticker_price_from_list
 
 
@@ -147,7 +147,6 @@ class AutoTrader:
                 )
                 continue
 
-            
             scout_stack.append(ScoutHistory(pair, pair.ratio, current_coin_price, optional_coin_price))
 
             # Obtain (current coin)/(optional coin)
@@ -161,7 +160,6 @@ class AutoTrader:
             ratio_dict[pair] = (
                 coin_opt_coin_ratio - transaction_fee * self.config.SCOUT_MULTIPLIER * coin_opt_coin_ratio
             ) - pair.ratio
-
 
         if scout_stack:
             self.db.log_scout_stack(scout_stack)
