@@ -56,6 +56,7 @@ Create a .cfg file named `user.cfg` based off `.user.cfg.example`, then add your
 -   **tld** - 'com' or 'us', depending on your region. Default is 'com'.
 -   **hourToKeepScoutHistory** - Controls how many hours of scouting values are kept in the database. After the amount of time specified has passed, the information will be deleted.
 -   **scout_multiplier** - Controls the value by which the difference between the current state of coin ratios and previous state of ratios is multiplied. For bigger values, the bot will wait for bigger margins to arrive before making a trade.
+-   **heartbeat_time** - The time in minutes until the heartbeat message is sent. If 0, the heartbeat message won't be used. If 60, the heartbeat message will be sent every hour.
 
 #### Environment Variables
 
@@ -70,6 +71,7 @@ API_SECRET_KEY: NhqPtmdSJYdKjVHjA7PZj4Mge3R5YNiP1e3UZjInClVN65XAbvqqM6A7H5fATj0j
 SCOUT_MULTIPLIER: 5
 SCOUT_SLEEP_TIME: 5
 TLD: com
+HEARTBEAT_TIME: 720
 ```
 
 ### Paying Fees with BNB

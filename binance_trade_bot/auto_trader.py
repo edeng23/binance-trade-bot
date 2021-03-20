@@ -1,7 +1,7 @@
 import random
 import sys
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 from sqlalchemy.orm import Session
 
@@ -19,6 +19,7 @@ class AutoTrader:
         self.db = database
         self.logger = logger
         self.config = config
+        self.best_ratios: Dict[Tuple[str, str], float] = {}
 
     def transaction_through_bridge(self, pair: Pair, all_tickers):
         """
@@ -162,13 +163,29 @@ class AutoTrader:
             ) - pair.ratio
 
         # keep only ratios bigger than zero
-        ratio_dict = {k: v for k, v in ratio_dict.items() if v > 0}
+        ratio_dict_filtered = {k: v for k, v in ratio_dict.items() if v > 0}
 
         # if we have any viable options, pick the one with the biggest ratio
-        if ratio_dict:
-            best_pair = max(ratio_dict, key=ratio_dict.get)
+        if ratio_dict_filtered:
+            best_pair = max(ratio_dict_filtered, key=ratio_dict_filtered.get)
             self.logger.info(f"Will be jumping from {current_coin} to {best_pair.to_coin_id}")
             self.transaction_through_bridge(best_pair, all_tickers)
+            self.best_ratios.clear()
+    
+        for pair in ratio_dict:
+            pair_tuple = (pair.from_coin.symbol, pair.to_coin.symbol)
+            if pair_tuple in self.best_ratios:
+                self.best_ratios[pair_tuple] = max(self.best_ratios[pair_tuple], ratio_dict[pair])
+            else:
+                self.best_ratios[pair_tuple] = ratio_dict[pair]
+        
+    def heartbeat(self):
+        if len(self.best_ratios) == 0:
+            self.logger.info("No best scouting ratios available. A trade was probably just made.")
+            return
+        messages = [f"{pair[0]:<5} to {pair[1]:<5} Diff: {round(self.best_ratios[pair]*100, 4):0.4f}%" for pair in self.best_ratios]
+        heartbeat_msg = "Best scouting ratios since last trade:\n" + "\n".join(messages)
+        self.logger.info(heartbeat_msg)
 
     def update_values(self):
         """
