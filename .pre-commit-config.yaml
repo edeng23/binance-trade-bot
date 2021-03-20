@@ -19,7 +19,7 @@ repos:
     name: Sort Supported Coin List
     entry: .pre-commit-hooks/sort-coins-file.py
     language: python
-    files: ^supported_coin_list$
+    files: ^.supported_coin_list.example$
 
 - repo: https://github.com/asottile/pyupgrade
   rev: v2.10.0
