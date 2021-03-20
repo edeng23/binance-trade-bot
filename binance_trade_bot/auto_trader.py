@@ -171,14 +171,14 @@ class AutoTrader:
             self.logger.info(f"Will be jumping from {current_coin} to {best_pair.to_coin_id}")
             self.transaction_through_bridge(best_pair, all_tickers)
             self.best_ratios.clear()
-    
+
         for pair in ratio_dict:
             pair_tuple = (pair.from_coin.symbol, pair.to_coin.symbol)
             if pair_tuple in self.best_ratios:
                 self.best_ratios[pair_tuple] = max(self.best_ratios[pair_tuple], ratio_dict[pair])
             else:
                 self.best_ratios[pair_tuple] = ratio_dict[pair]
-        
+
     def heartbeat(self):
         if len(self.best_ratios) == 0:
             self.logger.info("No best scouting ratios available. A trade was probably just made.")
