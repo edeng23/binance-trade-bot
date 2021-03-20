@@ -183,7 +183,10 @@ class AutoTrader:
         if len(self.best_ratios) == 0:
             self.logger.info("No best scouting ratios available. A trade was probably just made.")
             return
-        messages = [f"{pair[0]:<5} to {pair[1]:<5} Diff: {round(self.best_ratios[pair]*100, 4):0.4f}%" for pair in self.best_ratios]
+        messages = [
+            f"{pair[0]:<5} to {pair[1]:<5} Diff: {round(self.best_ratios[pair]*100, 4):0.4f}%"
+            for pair in self.best_ratios
+        ]
         heartbeat_msg = "Best scouting ratios since last trade:\n" + "\n".join(messages)
         self.logger.info(heartbeat_msg)
 

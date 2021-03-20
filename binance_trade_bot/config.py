@@ -65,6 +65,5 @@ class Config:  # pylint: disable=too-few-public-methods
         self.CURRENT_COIN_SYMBOL = os.environ.get("CURRENT_COIN_SYMBOL") or config.get(USER_CFG_SECTION, "current_coin")
 
         self.HEARTBEAT_SLEEP_TIME = int(
-            os.environ.get("HEARTBEAT_TIME")
-            or config.get(USER_CFG_SECTION, "heartbeat_time")
+            os.environ.get("HEARTBEAT_TIME") or config.get(USER_CFG_SECTION, "heartbeat_time")
         )
