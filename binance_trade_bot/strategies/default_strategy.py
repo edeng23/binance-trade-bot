@@ -39,6 +39,7 @@ class Strategy(AutoTrader):
             return
 
         self._jump_to_best_coin(current_coin, current_coin_price, all_tickers)
+        self.bridge_scout()
 
     def initialize_current_coin(self):
         """
