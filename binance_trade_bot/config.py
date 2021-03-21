@@ -17,6 +17,7 @@ class Config:  # pylint: disable=too-few-public-methods
             "scout_multiplier": "5",
             "scout_sleep_time": "5",
             "hourToKeepScoutHistory": "1",
+            "heartbeat_time": "0",
             "tld": "com",
         }
 
@@ -62,3 +63,7 @@ class Config:  # pylint: disable=too-few-public-methods
         self.SUPPORTED_COIN_LIST = supported_coin_list
 
         self.CURRENT_COIN_SYMBOL = os.environ.get("CURRENT_COIN_SYMBOL") or config.get(USER_CFG_SECTION, "current_coin")
+
+        self.HEARTBEAT_SLEEP_TIME = int(
+            os.environ.get("HEARTBEAT_TIME") or config.get(USER_CFG_SECTION, "heartbeat_time")
+        )
