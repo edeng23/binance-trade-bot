@@ -1,5 +1,5 @@
 import time
-from typing import Dict
+from typing import Dict, Set
 
 from autobahn.twisted.websocket import connectWS
 from binance.client import Client
@@ -33,6 +33,7 @@ class CustomBinanceSocketManager(BinanceSocketManager):
 class BinanceCache:  # pylint: disable=too-few-public-methods
     ticker_values: Dict[str, float] = {}
     balances: Dict[str, float] = {}
+    non_existent_tickers: Set[str] = set()
 
 
 class BinanceStreamManager:
