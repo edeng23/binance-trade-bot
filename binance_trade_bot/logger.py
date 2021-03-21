@@ -8,7 +8,7 @@ class Logger:
     Logger = None
     NotificationHandler = None
 
-    def __init__(self, logging_service="crypto_trading"):
+    def __init__(self, logging_service="crypto_trading", enable_notifications=True):
         # Logger setup
         self.Logger = logging.getLogger(f"{logging_service}_logger")
         self.Logger.setLevel(logging.DEBUG)
@@ -26,7 +26,7 @@ class Logger:
         self.Logger.addHandler(ch)
 
         # notification handler
-        self.NotificationHandler = NotificationHandler()
+        self.NotificationHandler = NotificationHandler(enable_notifications)
 
     def log(self, message, level="info", notification=True):
 

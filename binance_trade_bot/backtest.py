@@ -157,7 +157,7 @@ def backtest(
     :return: The final coin balances
     """
     config = config or Config()
-    logger = Logger()
+    logger = Logger(enable_notifications=False)
 
     end_date = end_date or datetime.today()
 
@@ -179,7 +179,7 @@ def backtest(
     n = 1
     try:
         while manager.datetime < end_date:
-            print(manager.datetime)
+            logger.info(manager.datetime)
             try:
                 trader.scout()
             except SkipIncrement as e:
