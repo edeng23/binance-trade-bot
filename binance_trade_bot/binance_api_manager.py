@@ -39,6 +39,7 @@ class BinanceAPIManager:
         base_fee = self.get_trade_fees()[origin_coin + target_coin]
         if not self.get_using_bnb_for_fees():
             return base_fee
+
         # The discount is only applied if we have enough BNB to cover the fee
         amount_trading = (
             self._sell_quantity(origin_coin.symbol, target_coin.symbol)
@@ -76,7 +77,7 @@ class BinanceAPIManager:
 
         return price
 
-    def get_currency_balance(self, currency_symbol: str):
+    def get_currency_balance(self, currency_symbol: str) -> float:
         """
         Get balance of a specific coin
         """
@@ -86,7 +87,10 @@ class BinanceAPIManager:
                 currency_balance["asset"]: float(currency_balance["free"])
                 for currency_balance in self.binance_client.get_account()["balances"]
             }
-            balance = self.cache.balances.get(currency_symbol, None)
+            if currency_symbol not in self.cache.balances:
+                self.cache.balances[currency_symbol] = 0.0
+                return 0.0
+            return self.cache.balances.get(currency_symbol, 0.0)
 
         return balance
 
