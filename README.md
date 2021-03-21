@@ -13,7 +13,7 @@ So, if coins are basically oscillating with respect to each other, it seems smar
 
 ## How?
 
-The trading is done in the Binance market platform, which of course, does not have markets for every altcoin pair. The workaround for this is to use a bridge currency that will complement missing pairs. The default bridge currency is Tether (USDT), which is stable by design and compatible with nearly every coin on the platform. 
+The trading is done in the Binance market platform, which of course, does not have markets for every altcoin pair. The workaround for this is to use a bridge currency that will complement missing pairs. The default bridge currency is Tether (USDT), which is stable by design and compatible with nearly every coin on the platform.
 
 <p align="center">
   Coin A → USDT → Coin B
