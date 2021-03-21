@@ -7,19 +7,19 @@
 
 ## Why?
 
-This script was inspired by the observation that all cryptocurrencies pretty much behave in the same way. When one spikes, they all spike, and when one takes a dive, they all do. _Pretty much_. Moreover, all coins follow Bitcoin's lead; the difference is their phase offset.
+This project was inspired by the observation that all cryptocurrencies pretty much behave in the same way. When one spikes, they all spike, and when one takes a dive, they all do. _Pretty much_. Moreover, all coins follow Bitcoin's lead; the difference is their phase offset.
 
 So, if coins are basically oscillating with respect to each other, it seems smart to trade the rising coin for the falling coin, and then trade back when the ratio is reversed.
 
 ## How?
 
-The trading is done in the Binance market platform, which of course does not have markets for every altcoin pair. The workaround for this is to use Tether (USDT), which is stable by design, as a bridge currency.
+The trading is done in the Binance market platform, which of course, does not have markets for every altcoin pair. The workaround for this is to use a bridge currency that will complement missing pairs. The default bridge currency is Tether (USDT), which is stable by design and compatible with nearly every coin on the platform. 
 
 <p align="center">
   Coin A → USDT → Coin B
 </p>
 
-The way the bot takes advantage of this behaviour is to always downgrade from the "strong" coin to the "weak" coin, under the assumption that at some point the tables will turn. It will then return to the original coin, ultimately holding more of it than it did originally. This is done while taking into consideration the trading fees.
+The way the bot takes advantage of the observed behaviour is to always downgrade from the "strong" coin to the "weak" coin, under the assumption that at some point the tables will turn. It will then return to the original coin, ultimately holding more of it than it did originally. This is done while taking into consideration the trading fees.
 
 <div align="center">
   <p><b>Coin A</b> → USDT → Coin B</p>
@@ -100,7 +100,7 @@ The official image is available [here](https://hub.docker.com/r/edeng23/binance-
 docker-compose up
 ```
 
-if you only want to start the sqlitebrowser
+If you only want to start the SQLite browser
 
 ```shell
 docker-compose up -d sqlitebrowser
@@ -134,5 +134,16 @@ A list of answers to what seem to be the most frequently asked questions can be 
 
 ## Disclaimer
 
-The code within this repository comes with no guarantee. Run it at your own risk.
-Do not risk money which you are afraid to lose. There might be bugs in the code - this software does not come with any warranty.
+This project is for informational purposes only. You should not construe any
+such information or other material as legal, tax, investment, financial, or
+other advice. Nothing contained here constitutes a solicitation, recommendation,
+endorsement, or offer by me or any third party service provider to buy or sell
+any securities or other financial instruments in this or in any other
+jurisdiction in which such solicitation or offer would be unlawful under the
+securities laws of such jurisdiction.
+
+If you plan to use real money, USE AT YOUR OWN RISK.
+
+Under no circumstances will I be held responsible or liable in any way for any
+claims, damages, losses, expenses, costs, or liabilities whatsoever, including,
+without limitation, any direct or indirect damages for loss of profits.
