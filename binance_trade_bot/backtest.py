@@ -21,6 +21,10 @@ class FakeAllTickers(AllTickers):  # pylint: disable=too-few-public-methods
         return self.manager.get_market_ticker_price(ticker_symbol)
 
 
+class SkipIncrement(Exception):
+    pass
+
+
 class MockBinanceManager(BinanceAPIManager):
     def __init__(
         self,
@@ -63,7 +67,10 @@ class MockBinanceManager(BinanceAPIManager):
                 date = datetime.utcfromtimestamp(result[0] / 1000).strftime("%d %b %Y %H:%M:%S")
                 price = float(result[1])
                 cache.set(f"{ticker_symbol}_{date}", price)
-        return cache.get(key)
+        val = cache.get(key)
+        if not val:
+            raise SkipIncrement(f"Couldn't get price for {ticker_symbol}")
+        return val
 
     def get_currency_balance(self, currency_symbol: str):
         """
@@ -173,7 +180,10 @@ def backtest(
     try:
         while manager.datetime < end_date:
             print(manager.datetime)
-            trader.scout()
+            try:
+                trader.scout()
+            except SkipIncrement as e:
+                logger.warning(f"Skipping increment: {e}")
             manager.increment(interval)
             if n % 100 == 0:
                 yield manager
