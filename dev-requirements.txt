@@ -1,1 +1,3 @@
+pylint-flask-sqlalchemy
 pylint-sqlalchemy
+pylint-flask
