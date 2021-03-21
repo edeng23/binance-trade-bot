@@ -73,11 +73,13 @@ class BinanceAPIManager:
         Get ticker price of a specific coin
         """
         price = self.cache.ticker_values.get(ticker_symbol, None)
-        if price is None:
+        if price is None and ticker_symbol not in self.cache.non_existent_tickers:
             self.cache.ticker_values = {
                 ticker["symbol"]: float(ticker["price"]) for ticker in self.binance_client.get_symbol_ticker()
             }
             price = self.cache.ticker_values.get(ticker_symbol, None)
+            if price is None:
+                self.cache.non_existent_tickers.add(ticker_symbol)
 
         return price
 
