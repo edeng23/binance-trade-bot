@@ -30,10 +30,27 @@ class CustomBinanceSocketManager(BinanceSocketManager):
         return path
 
 
+class BinanceOrder:  # pylint: disable=too-few-public-methods
+    def __init__(self, event):
+        self.event = event
+        self.symbol = event["s"]
+        self.side = event["S"]
+        self.order_type = event["o"]
+        self.id = event["i"]
+        self.cumulative_quote_qty = float(event["Z"])
+        self.status = event["X"]
+        self.price = float(event["p"])
+        self.time = event["T"]
+
+    def __repr__(self):
+        return f"<BinanceOrder {self.event}>"
+
+
 class BinanceCache:  # pylint: disable=too-few-public-methods
     ticker_values: Dict[str, float] = {}
     balances: Dict[str, float] = {}
     non_existent_tickers: Set[str] = set()
+    orders: Dict[str, BinanceOrder] = {}
 
 
 class BinanceStreamManager:
@@ -93,6 +110,9 @@ class BinanceStreamManager:
                 self.cache.balances[bal["a"]] = float(bal["f"])
         elif msg["e"] == "balanceUpdate":
             del self.cache.balances[msg["a"]]
+        elif msg["e"] == "executionReport":
+            order = BinanceOrder(msg)
+            self.cache.orders[order.id] = order
 
     def close(self):
         self.bm.close()
