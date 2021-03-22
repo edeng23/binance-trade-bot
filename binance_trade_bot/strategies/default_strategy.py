@@ -41,6 +41,17 @@ class Strategy(AutoTrader):
         self._jump_to_best_coin(current_coin, current_coin_price, all_tickers)
         self.bridge_scout()
 
+    def bridge_scout(self):
+        current_coin = self.db.get_current_coin()
+        if self.manager.get_currency_balance(current_coin.symbol) > self.manager.get_min_notional(
+            current_coin.symbol, self.config.BRIDGE.symbol
+        ):
+            # Only scout if we don't have enough of the current coin
+            return
+        new_coin = super().bridge_scout()
+        if new_coin is not None:
+            self.db.set_current_coin(new_coin)
+
     def initialize_current_coin(self):
         """
         Decide what is the current coin, and set it up in the DB.

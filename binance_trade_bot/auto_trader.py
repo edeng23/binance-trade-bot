@@ -156,7 +156,8 @@ class AutoTrader:
                 if bridge_balance > self.manager.get_min_notional(coin.symbol, self.config.BRIDGE.symbol):
                     self.logger.info(f"Will be purchasing {coin} using bridge coin")
                     self.manager.buy_alt(coin, self.config.BRIDGE, all_tickers)
-                return
+                    return coin
+        return None
 
     def update_values(self):
         """
