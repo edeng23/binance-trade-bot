@@ -184,7 +184,10 @@ def backtest(
     try:
         while manager.datetime < end_date:
             logger.info(f"Time: {manager.datetime}")
-            trader.scout()
+            try:
+                trader.scout()
+            except Exception as e:  # pylint: disable=broad-except
+                logger.warning(e)
             manager.increment(interval)
             if n % 100 == 0:
                 yield manager
