@@ -1,3 +1,5 @@
+import random
+import sys
 from datetime import datetime
 from typing import Dict, List
 
@@ -120,6 +122,14 @@ class AutoTrader:
             ratio_dict[pair] = (
                 coin_opt_coin_ratio - transaction_fee * self.config.SCOUT_MULTIPLIER * coin_opt_coin_ratio
             ) - pair.ratio
+
+            # Output scout result for each selected pair
+            progress = (coin_opt_coin_ratio - transaction_fee * self.config.SCOUT_MULTIPLIER * coin_opt_coin_ratio) / pair.ratio * 100
+            progress_absolute = coin_opt_coin_ratio / pair.ratio * 100
+            print(
+                str(datetime.now())
+                + f" - SCOUTING:RESULT - {pair.to_coin} = {ratio_dict[pair]} ({pair.from_coin}: {coin_price}, {pair.to_coin}: {optional_coin_price}) [progress = {progress: .2f}% , progress_nofeenomultiplier = {progress_absolute: .2f}%]"
+            )
         return ratio_dict
 
     def _jump_to_best_coin(self, coin: Coin, coin_price: float, all_tickers):
