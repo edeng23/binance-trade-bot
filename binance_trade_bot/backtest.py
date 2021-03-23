@@ -146,6 +146,7 @@ def backtest(
     start_date: datetime = None,
     end_date: datetime = None,
     interval=1,
+    yield_interval=100,
     start_balances: Dict[str, float] = None,
     starting_coin: str = None,
     config: Config = None,
@@ -156,6 +157,7 @@ def backtest(
     :param start_date: Date to  backtest from
     :param end_date: Date to backtest up to
     :param interval: Number of virtual minutes between each scout
+    :param yield_interval: After how many intervals should the manager be yielded
     :param start_balances: A dictionary of initial coin values. Default: {BRIDGE: 100}
     :param starting_coin: The coin to start on. Default: first coin in coin list
 
@@ -193,7 +195,7 @@ def backtest(
             except Exception:  # pylint: disable=broad-except
                 logger.warning(format_exc())
             manager.increment(interval)
-            if n % 100 == 0:
+            if n % yield_interval == 0:
                 yield manager
             n += 1
     except KeyboardInterrupt:
