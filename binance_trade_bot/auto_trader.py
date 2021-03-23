@@ -128,7 +128,10 @@ class AutoTrader:
             progress_absolute = coin_opt_coin_ratio / pair.ratio * 100
             print(
                 str(datetime.now())
-                + f" - SCOUTING:RESULT - {pair.to_coin} = {ratio_dict[pair]} ({pair.from_coin}: {coin_price}, {pair.to_coin}: {optional_coin_price}) [progress = {progress: .2f}% , progress_nofeenomultiplier = {progress_absolute: .2f}%]"
+                + f" - SCOUTING:RESULT - "
+                  f"{pair.to_coin} = {ratio_dict[pair]} "
+                  f"({pair.from_coin}: {coin_price}, {pair.to_coin}: {optional_coin_price}) "
+                  f"[progress = {progress: .2f}% , progress_nofeenomultiplier = {progress_absolute: .2f}%]"
             )
         return ratio_dict
 
