@@ -19,7 +19,7 @@ class Database:
     def __init__(self, logger: Logger, config: Config, uri="sqlite:///data/crypto_trading.db"):
         self.logger = logger
         self.config = config
-        self.engine = create_engine(uri, connect_args={"check_same_thread": False})
+        self.engine = create_engine(uri)
         self.SessionMaker = sessionmaker(bind=self.engine)
         self.socketio_client = Client()
 
