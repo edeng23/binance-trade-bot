@@ -1,14 +1,15 @@
 from datetime import datetime, timedelta
+from traceback import format_exc
 from typing import Dict
 
 from sqlitedict import SqliteDict
 
-from .auto_trader import AutoTrader
 from .binance_api_manager import AllTickers, BinanceAPIManager
 from .config import Config
 from .database import Database
 from .logger import Logger
 from .models import Coin, Pair
+from .strategies import get_strategy
 
 cache = SqliteDict("data/backtest_cache.db")
 
@@ -175,19 +176,22 @@ def backtest(
         manager.buy_alt(starting_coin, config.BRIDGE, manager.get_all_market_tickers())
     db.set_current_coin(starting_coin)
 
-    trader = AutoTrader(manager, db, logger, config)
-    trader.initialize_trade_thresholds()
+    strategy = get_strategy(config.STRATEGY)
+    if strategy is None:
+        logger.error("Invalid strategy name")
+        return manager
+    trader = strategy(manager, db, logger, config)
+    trader.initialize()
 
     yield manager
 
     n = 1
     try:
         while manager.datetime < end_date:
-            logger.info(f"Time: {manager.datetime}")
             try:
                 trader.scout()
-            except Exception as e:  # pylint: disable=broad-except
-                logger.warning(e)
+            except Exception:  # pylint: disable=broad-except
+                logger.warning(format_exc())
             manager.increment(interval)
             if n % 100 == 0:
                 yield manager

@@ -11,6 +11,7 @@ if __name__ == "__main__":
         btc_diff = round((btc_value - history[0][0]) / history[0][0], 3)
         bridge_diff = round((bridge_value - history[0][1]) / history[0][1], 3)
         print("------")
+        print("TIME:", manager.datetime)
         print("BALANCES:", manager.balances)
         print("BTC VALUE:", btc_value, f"({btc_diff}%)")
         print(f"{manager.config.BRIDGE.symbol} VALUE:", bridge_value, f"({bridge_diff}%)")
