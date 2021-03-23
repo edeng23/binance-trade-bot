@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from typing import Dict
 
-import pickledb
+from sqlitedict import SqliteDict
 
 from .auto_trader import AutoTrader
 from .binance_api_manager import AllTickers, BinanceAPIManager
@@ -10,7 +10,7 @@ from .database import Database
 from .logger import Logger
 from .models import Coin, Pair
 
-cache = pickledb.load(".backtest_cache.db", False)
+cache = SqliteDict("data/backtest_cache.db")
 
 
 class FakeAllTickers(AllTickers):  # pylint: disable=too-few-public-methods
@@ -52,9 +52,9 @@ class MockBinanceManager(BinanceAPIManager):
         Get ticker price of a specific coin
         """
         target_date = self.datetime.strftime("%d %b %Y %H:%M:%S")
-        key = f"{ticker_symbol}_{target_date}"
-        val = cache.get(key)
-        if not val:
+        key = f"{ticker_symbol} - {target_date}"
+        val = cache.get(key, None)
+        if val is None:
             end_date = self.datetime + timedelta(minutes=1000)
             if end_date > datetime.now():
                 end_date = datetime.now()
@@ -65,10 +65,9 @@ class MockBinanceManager(BinanceAPIManager):
             ):
                 date = datetime.utcfromtimestamp(result[0] / 1000).strftime("%d %b %Y %H:%M:%S")
                 price = float(result[1])
-                cache.set(f"{ticker_symbol}_{date}", price)
-        val = cache.get(key)
-        if not val:
-            return None
+                cache[f"{ticker_symbol} - {date}"] = price
+            cache.commit()
+            val = cache.get(key, None)
         return val
 
     def get_currency_balance(self, currency_symbol: str):
@@ -189,9 +188,8 @@ def backtest(
             manager.increment(interval)
             if n % 100 == 0:
                 yield manager
-            if n % 1000 == 0:
-                cache.dump()
             n += 1
     except KeyboardInterrupt:
-        cache.dump()
+        pass
+    cache.close()
     return manager
