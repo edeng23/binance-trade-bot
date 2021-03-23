@@ -29,7 +29,7 @@ class BinanceAPIManager:
 
     @cached(cache=TTLCache(maxsize=1, ttl=60))
     def get_using_bnb_for_fees(self):
-        return self.binance_client.get_bnb_burn_spot_margin()['spotBNBBurn']
+        return self.binance_client.get_bnb_burn_spot_margin()["spotBNBBurn"]
 
     def get_fee(self, origin_coin: Coin, target_coin: Coin, selling: bool):
         base_fee = self.get_trade_fees()[origin_coin + target_coin]
