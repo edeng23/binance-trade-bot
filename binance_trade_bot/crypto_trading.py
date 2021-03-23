@@ -18,7 +18,7 @@ def main():
     manager = BinanceAPIManager(config, db, logger)
     trader = AutoTrader(manager, db, logger, config)
 
-    logger.info("Creating database schema if it doesn't already exist")
+#    logger.info("Creating database schema if it doesn't already exist")
     db.create_database()
 
     db.set_coins(config.SUPPORTED_COIN_LIST)

@@ -155,7 +155,8 @@ class BinanceAPIManager:
         from_coin_price = get_market_ticker_price_from_list(all_tickers, origin_symbol + target_symbol)
 
         order_quantity = self._buy_quantity(origin_symbol, target_symbol, target_balance, from_coin_price)
-        self.logger.info(f"BUY QTY {order_quantity}")
+        total_order_price = order_quantity * from_coin_price
+        self.logger.info(f"BUY QTY {order_quantity} AT PRICE {from_coin_price} = {total_order_price}")
 
         # Try to buy until successful
         order = None

@@ -110,6 +110,10 @@ class AutoTrader:
                 all_tickers = self.manager.get_all_market_tickers()
                 self.manager.buy_alt(current_coin, self.config.BRIDGE, all_tickers)
                 self.logger.info("Ready to start trading")
+        else:
+            current_coin = self.db.get_current_coin()
+            self.logger.info(f"Current coin: {current_coin}")
+
 
     def scout(self):
         """
@@ -124,8 +128,7 @@ class AutoTrader:
             str(datetime.now())
             + " - CONSOLE - INFO - I am scouting the best trades. Current coin: {} ".format(
                 current_coin + self.config.BRIDGE
-            ),
-            end="\r",
+            )
         )
 
         current_coin_price = get_market_ticker_price_from_list(all_tickers, current_coin + self.config.BRIDGE)
@@ -160,6 +163,14 @@ class AutoTrader:
             ratio_dict[pair] = (
                 coin_opt_coin_ratio - transaction_fee * self.config.SCOUT_MULTIPLIER * coin_opt_coin_ratio
             ) - pair.ratio
+
+            # Output scout result for each selected pair
+            progress = (coin_opt_coin_ratio - transaction_fee * self.config.SCOUT_MULTIPLIER * coin_opt_coin_ratio) / pair.ratio * 100
+            progress_absolute = coin_opt_coin_ratio / pair.ratio * 100
+            print(
+                str(datetime.now())
+                + f" - SCOUTING:RESULT - {pair.to_coin} = {ratio_dict[pair]} ({pair.from_coin}: {current_coin_price}, {pair.to_coin}: {optional_coin_price}) [progress = {progress: .2f}% , progress_nofeenomultiplier = {progress_absolute: .2f}%]"
+            )
 
         # keep only ratios bigger than zero
         ratio_dict = {k: v for k, v in ratio_dict.items() if v > 0}
