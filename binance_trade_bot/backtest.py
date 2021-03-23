@@ -21,10 +21,6 @@ class FakeAllTickers(AllTickers):  # pylint: disable=too-few-public-methods
         return self.manager.get_market_ticker_price(ticker_symbol)
 
 
-class SkipIncrement(Exception):
-    pass
-
-
 class MockBinanceManager(BinanceAPIManager):
     def __init__(
         self,
@@ -59,17 +55,20 @@ class MockBinanceManager(BinanceAPIManager):
         key = f"{ticker_symbol}_{target_date}"
         val = cache.get(key)
         if not val:
-            end_date = self.datetime + timedelta(hours=4)
+            end_date = self.datetime + timedelta(minutes=1000)
             if end_date > datetime.now():
                 end_date = datetime.now()
             end_date = end_date.strftime("%d %b %Y %H:%M:%S")
-            for result in self.binance_client.get_historical_klines(ticker_symbol, "1m", target_date, end_date):
+            self.logger.info(f"Fetching prices for {ticker_symbol} between {self.datetime} and {end_date}")
+            for result in self.binance_client.get_historical_klines(
+                ticker_symbol, "1m", target_date, end_date, limit=1000
+            ):
                 date = datetime.utcfromtimestamp(result[0] / 1000).strftime("%d %b %Y %H:%M:%S")
                 price = float(result[1])
                 cache.set(f"{ticker_symbol}_{date}", price)
         val = cache.get(key)
         if not val:
-            raise SkipIncrement(f"Couldn't get price for {ticker_symbol}")
+            return None
         return val
 
     def get_currency_balance(self, currency_symbol: str):
@@ -123,9 +122,15 @@ class MockBinanceManager(BinanceAPIManager):
                 if coin == target_symbol:
                     total += balance
                 else:
-                    total += balance / self.get_market_ticker_price(target_symbol + coin)
+                    price = self.get_market_ticker_price(target_symbol + coin)
+                    if price is None:
+                        continue
+                    total += balance / price
             else:
-                total += self.get_market_ticker_price(coin + target_symbol) * balance
+                price = self.get_market_ticker_price(coin + target_symbol)
+                if price is None:
+                    continue
+                total += price * balance
         return total
 
 
@@ -157,7 +162,7 @@ def backtest(
     :return: The final coin balances
     """
     config = config or Config()
-    logger = Logger(enable_notifications=False)
+    logger = Logger("backtesting", enable_notifications=False)
 
     end_date = end_date or datetime.today()
 
@@ -179,11 +184,8 @@ def backtest(
     n = 1
     try:
         while manager.datetime < end_date:
-            logger.info(manager.datetime)
-            try:
-                trader.scout()
-            except SkipIncrement as e:
-                logger.warning(f"Skipping increment: {e}")
+            logger.info(f"Time: {manager.datetime}")
+            trader.scout()
             manager.increment(interval)
             if n % 100 == 0:
                 yield manager
