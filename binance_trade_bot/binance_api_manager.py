@@ -25,11 +25,14 @@ class BinanceAPIManager:
 
     @cached(cache=TTLCache(maxsize=1, ttl=43200))
     def get_trade_fees(self) -> Dict[str, float]:
-        return {ticker["symbol"]: ticker["taker"] for ticker in self.binance_client.get_trade_fee()["tradeFee"]}
+        return {
+            ticker["symbol"]: ticker["taker"]
+            for ticker in self.binance_client.get_trade_fee()["tradeFee"]
+        }
 
     @cached(cache=TTLCache(maxsize=1, ttl=60))
     def get_using_bnb_for_fees(self):
-        return self.binance_client.get_bnb_burn_spot_margin()['spotBNBBurn']
+        return self.binance_client.get_bnb_burn_spot_margin()["spotBNBBurn"]
 
     def get_fee(self, origin_coin: Coin, target_coin: Coin, selling: bool):
         base_fee = self.get_trade_fees()[origin_coin + target_coin]
@@ -91,28 +94,40 @@ class BinanceAPIManager:
                 attempts += 1
         return None
 
-    def get_symbol_filter(self, origin_symbol: str, target_symbol: str, filter_type: str):
+    def get_symbol_filter(
+        self, origin_symbol: str, target_symbol: str, filter_type: str
+    ):
         return next(
             _filter
-            for _filter in self.binance_client.get_symbol_info(origin_symbol + target_symbol)["filters"]
+            for _filter in self.binance_client.get_symbol_info(
+                origin_symbol + target_symbol
+            )["filters"]
             if _filter["filterType"] == filter_type
         )
 
     @cached(cache=TTLCache(maxsize=2000, ttl=43200))
     def get_alt_tick(self, origin_symbol: str, target_symbol: str):
-        step_size = self.get_symbol_filter(origin_symbol, target_symbol, "LOT_SIZE")["stepSize"]
+        step_size = self.get_symbol_filter(origin_symbol, target_symbol, "LOT_SIZE")[
+            "stepSize"
+        ]
         if step_size.find("1") == 0:
             return 1 - step_size.find(".")
         return step_size.find("1") - 1
 
     @cached(cache=TTLCache(maxsize=2000, ttl=43200))
     def get_min_notional(self, origin_symbol: str, target_symbol: str):
-        return float(self.get_symbol_filter(origin_symbol, target_symbol, "MIN_NOTIONAL")["minNotional"])
+        return float(
+            self.get_symbol_filter(origin_symbol, target_symbol, "MIN_NOTIONAL")[
+                "minNotional"
+            ]
+        )
 
     def wait_for_order(self, origin_symbol, target_symbol, order_id):
         while True:
             try:
-                order_status = self.binance_client.get_order(symbol=origin_symbol + target_symbol, orderId=order_id)
+                order_status = self.binance_client.get_order(
+                    symbol=origin_symbol + target_symbol, orderId=order_id
+                )
                 break
             except BinanceAPIException as e:
                 self.logger.info(e)
@@ -125,7 +140,9 @@ class BinanceAPIManager:
 
         while order_status["status"] != "FILLED":
             try:
-                order_status = self.binance_client.get_order(symbol=origin_symbol + target_symbol, orderId=order_id)
+                order_status = self.binance_client.get_order(
+                    symbol=origin_symbol + target_symbol, orderId=order_id
+                )
             except BinanceAPIException as e:
                 self.logger.info(e)
                 time.sleep(1)
@@ -139,7 +156,11 @@ class BinanceAPIManager:
         return self.retry(self._buy_alt, origin_coin, target_coin, all_tickers)
 
     def _buy_quantity(
-        self, origin_symbol: str, target_symbol: str, target_balance: float = None, from_coin_price: float = None
+        self,
+        origin_symbol: str,
+        target_symbol: str,
+        target_balance: float = None,
+        from_coin_price: float = None,
     ):
         target_balance = target_balance or self.get_currency_balance(target_symbol)
         from_coin_price = from_coin_price or get_market_ticker_price_from_list(
@@ -147,7 +168,9 @@ class BinanceAPIManager:
         )
 
         origin_tick = self.get_alt_tick(origin_symbol, target_symbol)
-        return math.floor(target_balance * 10 ** origin_tick / from_coin_price) / float(10 ** origin_tick)
+        return math.floor(target_balance * 10 ** origin_tick / from_coin_price) / float(
+            10 ** origin_tick
+        )
 
     def _buy_alt(self, origin_coin: Coin, target_coin: Coin, all_tickers):
         """
@@ -159,9 +182,13 @@ class BinanceAPIManager:
 
         origin_balance = self.get_currency_balance(origin_symbol)
         target_balance = self.get_currency_balance(target_symbol)
-        from_coin_price = get_market_ticker_price_from_list(all_tickers, origin_symbol + target_symbol)
+        from_coin_price = get_market_ticker_price_from_list(
+            all_tickers, origin_symbol + target_symbol
+        )
 
-        order_quantity = self._buy_quantity(origin_symbol, target_symbol, target_balance, from_coin_price)
+        order_quantity = self._buy_quantity(
+            origin_symbol, target_symbol, target_balance, from_coin_price
+        )
         self.logger.info(f"BUY QTY {order_quantity}")
 
         # Try to buy until successful
@@ -193,7 +220,9 @@ class BinanceAPIManager:
     def sell_alt(self, origin_coin: Coin, target_coin: Coin):
         return self.retry(self._sell_alt, origin_coin, target_coin)
 
-    def _sell_quantity(self, origin_symbol: str, target_symbol: str, origin_balance: float = None):
+    def _sell_quantity(
+        self, origin_symbol: str, target_symbol: str, origin_balance: float = None
+    ):
         origin_balance = origin_balance or self.get_currency_balance(origin_symbol)
 
         origin_tick = self.get_alt_tick(origin_symbol, target_symbol)
@@ -210,13 +239,17 @@ class BinanceAPIManager:
         origin_balance = self.get_currency_balance(origin_symbol)
         target_balance = self.get_currency_balance(target_symbol)
 
-        order_quantity = self._sell_quantity(origin_symbol, target_symbol, origin_balance)
+        order_quantity = self._sell_quantity(
+            origin_symbol, target_symbol, origin_balance
+        )
         self.logger.info(f"Selling {order_quantity} of {origin_symbol}")
 
         self.logger.info(f"Balance is {origin_balance}")
         order = None
         while order is None:
-            order = self.binance_client.order_market_sell(symbol=origin_symbol + target_symbol, quantity=order_quantity)
+            order = self.binance_client.order_market_sell(
+                symbol=origin_symbol + target_symbol, quantity=order_quantity
+            )
 
         self.logger.info("order")
         self.logger.info(order)
