@@ -27,8 +27,7 @@ class Strategy(AutoTrader):
         # stopped. Not logging though to reduce log size.
         print(
             f"{datetime.now()} - CONSOLE - INFO - I am scouting the best trades. "
-            f"Current coin: {current_coin + self.config.BRIDGE} ",
-            end="\r",
+            f"Current coin: {current_coin + self.config.BRIDGE} "
         )
 
         current_coin_price = all_tickers.get_price(current_coin + self.config.BRIDGE)
@@ -38,7 +37,7 @@ class Strategy(AutoTrader):
             return
 
         self._jump_to_best_coin(current_coin, current_coin_price, all_tickers)
-        self.bridge_scout()
+#        self.bridge_scout()
 
     def bridge_scout(self):
         current_coin = self.db.get_current_coin()
