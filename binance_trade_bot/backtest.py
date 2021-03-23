@@ -57,7 +57,7 @@ class MockBinanceManager(BinanceAPIManager):
             val = cache.get(key, None)
         return val
 
-    def get_currency_balance(self, currency_symbol: str):
+    def get_currency_balance(self, currency_symbol: str, force=False):
         """
         Get balance of a specific coin
         """
