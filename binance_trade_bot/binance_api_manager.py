@@ -71,8 +71,10 @@ class BinanceAPIManager:
             self.cache.ticker_values = {
                 ticker["symbol"]: float(ticker["price"]) for ticker in self.binance_client.get_symbol_ticker()
             }
+            self.logger.debug(f"Fetched all ticker prices: {self.cache.ticker_values}")
             price = self.cache.ticker_values.get(ticker_symbol, None)
             if price is None:
+                self.logger.info(f"Ticker does not exist: {ticker_symbol} - will not be fetched from now on")
                 self.cache.non_existent_tickers.add(ticker_symbol)
 
         return price
@@ -87,6 +89,7 @@ class BinanceAPIManager:
                 currency_balance["asset"]: float(currency_balance["free"])
                 for currency_balance in self.binance_client.get_account()["balances"]
             }
+            self.logger.debug(f"Fetched all balances: {self.cache.balances}")
             if currency_symbol not in self.cache.balances:
                 self.cache.balances[currency_symbol] = 0.0
                 return 0.0
@@ -101,9 +104,9 @@ class BinanceAPIManager:
             try:
                 return func(*args, **kwargs)
             except Exception as e:  # pylint: disable=broad-except
-                self.logger.info("Failed to Buy/Sell. Trying Again.")
+                self.logger.warning(f"Failed to Buy/Sell. Trying Again (attempt {attempts}/20)")
                 if attempts == 0:
-                    self.logger.info(e)
+                    self.logger.warning(e)
                 attempts += 1
         return None
 
@@ -132,13 +135,16 @@ class BinanceAPIManager:
             order_status: BinanceOrder = self.cache.orders.get(order_id, None)
             if order_status is not None:
                 break
+            self.logger.debug(f"Waiting for order {order_id} to be created")
             time.sleep(1)
 
-        self.logger.info(order_status)
+        self.logger.debug(f"Order created: {order_status}")
 
         while order_status.status != "FILLED":
             try:
                 order_status = self.cache.orders.get(order_id, None)
+
+                self.logger.debug(f"Waiting for order {order_id} to be filled")
 
                 if self._should_cancel_order(order_status):
                     cancel_order = None
@@ -173,6 +179,8 @@ class BinanceAPIManager:
             except Exception as e:  # pylint: disable=broad-except
                 self.logger.info(f"Unexpected Error: {e}")
                 time.sleep(1)
+
+        self.logger.debug(f"Order filled: {order_status}")
 
         return order_status
 
@@ -241,7 +249,7 @@ class BinanceAPIManager:
                 self.logger.info(e)
                 time.sleep(1)
             except Exception as e:  # pylint: disable=broad-except
-                self.logger.info(f"Unexpected Error: {e}")
+                self.logger.warning(f"Unexpected Error: {e}")
 
         trade_log.set_ordered(origin_balance, target_balance, order_quantity)
 
@@ -293,9 +301,6 @@ class BinanceAPIManager:
         self.logger.info(order)
 
         trade_log.set_ordered(origin_balance, target_balance, order_quantity)
-
-        # Binance server can take some time to save the order
-        self.logger.info("Waiting for Binance")
 
         order = self.wait_for_order(order["orderId"], origin_symbol, target_symbol)
 

@@ -71,19 +71,21 @@ class BinanceStreamManager:
             try:
                 return func(*args, **kwargs)
             except Exception as e:  # pylint: disable=broad-except
-                self.logger.info("Failed to connect to websocket. Trying Again.")
+                self.logger.warning(f"Failed to connect to websocket. Trying Again (attempt {attempts}/20)")
                 if attempts == 0:
                     self.logger.info(e)
                 attempts += 1
         return None
 
     def _start_ticker_values_socket(self):
+        self.logger.debug(f"Starting ticker socket")
         conn = self.bm.start_ticker_socket(self._process_ticker_values)
         if conn:
             return conn
         return self.retry(self._start_ticker_values_socket)
 
     def _start_user_socket(self):
+        self.logger.debug(f"Starting user socket")
         conn = self.bm.start_user_socket(self._process_user_socket)
         if conn:
             return conn
@@ -91,6 +93,7 @@ class BinanceStreamManager:
 
     def _process_ticker_values(self, msg):
         if "e" in msg and msg["e"] == "error":
+            self.logger.debug(f"Ticker socket error: {msg}")
             self.bm.stop_socket(self.ticker_price_socket_conn_key)
             self.ticker_price_socket_conn_key = self._start_ticker_values_socket()
             self.cache.ticker_values.clear()
@@ -100,6 +103,7 @@ class BinanceStreamManager:
             self.cache.ticker_values[ticker["s"]] = float(ticker["c"])
 
     def _process_user_socket(self, msg):
+        self.logger.debug(f"User socket message: {msg}")
         if msg["e"] == "error":
             self.bm.stop_socket(self.user_socket_conn_key)
             self.user_socket_conn_key = self._start_user_socket()
