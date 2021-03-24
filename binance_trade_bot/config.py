@@ -28,6 +28,7 @@ class Config:  # pylint: disable=too-few-public-methods
             config.read(CFG_FL_NAME)
 
         self.BRIDGE_SYMBOL = os.environ.get("BRIDGE_SYMBOL") or config.get(USER_CFG_SECTION, "bridge")
+        self.BRIDGE_LIMIT = os.environ.get("BRIDGE_LIMIT") or config.get(USER_CFG_SECTION, "bridge_limit")
         self.BRIDGE = Coin(self.BRIDGE_SYMBOL, False)
 
         # Prune settings

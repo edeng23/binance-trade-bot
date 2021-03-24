@@ -53,6 +53,7 @@ Create a .cfg file named `user.cfg` based off `.user.cfg.example`, then add your
 -   **api_secret_key** - Binance secret key generated in the Binance account setup stage.
 -   **current_coin** - This is your starting coin of choice. This should be one of the coins from your supported coin list. If you want to start from your bridge currency, leave this field empty - the bot will select a random coin from your supported coin list and buy it.
 -   **bridge** - Your bridge currency of choice. Notice that different bridges will allow different sets of supported coins. For example, there may be a Binance particular-coin/USDT pair but no particular-coin/BUSD pair.
+-   **bridge_limit** - Your bridge currency trading limit. Bot will not take more than specified in the configuration.
 -   **tld** - 'com' or 'us', depending on your region. Default is 'com'.
 -   **hourToKeepScoutHistory** - Controls how many hours of scouting values are kept in the database. After the amount of time specified has passed, the information will be deleted.
 -   **scout_multiplier** - Controls the value by which the difference between the current state of coin ratios and previous state of ratios is multiplied. For bigger values, the bot will wait for bigger margins to arrive before making a trade.
@@ -66,6 +67,7 @@ All of the options provided in `user.cfg` can also be configured using environme
 CURRENT_COIN_SYMBOL:
 SUPPORTED_COIN_LIST: "XLM TRX ICX EOS IOTA ONT QTUM ETC ADA XMR DASH NEO ATOM DOGE VET BAT OMG BTT"
 BRIDGE_SYMBOL: USDT
+BRIDGE_LIMIT: 100
 API_KEY: vmPUZE6mv9SD5VNHk4HlWFsOr6aKE2zvsw0MuIgwCIPy6utIco14y7Ju91duEh8A
 API_SECRET_KEY: NhqPtmdSJYdKjVHjA7PZj4Mge3R5YNiP1e3UZjInClVN65XAbvqqM6A7H5fATj0j
 SCOUT_MULTIPLIER: 5

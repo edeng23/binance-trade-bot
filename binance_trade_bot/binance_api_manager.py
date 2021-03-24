@@ -22,6 +22,7 @@ class BinanceAPIManager:
         )
         self.db = db
         self.logger = logger
+        self.config = config
 
     @cached(cache=TTLCache(maxsize=1, ttl=43200))
     def get_trade_fees(self) -> Dict[str, float]:
@@ -74,6 +75,12 @@ class BinanceAPIManager:
         Get balance of a specific coin
         """
         for currency_balance in self.binance_client.get_account()["balances"]:
+            if currency_balance["asset"] == self.config.BRIDGE_SYMBOL:
+                return (
+                    float(self.config.BRIDGE_LIMIT)
+                    if float(self.config.BRIDGE_LIMIT) <= float(currency_balance["free"])
+                    else float(currency_balance["free"])
+                )
             if currency_balance["asset"] == currency_symbol:
                 return float(currency_balance["free"])
         return None
