@@ -1,12 +1,12 @@
 import os
 from configparser import NoOptionError
-from contextlib import contextmanager
 from unittest.mock import mock_open, patch
 
 import pytest
 
 from binance_trade_bot.config import CFG_FL_NAME, Config
 from tests.test_data.user_config import API_KEY, BINANCE_TLD, BRIDGE_SYMBOL, DEFAULT_USER_CONFIG, SECRET_KEY
+from tests.utils import create_temporary_user_config_file
 
 
 class TestConfig:
@@ -19,7 +19,7 @@ class TestConfig:
 
     @staticmethod
     def test_config_read_from_file():
-        with create_user_config_file(DEFAULT_USER_CONFIG):
+        with create_temporary_user_config_file(DEFAULT_USER_CONFIG):
             trade_bot_config = Config()
             assert trade_bot_config.BINANCE_API_KEY == API_KEY
             assert trade_bot_config.BINANCE_API_SECRET_KEY == SECRET_KEY
@@ -60,17 +60,3 @@ class TestConfig:
             assert trade_bot_config.SCOUT_MULTIPLIER == 3
             assert trade_bot_config.SCOUT_SLEEP_TIME == 4
             assert trade_bot_config.SCOUT_HISTORY_PRUNE_TIME == 2
-
-
-@contextmanager
-def create_user_config_file(content=""):
-    with open(CFG_FL_NAME, "w") as f:
-        f.write(content)
-    try:
-        yield CFG_FL_NAME
-        os.remove(CFG_FL_NAME)
-    except Exception:  # pylint: disable=broad-except
-        pass
-    finally:
-        if os.path.exists(CFG_FL_NAME):
-            os.remove(CFG_FL_NAME)
