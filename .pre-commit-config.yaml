@@ -70,6 +70,7 @@ repos:
     - flask-socketio==5.0.1
     - gunicorn==20.0.4
     - pylint-sqlalchemy
+    - pytest==6.1.1
     - python-binance==0.7.9
     - python-socketio[client]==5.0.4
     - schedule==1.0.0
