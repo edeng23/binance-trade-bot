@@ -2,8 +2,8 @@ from binance_trade_bot.utils import get_market_ticker_price_from_list
 
 
 class TestUtils:
-    LTC_BTC_SYMBOL = "LTCBTC"
     LTC_BTC_PRICE = 4.00000200
+    LTC_BTC_SYMBOL = "LTCBTC"
     LTC_BTC = {"symbol": LTC_BTC_SYMBOL, "price": str(LTC_BTC_PRICE)}
 
     ETC_BTC = {"symbol": "ETHBTC", "price": "0.07946600"}
