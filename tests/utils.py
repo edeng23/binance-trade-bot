@@ -9,7 +9,8 @@ def create_temporary_user_config_file(content=""):
     with open(CFG_FL_NAME, "w") as f:
         f.write(content)
 
-    yield CFG_FL_NAME
-
-    if os.path.exists(CFG_FL_NAME):
-        os.remove(CFG_FL_NAME)
+    try:
+        yield CFG_FL_NAME
+    finally:
+        if os.path.exists(CFG_FL_NAME):
+            os.remove(CFG_FL_NAME)
