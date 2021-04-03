@@ -20,22 +20,34 @@ class AutoTrader:
     def initialize(self):
         self.initialize_trade_thresholds()
 
-    def transaction_through_bridge(self, pair: Pair, all_tickers):
+    def transaction_through_bridge(self, pair: Pair, all_tickers: AllTickers):
         """
         Jump from the source coin to the destination coin through bridge coin
         """
-        if self.manager.sell_alt(pair.from_coin, self.config.BRIDGE) is None:
+        can_sell = False
+        balance = self.manager.get_currency_balance(pair.from_coin.symbol)
+        from_coin_price = all_tickers.get_price(pair.from_coin + self.config.BRIDGE)
+
+        if balance and balance * from_coin_price > self.manager.get_min_notional(pair.from_coin, self.config.BRIDGE):
+            can_sell = True
+        else:
+            self.logger.info("Skipping sell")
+
+        if can_sell and self.manager.sell_alt(pair.from_coin, self.config.BRIDGE, all_tickers) is None:
             self.logger.info("Couldn't sell, going back to scouting mode...")
             return None
 
         result = self.manager.buy_alt(pair.to_coin, self.config.BRIDGE, all_tickers)
+
         if result is not None:
+            self.db.set_current_coin(pair.to_coin)
             self.update_trade_threshold(pair.to_coin, float(result["price"]), all_tickers)
             return result
+
         self.logger.info("Couldn't buy, going back to scouting mode...")
         return None
 
-    def update_trade_threshold(self, coin: Coin, coin_price: float, all_tickers):
+    def update_trade_threshold(self, coin: Coin, coin_price: float, all_tickers: AllTickers):
         """
         Update all the coins with the threshold of buying the current held coin
         """
