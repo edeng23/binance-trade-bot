@@ -8,3 +8,5 @@ hourToKeepScoutHistory=1
 scout_multiplier=5
 scout_sleep_time=5
 strategy=default
+buy_timeout=0
+sell_timeout=0

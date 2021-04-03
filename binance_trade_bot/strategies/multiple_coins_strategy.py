@@ -26,5 +26,3 @@ class Strategy(AutoTrader):
             self.logger.info(f"Scouting for best trades. Current ticker: {coin + self.config.BRIDGE} ", False)
 
             self._jump_to_best_coin(coin, coin_price, all_tickers)
-
-        self.bridge_scout()

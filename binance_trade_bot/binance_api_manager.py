@@ -30,6 +30,7 @@ class BinanceAPIManager:
         )
         self.db = db
         self.logger = logger
+        self.config = config
 
     @cached(cache=TTLCache(maxsize=1, ttl=43200))
     def get_trade_fees(self) -> Dict[str, float]:
@@ -134,6 +135,34 @@ class BinanceAPIManager:
         while order_status["status"] != "FILLED":
             try:
                 order_status = self.binance_client.get_order(symbol=origin_symbol + target_symbol, orderId=order_id)
+
+                if self._should_cancel_order(order_status):
+                    cancel_order = None
+                    while cancel_order is None:
+                        cancel_order = self.binance_client.cancel_order(
+                            symbol=origin_symbol + target_symbol, orderId=order_id
+                        )
+                    self.logger.info("Order timeout, canceled...")
+
+                    # sell partially
+                    if order_status["status"] == "PARTIALLY_FILLED" and order_status["side"] == "BUY":
+                        self.logger.info("Sell partially filled amount")
+
+                        order_quantity = self._sell_quantity(origin_symbol, target_symbol)
+                        partially_order = None
+                        while partially_order is None:
+                            partially_order = self.binance_client.order_market_sell(
+                                symbol=origin_symbol + target_symbol, quantity=order_quantity
+                            )
+
+                    self.logger.info("Going back to scouting mode...")
+                    return None
+
+                if order_status["status"] == "CANCELED":
+                    self.logger.info("Order is canceled, going back to scouting mode...")
+                    return None
+
+                time.sleep(1)
             except BinanceAPIException as e:
                 self.logger.info(e)
                 time.sleep(1)
@@ -142,6 +171,29 @@ class BinanceAPIManager:
                 time.sleep(1)
 
         return order_status
+
+    def _should_cancel_order(self, order_status):
+        minutes = (time.time() - order_status["time"] / 1000) / 60
+        timeout = 0
+
+        if order_status["side"] == "SELL":
+            timeout = float(self.config.SELL_TIMEOUT)
+        else:
+            timeout = float(self.config.BUY_TIMEOUT)
+
+        if timeout and minutes > timeout and order_status["status"] == "NEW":
+            return True
+
+        if timeout and minutes > timeout and order_status["status"] == "PARTIALLY_FILLED":
+            if order_status["side"] == "SELL":
+                return True
+
+            if order_status["side"] == "BUY":
+                current_price = self.get_market_ticker_price(order_status["symbol"])
+                if float(current_price) * (1 - 0.001) > float(order_status["price"]):
+                    return True
+
+        return False
 
     def buy_alt(self, origin_coin: Coin, target_coin: Coin, all_tickers: AllTickers):
         return self.retry(self._buy_alt, origin_coin, target_coin, all_tickers)
@@ -190,14 +242,16 @@ class BinanceAPIManager:
 
         stat = self.wait_for_order(origin_symbol, target_symbol, order["orderId"])
 
-        self.logger.info(f"Bought {origin_symbol}")
+        if stat is None:
+            return None
 
+        self.logger.info(f"Bought {origin_symbol}")
         trade_log.set_complete(stat["cummulativeQuoteQty"])
 
         return order
 
-    def sell_alt(self, origin_coin: Coin, target_coin: Coin):
-        return self.retry(self._sell_alt, origin_coin, target_coin)
+    def sell_alt(self, origin_coin: Coin, target_coin: Coin, all_tickers: AllTickers):
+        return self.retry(self._sell_alt, origin_coin, target_coin, all_tickers)
 
     def _sell_quantity(self, origin_symbol: str, target_symbol: str, origin_balance: float = None):
         origin_balance = origin_balance or self.get_currency_balance(origin_symbol)
@@ -205,7 +259,7 @@ class BinanceAPIManager:
         origin_tick = self.get_alt_tick(origin_symbol, target_symbol)
         return math.floor(origin_balance * 10 ** origin_tick) / float(10 ** origin_tick)
 
-    def _sell_alt(self, origin_coin: Coin, target_coin: Coin):
+    def _sell_alt(self, origin_coin: Coin, target_coin: Coin, all_tickers: AllTickers):
         """
         Sell altcoin
         """
@@ -215,6 +269,7 @@ class BinanceAPIManager:
 
         origin_balance = self.get_currency_balance(origin_symbol)
         target_balance = self.get_currency_balance(target_symbol)
+        from_coin_price = all_tickers.get_price(origin_symbol + target_symbol)
 
         order_quantity = self._sell_quantity(origin_symbol, target_symbol, origin_balance)
         self.logger.info(f"Selling {order_quantity} of {origin_symbol}")
@@ -222,7 +277,10 @@ class BinanceAPIManager:
         self.logger.info(f"Balance is {origin_balance}")
         order = None
         while order is None:
-            order = self.binance_client.order_market_sell(symbol=origin_symbol + target_symbol, quantity=order_quantity)
+            # Should sell at calculated price to avoid lost coin
+            order = self.binance_client.order_limit_sell(
+                symbol=origin_symbol + target_symbol, quantity=(order_quantity), price=from_coin_price
+            )
 
         self.logger.info("order")
         self.logger.info(order)
@@ -233,6 +291,9 @@ class BinanceAPIManager:
         self.logger.info("Waiting for Binance")
 
         stat = self.wait_for_order(origin_symbol, target_symbol, order["orderId"])
+
+        if stat is None:
+            return None
 
         new_balance = self.get_currency_balance(origin_symbol)
         while new_balance >= origin_balance:

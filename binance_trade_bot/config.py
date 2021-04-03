@@ -8,7 +8,7 @@ CFG_FL_NAME = "user.cfg"
 USER_CFG_SECTION = "binance_user_config"
 
 
-class Config:  # pylint: disable=too-few-public-methods
+class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attributes
     def __init__(self):
         # Init config
         config = configparser.ConfigParser()
@@ -19,6 +19,8 @@ class Config:  # pylint: disable=too-few-public-methods
             "hourToKeepScoutHistory": "1",
             "tld": "com",
             "strategy": "default",
+            "sell_timeout": "0",
+            "buy_timeout": "0",
         }
 
         if not os.path.exists(CFG_FL_NAME):
@@ -65,3 +67,6 @@ class Config:  # pylint: disable=too-few-public-methods
         self.CURRENT_COIN_SYMBOL = os.environ.get("CURRENT_COIN_SYMBOL") or config.get(USER_CFG_SECTION, "current_coin")
 
         self.STRATEGY = os.environ.get("STRATEGY") or config.get(USER_CFG_SECTION, "strategy")
+
+        self.SELL_TIMEOUT = os.environ.get("SELL_TIMEOUT") or config.get(USER_CFG_SECTION, "sell_timeout")
+        self.BUY_TIMEOUT = os.environ.get("BUY_TIMEOUT") or config.get(USER_CFG_SECTION, "buy_timeout")

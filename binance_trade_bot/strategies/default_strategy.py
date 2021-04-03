@@ -3,18 +3,12 @@ import sys
 from datetime import datetime
 
 from binance_trade_bot.auto_trader import AutoTrader
-from binance_trade_bot.models import Pair
 
 
 class Strategy(AutoTrader):
     def initialize(self):
         super().initialize()
         self.initialize_current_coin()
-
-    def transaction_through_bridge(self, pair: Pair, all_tickers):
-        super().transaction_through_bridge(pair, all_tickers)
-
-        self.db.set_current_coin(pair.to_coin)
 
     def scout(self):
         """
@@ -38,7 +32,6 @@ class Strategy(AutoTrader):
             return
 
         self._jump_to_best_coin(current_coin, current_coin_price, all_tickers)
-        self.bridge_scout()
 
     def bridge_scout(self):
         current_coin = self.db.get_current_coin()
