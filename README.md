@@ -92,7 +92,9 @@ If you are interested in running a Telegram bot, more information can be found a
 
 ### Run
 
-`python -m binance_trade_bot`
+```shell
+python -m binance_trade_bot
+```
 
 ### Docker
 
@@ -107,6 +109,16 @@ If you only want to start the SQLite browser
 ```shell
 docker-compose up -d sqlitebrowser
 ```
+
+## Backtesting
+
+You can test the bot on historic data to see how it performs.
+
+```shell
+python backtest.py
+```
+
+Feel free to modify that file to test and compare different settings and time periods
 
 ## Developing
 
