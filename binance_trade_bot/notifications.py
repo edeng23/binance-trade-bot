@@ -8,8 +8,8 @@ APPRISE_CONFIG_PATH = "config/apprise.yml"
 
 
 class NotificationHandler:
-    def __init__(self):
-        if path.exists(APPRISE_CONFIG_PATH):
+    def __init__(self, enabled=True):
+        if enabled and path.exists(APPRISE_CONFIG_PATH):
             self.apobj = apprise.Apprise()
             config = apprise.AppriseConfig()
             config.add(APPRISE_CONFIG_PATH)
@@ -33,6 +33,6 @@ class NotificationHandler:
                 self.apobj.notify(body=message)
             self.queue.task_done()
 
-    def send_notification(self, message, attachments=[]):
+    def send_notification(self, message, attachments=None):
         if self.enabled:
-            self.queue.put((message, attachments))
+            self.queue.put((message, attachments or []))

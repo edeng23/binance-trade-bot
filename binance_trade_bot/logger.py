@@ -1,9 +1,6 @@
-import logging
 import logging.handlers
 
 from .notifications import NotificationHandler
-
-LOG_PATH = "logs/crypto_trading.log"
 
 
 class Logger:
@@ -11,14 +8,13 @@ class Logger:
     Logger = None
     NotificationHandler = None
 
-    def __init__(self):
+    def __init__(self, logging_service="crypto_trading", enable_notifications=True):
         # Logger setup
-        self.Logger = logging.getLogger("crypto_trader_logger")
+        self.Logger = logging.getLogger(f"{logging_service}_logger")
         self.Logger.setLevel(logging.DEBUG)
-        formatter = logging.Formatter(
-            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-        )
-        fh = logging.FileHandler(LOG_PATH)
+        formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        # default is "logs/crypto_trading.log"
+        fh = logging.FileHandler(f"logs/{logging_service}.log")
         fh.setLevel(logging.DEBUG)
         fh.setFormatter(formatter)
         self.Logger.addHandler(fh)
@@ -30,30 +26,30 @@ class Logger:
         self.Logger.addHandler(ch)
 
         # notification handler
-        self.NotificationHandler = NotificationHandler()
+        self.NotificationHandler = NotificationHandler(enable_notifications)
 
     def log(self, message, level="info", notification=True):
 
-        if "info" == level:
+        if level == "info":
             self.Logger.info(message)
-        elif "warning" == level:
+        elif level == "warning":
             self.Logger.warning(message)
-        elif "error" == level:
+        elif level == "error":
             self.Logger.error(message)
-        elif "debug" == level:
+        elif level == "debug":
             self.Logger.debug(message)
 
         if notification and self.NotificationHandler.enabled:
             self.NotificationHandler.send_notification(message)
 
-    def info(self, message):
-        self.log(message, "info")
+    def info(self, message, notification=True):
+        self.log(message, "info", notification)
 
-    def warning(self, message):
-        self.log(message, "warning")
+    def warning(self, message, notification=True):
+        self.log(message, "warning", notification)
 
-    def error(self, message):
-        self.log(message, "error")
+    def error(self, message, notification=True):
+        self.log(message, "error", notification)
 
-    def debug(self, message):
-        self.log(message, "debug")
+    def debug(self, message, notification=True):
+        self.log(message, "debug", notification)

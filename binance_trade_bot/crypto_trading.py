@@ -1,22 +1,27 @@
 #!python3
 import time
 
-from .auto_trader import AutoTrader
 from .binance_api_manager import BinanceAPIManager
 from .config import Config
 from .database import Database
 from .logger import Logger
 from .scheduler import SafeScheduler
+from .strategies import get_strategy
 
 
 def main():
     logger = Logger()
-    logger.info('Starting')
+    logger.info("Starting")
 
     config = Config()
     db = Database(logger, config)
     manager = BinanceAPIManager(config, db, logger)
-    trader = AutoTrader(manager, db, logger, config)
+    strategy = get_strategy(config.STRATEGY)
+    if strategy is None:
+        logger.error("Invalid strategy name")
+        return
+    trader = strategy(manager, db, logger, config)
+    logger.info(f"Chosen strategy: {config.STRATEGY}")
 
     logger.info("Creating database schema if it doesn't already exist")
     db.create_database()
@@ -24,9 +29,8 @@ def main():
     db.set_coins(config.SUPPORTED_COIN_LIST)
     db.migrate_old_state()
 
-    trader.initialize_trade_thresholds()
-    trader.initialize_current_coin()
-    
+    trader.initialize()
+
     schedule = SafeScheduler(logger)
     schedule.every(config.SCOUT_SLEEP_TIME).seconds.do(trader.scout).tag("scouting")
     schedule.every(1).minutes.do(trader.update_values).tag("updating value history")
