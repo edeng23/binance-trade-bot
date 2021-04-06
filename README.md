@@ -1,10 +1,13 @@
 # binance-trade-bot
 
->Automated cryptocurrency trading bot
+![github](https://img.shields.io/github/workflow/status/edeng23/binance-trade-bot/binance-trade-bot)
+![docker](https://img.shields.io/docker/pulls/edeng23/binance-trade-bot)
+
+> Automated cryptocurrency trading bot
 
 ## Why?
 
-This script was inspired by the observation that all cryptocurrencies pretty much behave in the same way. When one spikes, they all spike, and when one takes a dive, they all do. *Pretty much*. Moreover, all coins follow Bitcoin's lead; the difference is their phase offset.
+This script was inspired by the observation that all cryptocurrencies pretty much behave in the same way. When one spikes, they all spike, and when one takes a dive, they all do. _Pretty much_. Moreover, all coins follow Bitcoin's lead; the difference is their phase offset.
 
 So, if coins are basically oscillating with respect to each other, it seems smart to trade the rising coin for the falling coin, and then trade back when the ratio is reversed.
 
@@ -29,10 +32,10 @@ The bot jumps between a configured set of coins on the condition that it does no
 
 ## Binance Setup
 
-* Create a [Binance account](https://accounts.binance.com/en/register).
-* Enable Two-factor Authentication.
-* Create a new API key.
-* Get a cryptocurrency. If its symbol is not in the default list, add it.
+-   Create a [Binance account](https://accounts.binance.com/en/register).
+-   Enable Two-factor Authentication.
+-   Create a new API key.
+-   Get a cryptocurrency. If its symbol is not in the default list, add it.
 
 ## Tool Setup
 
@@ -45,14 +48,31 @@ Run the following line in the terminal: `pip install -r requirements.txt`.
 Create a .cfg file named `user.cfg` based off `.user.cfg.example`, then add your API keys and current coin.
 
 **The configuration file consists of the following fields:**
-- **api_key** - Binance API key generated in the Binance account setup stage.
-- **api_secret_key** - Binance secret key generated in the Binance account setup stage.
-- **current_coin** - This is your starting coin of choice. This should be one of the coins from your supported coin list. If you want to start from your bridge currency, leave this field empty - the bot will select a random coin from your supported coin list and buy it.
-- **bridge** - Your bridge currency of choice. Notice that different bridges will allow different sets of supported coins. For example, there may be a Binance particular-coin/USDT pair but no particular-coin/BUSD pair. 
-- **tld** - 'com' or 'us', depending on your region. Default is 'com'.
-- **hourToKeepScoutHistory** - Controls how many hours of scouting values are kept in the database. After the amount of time specified has passed, the information will be deleted. 
-- **scout_transaction_fee** - The transaction fee percentage. This value should be changed, for example, if you are [using BNB to pay for fees](https://www.binance.com/en/support/faq/115000583311-Using-BNB-to-Pay-for-Fees). 
-- **scout_multiplier** - Controls the value by which the difference between the current state of coin ratios and previous state of ratios is multiplied. For bigger values, the bot will wait for bigger margins to arrive before making a trade. 
+
+-   **api_key** - Binance API key generated in the Binance account setup stage.
+-   **api_secret_key** - Binance secret key generated in the Binance account setup stage.
+-   **current_coin** - This is your starting coin of choice. This should be one of the coins from your supported coin list. If you want to start from your bridge currency, leave this field empty - the bot will select a random coin from your supported coin list and buy it.
+-   **bridge** - Your bridge currency of choice. Notice that different bridges will allow different sets of supported coins. For example, there may be a Binance particular-coin/USDT pair but no particular-coin/BUSD pair.
+-   **tld** - 'com' or 'us', depending on your region. Default is 'com'.
+-   **hourToKeepScoutHistory** - Controls how many hours of scouting values are kept in the database. After the amount of time specified has passed, the information will be deleted.
+-   **scout_transaction_fee** - The transaction fee percentage. This value should be changed, for example, if you are [using BNB to pay for fees](https://www.binance.com/en/support/faq/115000583311-Using-BNB-to-Pay-for-Fees).
+-   **scout_multiplier** - Controls the value by which the difference between the current state of coin ratios and previous state of ratios is multiplied. For bigger values, the bot will wait for bigger margins to arrive before making a trade.
+
+#### Environment Variables
+
+All of the options provided in `user.cfg` can also be configured using environment variables.
+
+```
+CURRENT_COIN_SYMBOL:
+SUPPORTED_COIN_LIST: "XLM TRX ICX EOS IOTA ONT QTUM ETC ADA XMR DASH NEO ATOM DOGE VET BAT OMG BTT"
+BRIDGE_SYMBOL: USDT
+API_KEY: vmPUZE6mv9SD5VNHk4HlWFsOr6aKE2zvsw0MuIgwCIPy6utIco14y7Ju91duEh8A
+API_SECRET_KEY: NhqPtmdSJYdKjVHjA7PZj4Mge3R5YNiP1e3UZjInClVN65XAbvqqM6A7H5fATj0j
+SCOUT_TRANSACTION_FEE: 0.001
+SCOUT_MULTIPLIER: 5
+SCOUT_SLEEP_TIME: 5
+TLD: com
+```
 
 ### Notifications with Apprise
 
@@ -66,27 +86,45 @@ If you are interested in running a Telegram bot, more information can be found a
 
 ### Run
 
-`./crypto_trading.py`
+`python -m binance_trade_bot`
 
 ### Docker
+
+The official image is available [here](https://hub.docker.com/r/edeng23/binance-trade-bot) and will update on every new change.
 
 ```shell
 docker-compose up
 ```
 
 if you only want to start the sqlitebrowser
+
 ```shell
 docker-compose up -d sqlitebrowser
 ```
+
+## Direct Pair Transactions
+
+The system also supports using direct-pair transactions when they are available, e.g. converting from ETH to XRP directly rather than via a bridge currency. Benefits of this are:
+-   Reduces the time to execute jumps
+-   Cuts down on transaction fees since only one transaction is made
+-   Eliminates the possibility of getting temporarily "stuck" on the bridge currency if the price of the target coin increases mid-jump
+
+### How to Maximize Direct Pairs
+To determine which currencies are available for direct pair transations, a small tool called `max_coin_clique.py` is available. This script checks for all available currency pairs and compares it to a list of all currencies supported by Binance. It outputs a set of `.png` images showing each currency and it's pairs as a graph, as well as subsets of currencies that only have three direct pairs, or four direct pairs.
+
+To maximize the likelihood of utilizing a direct pair transaction, you may wish to avoid coins that can only trade with one other currency on your supported coin list.
+
+
 ## Support the Project
 
 <a href="https://www.buymeacoffee.com/edeng" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="41" width="174"></a>
 
 ## Join the Chat
 
-* **Discord**: [Invite Link](https://discord.gg/m4TNaxreCN)
+-   **Discord**: [Invite Link](https://discord.gg/m4TNaxreCN)
 
 ## FAQ
+
 A list of answers to what seem to be the most frequently asked questions can be found in our discord server, in the corresponding channel.
 
 <p align="center">
@@ -95,5 +133,5 @@ A list of answers to what seem to be the most frequently asked questions can be 
 
 ## Disclaimer
 
-The code within this repository comes with no guarantee. Run it at your own risk. 
+The code within this repository comes with no guarantee. Run it at your own risk.
 Do not risk money which you are afraid to lose. There might be bugs in the code - this software does not come with any warranty.
