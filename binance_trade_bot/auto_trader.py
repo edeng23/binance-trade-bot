@@ -16,6 +16,7 @@ class AutoTrader:
         self.db = database
         self.logger = logger
         self.config = config
+        self.squelch = False
 
     def initialize(self):
         self.initialize_trade_thresholds()
@@ -107,7 +108,18 @@ class AutoTrader:
                 )
                 continue
 
-            self.db.log_scout(pair, pair.ratio, coin_price, optional_coin_price)
+            # log_scout is an expensive operation to run on low-end devices. This is now opt-in.
+            try:
+                if self.config.VERBOSE_SCOUT_LOGGING:
+                    self.db.log_scout(pair, pair.ratio, coin_price, optional_coin_price)
+            except AttributeError:
+                if not self.squelch:
+                    self.logger.info(
+                        "Verbose scout logging to DB is not enabled by default anymore. This config. is controlled by"
+                        " verbose_scout_logging=True/False in user.cfg and is not set."
+                    )
+                    # Prevent spamming the user with this message
+                    self.squelch = True
 
             # Obtain (current coin)/(optional coin)
             coin_opt_coin_ratio = coin_price / optional_coin_price

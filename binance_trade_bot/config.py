@@ -19,6 +19,7 @@ class Config:  # pylint: disable=too-few-public-methods
             "hourToKeepScoutHistory": "1",
             "tld": "com",
             "strategy": "default",
+            "verbose_scout_logging": False,
         }
 
         if not os.path.exists(CFG_FL_NAME):
@@ -65,3 +66,7 @@ class Config:  # pylint: disable=too-few-public-methods
         self.CURRENT_COIN_SYMBOL = os.environ.get("CURRENT_COIN_SYMBOL") or config.get(USER_CFG_SECTION, "current_coin")
 
         self.STRATEGY = os.environ.get("STRATEGY") or config.get(USER_CFG_SECTION, "strategy")
+
+        self.VERBOSE_SCOUT_LOGGING = os.environ.get("VERBOSE_SCOUT_LOGGING") or config.get(
+            USER_CFG_SECTION, "verbose_scout_logging"
+        )
