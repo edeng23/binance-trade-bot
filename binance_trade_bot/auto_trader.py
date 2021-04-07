@@ -28,13 +28,17 @@ class AutoTrader:
         for ticker in all_tickers:
             available_tickers[ticker['symbol']] = None
         if pair.from_coin_id+pair.to_coin_id in available_tickers:
-            self.logger.info("Direct pair {0}{1} exists. Selling {0} for {1}".format(pair.from_coin_id, pair.to_coin_id))
+            self.logger.info(
+                "Direct pair {0}{1} exists. Selling {0} for {1}".format(pair.from_coin_id, pair.to_coin_id)
+            )
             result = self.manager.sell_alt(pair.from_coin, pair.to_coin);
             if result is not None:
                 self.update_trade_threshold(pair.to_coin, float(result["price"]), all_tickers)
                 return None
         elif pair.to_coin_id+pair.from_coin_id in available_tickers:
-            self.logger.info("Direct pair {0}{1} exists. Buying {0} with {1}".format(pair.to_coin_id, pair.from_coin_id))
+            self.logger.info(
+                "Direct pair {0}{1} exists. Buying {0} with {1}".format(pair.to_coin_id, pair.from_coin_id)
+            )
             result = self.manager.buy_alt(pair.to_coin, pair.from_coin, all_tickers, True)
             if result is not None:
                 self.update_trade_threshold(pair.to_coin, float(result["price"]), all_tickers)
@@ -47,7 +51,7 @@ class AutoTrader:
             if result is not None:
                 self.update_trade_threshold(pair.to_coin, float(result["price"]), all_tickers)
                 return result
-                
+
         self.logger.info("Couldn't buy, going back to scouting mode...")
         return None
 
