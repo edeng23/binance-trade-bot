@@ -204,7 +204,7 @@ class BinanceAPIManager:
 
         if marketBuy:
             if origin_coin == self.config.BRIDGE:
-                # In a market trade, the order price needs to be calculated from the average of all partial fills.
+                # In a market buy, the order price needs to be calculated from the average of all partial fills.
                 order["price"] = self.get_averaged_price(order)
             else:
                 # In a direct-pair market trade (not coming from the bridge currency),
@@ -266,7 +266,7 @@ class BinanceAPIManager:
         trade_log.set_complete(stat["cummulativeQuoteQty"])
 
         if target_coin != self.config.BRIDGE:
-            # In a direct-pair market trade (not coming from the bridge currency),
+            # In a direct-pair market trade (not jumping to the bridge currency),
             # "order" does not contain the price of the target coin relative to the bridge currency
             # (only the price between the two coins).
             # this assumes the order price relative to the bridge currency is determined based
@@ -282,5 +282,5 @@ class BinanceAPIManager:
         averaged_price = 0
         for fill in order["fills"]:
             averaged_price += float(fill["qty"]) / float(order["executedQty"]) * float(fill["price"])
-        self.logger.info(f"Average price was {averaged_price}.")
+        self.logger.info(f"Average price of market buy was {averaged_price}.")
         return averaged_price

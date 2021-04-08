@@ -31,7 +31,7 @@ class AutoTrader:
             result = self.manager.sell_alt(pair.from_coin, pair.to_coin, all_tickers)
             if result is not None:
                 self.update_trade_threshold(pair.to_coin, float(result["price"]), all_tickers)
-                return None
+                return result
         elif all_tickers.get_price(pair.to_coin_id + pair.from_coin_id) is not None:
             self.logger.info(
                 "Direct pair {0}{1} exists. Buying {0} with {1}".format(pair.to_coin_id, pair.from_coin_id)
@@ -44,7 +44,7 @@ class AutoTrader:
             if self.manager.sell_alt(pair.from_coin, self.config.BRIDGE, all_tickers) is None:
                 self.logger.info("Couldn't sell, going back to scouting mode...")
                 return None
-            result = self.manager.buy_alt(pair.to_coin, self.config.BRIDGE, all_tickers)
+            result = self.manager.buy_alt(pair.to_coin, self.config.BRIDGE, all_tickers, False)
             if result is not None:
                 self.update_trade_threshold(pair.to_coin, float(result["price"]), all_tickers)
                 return result
