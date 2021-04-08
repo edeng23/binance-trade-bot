@@ -201,10 +201,23 @@ class BinanceAPIManager:
 
         trade_log.set_complete(stat["cummulativeQuoteQty"])
 
+        if marketBuy:
+            if origin_coin == self.config.BRIDGE:
+                # In a market trade, the order price needs to be calculated from the average of all partial fills.
+                averaged_price = 0
+                for fill in order["fills"]:
+                    averaged_price += (float(fill["qty"]) / float(order["executedQty"]) * float(fill["price"]))
+                order["price"] = averaged_price
+            else:
+                # In a direct-pair market trade (not coming from the bridge currency), "order" does not contain the price of the target coin relative to the bridge currency (only the price between the two coins).
+                # this assumes the order price relative to the bridge currency is determined based on the current price since the market transaction is nearly instantaneous.
+                order["price"] = all_tickers.get_price(origin_coin + self.config.BRIDGE)
+                self.logger.info("Price of {0} was {1} {2} per {0}.".format(target_symbol, order["price"], BRIDGE.symbol))
+
         return order
 
-    def sell_alt(self, origin_coin: Coin, target_coin: Coin):
-        return self.retry(self._sell_alt, origin_coin, target_coin)
+    def sell_alt(self, origin_coin: Coin, target_coin: Coin, all_tickers: AllTickers):
+        return self.retry(self._sell_alt, origin_coin, target_coin, all_tickers)
 
     def _sell_quantity(self, origin_symbol: str, target_symbol: str, origin_balance: float = None):
         origin_balance = origin_balance or self.get_currency_balance(origin_symbol)
@@ -212,7 +225,7 @@ class BinanceAPIManager:
         origin_tick = self.get_alt_tick(origin_symbol, target_symbol)
         return math.floor(origin_balance * 10 ** origin_tick) / float(10 ** origin_tick)
 
-    def _sell_alt(self, origin_coin: Coin, target_coin: Coin):
+    def _sell_alt(self, origin_coin: Coin, target_coin: Coin, all_tickers):
         """
         Sell altcoin
         """
@@ -248,5 +261,11 @@ class BinanceAPIManager:
         self.logger.info(f"Sold {origin_symbol}")
 
         trade_log.set_complete(stat["cummulativeQuoteQty"])
+
+        if target_coin != self.config.BRIDGE:
+            # Since it was a direct-pair market trade, "order" does not contain the price of the target coin relative to the bridge currency.
+            # the order price relative to the bridge currency is determined based on the current price since the transaction is nearly instant.
+            order[u'price'] = self.get_market_ticker_price_from_list(all_tickers, pair.to_coin + BRIDGE)
+            self.logger.info("Price of {0} was {1} {2} per {0}.".format(target_symbol, order[u'price'], BRIDGE.symbol))
 
         return order
