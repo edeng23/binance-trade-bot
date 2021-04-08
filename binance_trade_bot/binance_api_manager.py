@@ -30,6 +30,7 @@ class BinanceAPIManager:
         )
         self.db = db
         self.logger = logger
+        self.config = config
 
     @cached(cache=TTLCache(maxsize=1, ttl=43200))
     def get_trade_fees(self) -> Dict[str, float]:
@@ -143,8 +144,8 @@ class BinanceAPIManager:
 
         return order_status
 
-    def buy_alt(self, origin_coin: Coin, target_coin: Coin, all_tickers: AllTickers):
-        return self.retry(self._buy_alt, origin_coin, target_coin, all_tickers)
+    def buy_alt(self, origin_coin: Coin, target_coin: Coin, all_tickers: AllTickers, marketBuy: bool):
+        return self.retry(self._buy_alt, origin_coin, target_coin, all_tickers, marketBuy)
 
     def _buy_quantity(
         self, origin_symbol: str, target_symbol: str, target_balance: float = None, from_coin_price: float = None
@@ -155,7 +156,8 @@ class BinanceAPIManager:
         origin_tick = self.get_alt_tick(origin_symbol, target_symbol)
         return math.floor(target_balance * 10 ** origin_tick / from_coin_price) / float(10 ** origin_tick)
 
-    def _buy_alt(self, origin_coin: Coin, target_coin: Coin, all_tickers):
+    def _buy_alt(self, origin_coin: Coin, target_coin: Coin, all_tickers, marketBuy: bool):
+
         """
         Buy altcoin
         """
@@ -174,11 +176,17 @@ class BinanceAPIManager:
         order = None
         while order is None:
             try:
-                order = self.binance_client.order_limit_buy(
-                    symbol=origin_symbol + target_symbol,
-                    quantity=order_quantity,
-                    price=from_coin_price,
-                )
+                if marketBuy:
+                    order = self.binance_client.order_market_buy(
+                        symbol=origin_symbol + target_symbol,
+                        quantity=order_quantity,
+                    )
+                else:
+                    order = self.binance_client.order_limit_buy(
+                        symbol=origin_symbol + target_symbol,
+                        quantity=order_quantity,
+                        price=from_coin_price,
+                    )
                 self.logger.info(order)
             except BinanceAPIException as e:
                 self.logger.info(e)
@@ -194,10 +202,25 @@ class BinanceAPIManager:
 
         trade_log.set_complete(stat["cummulativeQuoteQty"])
 
+        if marketBuy:
+            if origin_coin == self.config.BRIDGE:
+                # In a market buy, the order price needs to be calculated from the average of all partial fills.
+                order["price"] = self.get_averaged_price(order)
+            else:
+                # In a direct-pair market trade (not coming from the bridge currency),
+                # "order" does not contain the price of the target coin relative to the bridge currency
+                # (only the price between the two coins).
+                # this assumes the order price relative to the bridge currency is determined based
+                # on the current price since the market transaction is nearly instantaneous.
+                order["price"] = all_tickers.get_price(origin_coin + self.config.BRIDGE.symbol)
+                self.logger.info(
+                    "Price of {0} was {1} {2} per {0}.".format(target_symbol, order["price"], self.config.BRIDGE.symbol)
+                )
+
         return order
 
-    def sell_alt(self, origin_coin: Coin, target_coin: Coin):
-        return self.retry(self._sell_alt, origin_coin, target_coin)
+    def sell_alt(self, origin_coin: Coin, target_coin: Coin, all_tickers: AllTickers):
+        return self.retry(self._sell_alt, origin_coin, target_coin, all_tickers)
 
     def _sell_quantity(self, origin_symbol: str, target_symbol: str, origin_balance: float = None):
         origin_balance = origin_balance or self.get_currency_balance(origin_symbol)
@@ -205,7 +228,7 @@ class BinanceAPIManager:
         origin_tick = self.get_alt_tick(origin_symbol, target_symbol)
         return math.floor(origin_balance * 10 ** origin_tick) / float(10 ** origin_tick)
 
-    def _sell_alt(self, origin_coin: Coin, target_coin: Coin):
+    def _sell_alt(self, origin_coin: Coin, target_coin: Coin, all_tickers):
         """
         Sell altcoin
         """
@@ -242,4 +265,22 @@ class BinanceAPIManager:
 
         trade_log.set_complete(stat["cummulativeQuoteQty"])
 
+        if target_coin != self.config.BRIDGE:
+            # In a direct-pair market trade (not jumping to the bridge currency),
+            # "order" does not contain the price of the target coin relative to the bridge currency
+            # (only the price between the two coins).
+            # this assumes the order price relative to the bridge currency is determined based
+            # on the current price since the market transaction is nearly instantaneous.
+            order["price"] = all_tickers.get_price(origin_coin + self.config.BRIDGE.symbol)
+            self.logger.info(
+                "Price of {0} was {1} {2} per {0}.".format(target_symbol, order["price"], self.config.BRIDGE.symbol)
+            )
+
         return order
+
+    def get_averaged_price(self, order):
+        averaged_price = 0
+        for fill in order["fills"]:
+            averaged_price += float(fill["qty"]) / float(order["executedQty"]) * float(fill["price"])
+        self.logger.info(f"Average price of market buy was {averaged_price}.")
+        return averaged_price
