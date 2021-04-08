@@ -30,6 +30,7 @@ class BinanceAPIManager:
         )
         self.db = db
         self.logger = logger
+        self.config = config
 
     @cached(cache=TTLCache(maxsize=1, ttl=43200))
     def get_trade_fees(self) -> Dict[str, float]:
@@ -209,8 +210,11 @@ class BinanceAPIManager:
                     averaged_price += float(fill["qty"]) / float(order["executedQty"]) * float(fill["price"])
                 order["price"] = averaged_price
             else:
-                # In a direct-pair market trade (not coming from the bridge currency), "order" does not contain the price of the target coin relative to the bridge currency (only the price between the two coins).
-                # this assumes the order price relative to the bridge currency is determined based on the current price since the market transaction is nearly instantaneous.
+                # In a direct-pair market trade (not coming from the bridge currency), 
+                # "order" does not contain the price of the target coin relative to the bridge currency 
+                # (only the price between the two coins).
+                # this assumes the order price relative to the bridge currency is determined based
+                # on the current price since the market transaction is nearly instantaneous.
                 order["price"] = all_tickers.get_price(origin_coin + self.config.BRIDGE.symbol)
                 self.logger.info(
                     "Price of {0} was {1} {2} per {0}.".format(target_symbol, order["price"], self.config.BRIDGE.symbol)
@@ -265,9 +269,14 @@ class BinanceAPIManager:
         trade_log.set_complete(stat["cummulativeQuoteQty"])
 
         if target_coin != self.config.BRIDGE:
-            # Since it was a direct-pair market trade, "order" does not contain the price of the target coin relative to the bridge currency.
-            # the order price relative to the bridge currency is determined based on the current price since the transaction is nearly instant.
+            # In a direct-pair market trade (not coming from the bridge currency), 
+            # "order" does not contain the price of the target coin relative to the bridge currency 
+            # (only the price between the two coins).
+            # this assumes the order price relative to the bridge currency is determined based
+            # on the current price since the market transaction is nearly instantaneous.
             order["price"] = all_tickers.get_price(origin_coin + self.config.BRIDGE.symbol)
-            self.logger.info("Price of {0} was {1} {2} per {0}.".format(target_symbol, order["price"], self.config.BRIDGE.symbol))
+            self.logger.info(
+                "Price of {0} was {1} {2} per {0}.".format(target_symbol, order["price"], self.config.BRIDGE.symbol)
+            )
 
         return order
