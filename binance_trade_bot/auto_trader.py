@@ -24,7 +24,7 @@ class AutoTrader:
         """
         Jump from the source coin to the destination coin through bridge coin
         """
-        if all_tickers.get_price(pair.from_coin_id + pair.to_coin_id) != None:
+        if all_tickers.get_price(pair.from_coin_id + pair.to_coin_id) is not None:
             self.logger.info(
                 "Direct pair {0}{1} exists. Selling {0} for {1}".format(pair.from_coin_id, pair.to_coin_id)
             )
@@ -32,7 +32,7 @@ class AutoTrader:
             if result is not None:
                 self.update_trade_threshold(pair.to_coin, float(result["price"]), all_tickers)
                 return None
-        elif all_tickers.get_price(pair.to_coin_id + pair.from_coin_id) != None:
+        elif all_tickers.get_price(pair.to_coin_id + pair.from_coin_id) is not None:
             self.logger.info(
                 "Direct pair {0}{1} exists. Buying {0} with {1}".format(pair.to_coin_id, pair.from_coin_id)
             )
