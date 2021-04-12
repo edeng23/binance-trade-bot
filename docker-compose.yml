@@ -4,6 +4,7 @@ services:
   crypto-trading:
     image: edeng23/binance-trade-bot
     container_name: binance_trader
+    working_dir: /app
     volumes:
       - ./user.cfg:/app/user.cfg
       - ./data:/app/data
@@ -13,7 +14,9 @@ services:
   api:
     image: edeng23/binance-trade-bot
     container_name: binance_trader_api
+    working_dir: /app
     volumes:
+      - ./user.cfg:/app/user.cfg
       - ./data:/app/data
       - ./logs:/app/logs
     ports:
