@@ -57,6 +57,7 @@ Create a .cfg file named `user.cfg` based off `.user.cfg.example`, then add your
 -   **hourToKeepScoutHistory** - Controls how many hours of scouting values are kept in the database. After the amount of time specified has passed, the information will be deleted.
 -   **scout_multiplier** - Controls the value by which the difference between the current state of coin ratios and previous state of ratios is multiplied. For bigger values, the bot will wait for bigger margins to arrive before making a trade.
 -   **strategy** - The trading strategy to use. See [`binance_trade_bot/strategies`](binance_trade_bot/strategies/README.md) for more information
+-   **buy_timeout/sell_timeout** - Controls how many minutes to wait before cancelling a limit order (buy/sell) and returning to "scout" mode. 0 means that the order will never be cancelled prematurely.
 
 #### Environment Variables
 
@@ -72,6 +73,8 @@ SCOUT_MULTIPLIER: 5
 SCOUT_SLEEP_TIME: 5
 TLD: com
 STRATEGY: default
+buy_timeout=0
+sell_timeout=0
 ```
 
 ### Paying Fees with BNB
@@ -132,6 +135,10 @@ pre-commit install
 
 The scouting algorithm is unlikely to be changed. If you'd like to contribute an alternative
 method, [add a new strategy](binance_trade_bot/strategies/README.md).
+
+## Related Projects
+
+Thanks to a group of talented developers, there is now a [Telegram bot for remotely managing this project](https://github.com/lorcalhost/BTB-manager-telegram).
 
 ## Support the Project
 
