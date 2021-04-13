@@ -73,8 +73,8 @@ SCOUT_MULTIPLIER: 5
 SCOUT_SLEEP_TIME: 5
 TLD: com
 STRATEGY: default
-buy_timeout=0
-sell_timeout=0
+BUY_TIMEOUT: 0
+SELL_TIMEOUT: 0
 ```
 
 ### Paying Fees with BNB
