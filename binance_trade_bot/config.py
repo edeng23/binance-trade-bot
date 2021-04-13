@@ -21,7 +21,7 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
             "strategy": "default",
             "sell_timeout": "0",
             "buy_timeout": "0",
-            "recv_window": "1000",
+            "recv_window": "5000",
         }
 
         if not os.path.exists(CFG_FL_NAME):
