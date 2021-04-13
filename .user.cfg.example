@@ -10,3 +10,4 @@ scout_sleep_time=5
 strategy=default
 buy_timeout=0
 sell_timeout=0
+recv_window=5000

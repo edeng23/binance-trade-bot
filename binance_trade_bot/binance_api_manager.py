@@ -34,7 +34,7 @@ class BinanceAPIManager:
 
     @cached(cache=TTLCache(maxsize=1, ttl=43200))
     def get_trade_fees(self) -> Dict[str, float]:
-        return {ticker["symbol"]: ticker["taker"] for ticker in self.binance_client.get_trade_fee()["tradeFee"]}
+        return {ticker["symbol"]: ticker["taker"] for ticker in self.binance_client.get_trade_fee(recvWindow=config.RECV_WINDOW)["tradeFee"]}
 
     @cached(cache=TTLCache(maxsize=1, ttl=60))
     def get_using_bnb_for_fees(self):
@@ -82,7 +82,7 @@ class BinanceAPIManager:
         """
         Get balance of a specific coin
         """
-        for currency_balance in self.binance_client.get_account()["balances"]:
+        for currency_balance in self.binance_client.get_account(recvWindow=config.RECV_WINDOW)["balances"]:
             if currency_balance["asset"] == currency_symbol:
                 return float(currency_balance["free"])
         return None
@@ -121,7 +121,7 @@ class BinanceAPIManager:
     def wait_for_order(self, origin_symbol, target_symbol, order_id):
         while True:
             try:
-                order_status = self.binance_client.get_order(symbol=origin_symbol + target_symbol, orderId=order_id)
+                order_status = self.binance_client.get_order(symbol=origin_symbol + target_symbol, orderId=order_id, recvWindow=config.RECV_WINDOW)
                 break
             except BinanceAPIException as e:
                 self.logger.info(e)
@@ -134,13 +134,13 @@ class BinanceAPIManager:
 
         while order_status["status"] != "FILLED":
             try:
-                order_status = self.binance_client.get_order(symbol=origin_symbol + target_symbol, orderId=order_id)
+                order_status = self.binance_client.get_order(symbol=origin_symbol + target_symbol, orderId=order_id, recvWindow=config.RECV_WINDOW)
 
                 if self._should_cancel_order(order_status):
                     cancel_order = None
                     while cancel_order is None:
                         cancel_order = self.binance_client.cancel_order(
-                            symbol=origin_symbol + target_symbol, orderId=order_id
+                            symbol=origin_symbol + target_symbol, orderId=order_id, recvWindow=config.RECV_WINDOW
                         )
                     self.logger.info("Order timeout, canceled...")
 
@@ -152,7 +152,8 @@ class BinanceAPIManager:
                         partially_order = None
                         while partially_order is None:
                             partially_order = self.binance_client.order_market_sell(
-                                symbol=origin_symbol + target_symbol, quantity=order_quantity
+                                symbol=origin_symbol + target_symbol, quantity=order_quantity,
+                                recvWindow=config.RECV_WINDOW,
                             )
 
                     self.logger.info("Going back to scouting mode...")
@@ -230,6 +231,7 @@ class BinanceAPIManager:
                     symbol=origin_symbol + target_symbol,
                     quantity=order_quantity,
                     price=from_coin_price,
+                    recvWindow=config.RECV_WINDOW,
                 )
                 self.logger.info(order)
             except BinanceAPIException as e:
@@ -279,7 +281,8 @@ class BinanceAPIManager:
         while order is None:
             # Should sell at calculated price to avoid lost coin
             order = self.binance_client.order_limit_sell(
-                symbol=origin_symbol + target_symbol, quantity=(order_quantity), price=from_coin_price
+                symbol=origin_symbol + target_symbol, quantity=(order_quantity), price=from_coin_price,
+                recvWindow=config.RECV_WINDOW,
             )
 
         self.logger.info("order")
