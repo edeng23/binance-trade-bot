@@ -96,7 +96,7 @@ class MockBinanceManager(BinanceAPIManager):
         )
         return {"price": from_coin_price}
 
-    def sell_alt(self, origin_coin: Coin, target_coin: Coin):
+    def sell_alt(self, origin_coin: Coin, target_coin: Coin):  # pylint: disable=arguments-differ
         origin_symbol = origin_coin.symbol
         target_symbol = target_coin.symbol
 
