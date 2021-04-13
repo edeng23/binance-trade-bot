@@ -42,13 +42,10 @@ class BinanceAPIManager:
 
     def get_fee(self, origin_coin: Coin, target_coin: Coin, selling: bool):
         fees = self.get_trade_fees()
-
-        # US api returns an empty list for fees currently. No ETA for fix from Binance, so we're defaulting to 0.001 for base_fee.
         if not fees:
             base_fee = 0.001
         else:
             base_fee = fees[origin_coin + target_coin]
-        
         if not self.get_using_bnb_for_fees():
             return base_fee
         # The discount is only applied if we have enough BNB to cover the fee
