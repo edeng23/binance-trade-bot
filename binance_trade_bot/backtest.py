@@ -121,7 +121,6 @@ class MockBinanceManager(BinanceAPIManager):
             if coin == target_symbol:
                 total += balance
                 continue
-                
             if coin == self.config.BRIDGE.symbol:
                 price = self.get_market_ticker_price(target_symbol + coin)
                 if price is None:
