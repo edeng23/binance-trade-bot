@@ -10,6 +10,8 @@ services:
       - ./data:/app/data
       - ./logs:/app/logs
     command: python -m binance_trade_bot
+    environment:
+      - PYTHONUNBUFFERED=1
 
   api:
     image: edeng23/binance-trade-bot
