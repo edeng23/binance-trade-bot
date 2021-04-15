@@ -207,7 +207,7 @@ class BinanceAPIManager:
         origin_tick = self.get_alt_tick(origin_symbol, target_symbol)
         return math.floor(target_balance * 10 ** origin_tick / from_coin_price) / float(10 ** origin_tick)
 
-    def _buy_alt(self, origin_coin: Coin, target_coin: Coin, all_tickers): # pylint: disable=too-many-locals
+    def _buy_alt(self, origin_coin: Coin, target_coin: Coin, all_tickers):  # pylint: disable=too-many-locals
         """
         Buy altcoin
         """
@@ -262,7 +262,9 @@ class BinanceAPIManager:
         origin_tick = self.get_alt_tick(origin_symbol, target_symbol)
         return math.floor(origin_balance * 10 ** origin_tick) / float(10 ** origin_tick)
 
-    def _sell_alt(self, origin_coin: Coin, target_coin: Coin, all_tickers: AllTickers): # pylint: disable=too-many-locals
+    def _sell_alt(
+        self, origin_coin: Coin, target_coin: Coin, all_tickers: AllTickers
+    ):  # pylint: disable=too-many-locals
         """
         Sell altcoin
         """
