@@ -9,3 +9,5 @@ scout_multiplier=5
 scout_sleep_time=5
 strategy=default
 verbose_scout_logging=False
+buy_timeout=0
+sell_timeout=0

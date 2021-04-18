@@ -8,7 +8,7 @@ CFG_FL_NAME = "user.cfg"
 USER_CFG_SECTION = "binance_user_config"
 
 
-class Config:  # pylint: disable=too-few-public-methods
+class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attributes
     def __init__(self):
         # Init config
         config = configparser.ConfigParser()
@@ -20,6 +20,8 @@ class Config:  # pylint: disable=too-few-public-methods
             "tld": "com",
             "strategy": "default",
             "verbose_scout_logging": False,
+            "sell_timeout": "0",
+            "buy_timeout": "0",
         }
 
         if not os.path.exists(CFG_FL_NAME):
@@ -70,3 +72,5 @@ class Config:  # pylint: disable=too-few-public-methods
         self.VERBOSE_SCOUT_LOGGING = os.environ.get("VERBOSE_SCOUT_LOGGING") or config.get(
             USER_CFG_SECTION, "verbose_scout_logging"
         )
+        self.SELL_TIMEOUT = os.environ.get("SELL_TIMEOUT") or config.get(USER_CFG_SECTION, "sell_timeout")
+        self.BUY_TIMEOUT = os.environ.get("BUY_TIMEOUT") or config.get(USER_CFG_SECTION, "buy_timeout")
