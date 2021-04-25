@@ -13,6 +13,6 @@ if __name__ == "__main__":
         print("------")
         print("TIME:", manager.datetime)
         print("BALANCES:", manager.balances)
-        print("BTC VALUE:", btc_value, f"({btc_diff}%)")
-        print(f"{manager.config.BRIDGE.symbol} VALUE:", bridge_value, f"({bridge_diff}%)")
+        print("BTC VALUE:", btc_value, f"({btc_diff * 100}%)")
+        print(f"{manager.config.BRIDGE.symbol} VALUE:", bridge_value, f"({bridge_diff * 100}%)")
         print("------")
