@@ -220,6 +220,10 @@ class BinanceAPIManager:
         from_coin_price = all_tickers.get_price(origin_symbol + target_symbol)
 
         order_quantity = self._buy_quantity(origin_symbol, target_symbol, target_balance, from_coin_price)
+
+        if order_quantity * from_coin_price < self.get_min_notional(origin_symbol, target_symbol):
+            return None
+
         self.logger.info(f"BUY QTY {order_quantity}")
 
         # Try to buy until successful
