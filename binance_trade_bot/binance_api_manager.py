@@ -304,6 +304,7 @@ class BinanceAPIManager:
             new_balance = self.get_currency_balance(origin_symbol)
 
         self.logger.info(f"Sold {origin_symbol}")
+        self.db.set_current_coin(origin_coin)
 
         trade_log.set_complete(stat["cummulativeQuoteQty"])
 
