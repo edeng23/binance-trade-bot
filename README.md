@@ -58,6 +58,7 @@ Create a .cfg file named `user.cfg` based off `.user.cfg.example`, then add your
 -   **scout_multiplier** - Controls the value by which the difference between the current state of coin ratios and previous state of ratios is multiplied. For bigger values, the bot will wait for bigger margins to arrive before making a trade.
 -   **strategy** - The trading strategy to use. See [`binance_trade_bot/strategies`](binance_trade_bot/strategies/README.md) for more information
 -   **buy_timeout/sell_timeout** - Controls how many minutes to wait before cancelling a limit order (buy/sell) and returning to "scout" mode. 0 means that the order will never be cancelled prematurely.
+-   **recv_window** - Defines the limit of time (in milliseconds) the Binance API accept between the moment a request is sent, and the moment a request is received by the server. Default to 5s.
 
 #### Environment Variables
 
@@ -75,6 +76,7 @@ TLD: com
 STRATEGY: default
 buy_timeout=0
 sell_timeout=0
+RECV_WINDOW: 5000
 ```
 
 ### Paying Fees with BNB
