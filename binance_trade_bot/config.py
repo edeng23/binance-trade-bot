@@ -19,6 +19,7 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
             "hourToKeepScoutHistory": "1",
             "tld": "com",
             "strategy": "default",
+            "verbose_scout_logging": False,
             "sell_timeout": "0",
             "buy_timeout": "0",
         }
@@ -68,5 +69,8 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
 
         self.STRATEGY = os.environ.get("STRATEGY") or config.get(USER_CFG_SECTION, "strategy")
 
+        self.VERBOSE_SCOUT_LOGGING = os.environ.get("VERBOSE_SCOUT_LOGGING") or config.get(
+            USER_CFG_SECTION, "verbose_scout_logging"
+        )
         self.SELL_TIMEOUT = os.environ.get("SELL_TIMEOUT") or config.get(USER_CFG_SECTION, "sell_timeout")
         self.BUY_TIMEOUT = os.environ.get("BUY_TIMEOUT") or config.get(USER_CFG_SECTION, "buy_timeout")
