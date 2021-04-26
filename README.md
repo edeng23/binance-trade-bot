@@ -56,6 +56,7 @@ Create a .cfg file named `user.cfg` based off `.user.cfg.example`, then add your
 -   **tld** - 'com' or 'us', depending on your region. Default is 'com'.
 -   **hourToKeepScoutHistory** - Controls how many hours of scouting values are kept in the database. After the amount of time specified has passed, the information will be deleted.
 -   **scout_multiplier** - Controls the value by which the difference between the current state of coin ratios and previous state of ratios is multiplied. For bigger values, the bot will wait for bigger margins to arrive before making a trade.
+-   **trade_fee** - Controls trade fee for calculating profitable jumps. By default it doesn't have value: gets values through the binance api calls. Otherwise use float values for the fee. [Binance fee table for reference](https://www.binance.com/en/fee/schedule)
 -   **strategy** - The trading strategy to use. See [`binance_trade_bot/strategies`](binance_trade_bot/strategies/README.md) for more information
 -   **buy_timeout/sell_timeout** - Controls how many minutes to wait before cancelling a limit order (buy/sell) and returning to "scout" mode. 0 means that the order will never be cancelled prematurely.
 
