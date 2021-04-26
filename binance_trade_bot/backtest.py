@@ -118,14 +118,14 @@ class MockBinanceManager(BinanceAPIManager):
     def collate_coins(self, target_symbol: str):
         total = 0
         for coin, balance in self.balances.items():
+            if coin == target_symbol:
+                total += balance
+                continue
             if coin == self.config.BRIDGE.symbol:
-                if coin == target_symbol:
-                    total += balance
-                else:
-                    price = self.get_market_ticker_price(target_symbol + coin)
-                    if price is None:
-                        continue
-                    total += balance / price
+                price = self.get_market_ticker_price(target_symbol + coin)
+                if price is None:
+                    continue
+                total += balance / price
             else:
                 price = self.get_market_ticker_price(coin + target_symbol)
                 if price is None:
