@@ -71,11 +71,11 @@ class MockBinanceManager(BinanceAPIManager):
             val = cache.get(key, None)
         return val
 
-    def get_currency_balance(self, currency_symbol: str):
+    def get_full_balance(self):
         """
-        Get balance of a specific coin
+        Get full balance of the current account
         """
-        return self.balances.get(currency_symbol, 0)
+        return self.balances
 
     def buy_alt(self, origin_coin: Coin, target_coin: Coin, all_tickers: AllTickers):
         origin_symbol = origin_coin.symbol
