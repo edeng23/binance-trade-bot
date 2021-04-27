@@ -68,6 +68,10 @@ class BinanceAPIManager:
         Get ticker price of all coins
         """
         return AllTickers(self.binance_client.get_all_tickers())
+#seco 27-04-21
+    def get_coinlist(self) -> Get_Coinlist
+        
+        return Get_Coinlist(self.binance.client.exchangeinfo(“quotename”))
 
     def get_market_ticker_price(self, ticker_symbol: str):
         """
