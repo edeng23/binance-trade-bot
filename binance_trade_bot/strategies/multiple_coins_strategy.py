@@ -8,7 +8,6 @@ class Strategy(AutoTrader):
         """
         Scout for potential jumps from the current coin to another coin
         """
-        all_tickers = self.manager.get_all_market_tickers()
         have_coin = False
 
         # last coin bought
@@ -20,7 +19,7 @@ class Strategy(AutoTrader):
 
         for coin in self.db.get_coins():
             current_coin_balance = self.manager.get_currency_balance(coin.symbol)
-            coin_price = all_tickers.get_price(coin + self.config.BRIDGE)
+            coin_price = self.manager.get_ticker_price(coin + self.config.BRIDGE)
 
             if coin_price is None:
                 self.logger.info("Skipping scouting... current coin {} not found".format(coin + self.config.BRIDGE))
@@ -41,7 +40,7 @@ class Strategy(AutoTrader):
                 end="\r",
             )
 
-            self._jump_to_best_coin(coin, coin_price, all_tickers)
+            self._jump_to_best_coin(coin, coin_price)
 
         if not have_coin:
             self.bridge_scout()
