@@ -30,7 +30,7 @@ class ElonBot:
 
         self.user = config.ELON_TWITTER_USERNAME
         self.crypto_rules = config.ELON_CRYPTO_RULES
-        self.asset = config.BRIDGE
+        self.sell_symbol = config.BRIDGE
         self.auto_buy_delay = config.ELON_AUTO_BUY_DELAY_SECONDS
         self.auto_sell_delay = config.ELON_AUTO_SELL_DELAY_SECONDS
         self.margin_type = config.ELON_MARGIN_TYPE
@@ -49,7 +49,7 @@ class ElonBot:
         self.logger.info("Initialized ElonBot:")
         self.logger.info('  Twitter username:', self.user)
         self.logger.info('  Crypto rules:', self.crypto_rules)
-        self.logger.info('  Bridge:', self.asset)
+        self.logger.info('  Sell back to:', self.sell_symbol)
         self.logger.info('  Auto buy time:', self.auto_buy_delay)
         self.logger.info('  Auto sell time:', self.auto_sell_delay)
         self.logger.info('  Use image signal:', self.use_image_signal)
@@ -98,8 +98,8 @@ class ElonBot:
         return self.manager.buy(ticker_amount, ticker, coin.symbol)
 
     def sell(self, ticker: str):
-        _, available_ticker = self.manager.get_available_asset(self.asset, ticker)
-        return self.manager.sell(available_ticker, ticker, self.asset)
+        _, available_ticker = self.manager.get_available_asset(self.sell_symbol, ticker)
+        return self.manager.sell(available_ticker, ticker, self.sell_symbol)
 
     def trade(self, coin: Coin, ticker: str):
         time.sleep(self.auto_buy_delay)
