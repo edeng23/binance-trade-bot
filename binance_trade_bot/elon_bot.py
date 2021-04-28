@@ -57,7 +57,7 @@ class ElonBot:
         self.logger.info('  Order size:', self.order_size)
 
     @staticmethod
-    def get_image_text(uri: str) -> str:
+    def get_image_text(uri: str, coin: Coin) -> str:
         """Detects text in the file located in Google Cloud Storage or on the Web.
         """
         if uri is None or uri == '':
@@ -81,12 +81,12 @@ class ElonBot:
             return ''
 
     def buy(self, ticker: str):
-        ask_price = self.manager.get_ask_price(ticker, self.asset)
-        available_cash, _ = self.manager.get_available_asset(self.asset, ticker)
+        ask_price = self.manager.get_ask_price(ticker, coin.symbol)
+        available_cash, _ = self.manager.get_available_asset(coin.symbol, ticker)
         if available_cash == 0:
-            self.logger.info(f'Failed to buy {ticker}, no {self.asset} available')
+            self.logger.info(f'Failed to buy {ticker}, no {coin.symbol} available')
             return None
-        borrowable_cash = self.manager.get_max_borrowable(self.asset, ticker)
+        borrowable_cash = self.manager.get_max_borrowable(coin.symbol, ticker)
         if self.order_size == 'max':
             total_cash = available_cash + borrowable_cash
         else:
@@ -95,15 +95,15 @@ class ElonBot:
                 raise ValueError(f"Order size exceeds max margin: {self.order_size} > {max_cash}")
             total_cash = available_cash * Decimal(self.order_size)
         ticker_amount = total_cash / ask_price
-        return self.manager.buy(ticker_amount, ticker, self.asset)
+        return self.manager.buy(ticker_amount, ticker, coin.symbol)
 
     def sell(self, ticker: str):
         _, available_ticker = self.manager.get_available_asset(self.asset, ticker)
         return self.manager.sell(available_ticker, ticker, self.asset)
 
-    def trade(self, ticker: str):
+    def trade(self, coin: Coin, ticker: str):
         time.sleep(self.auto_buy_delay)
-        buy_result = self.buy(ticker)
+        buy_result = self.buy(ticker, coin)
         if buy_result is None:
             return None
         self.logger.info('Waiting for before sell', self.auto_sell_delay)
@@ -111,7 +111,7 @@ class ElonBot:
         sell_result = self.sell(ticker)
         return buy_result, sell_result
 
-    def process_tweet(self, tweet_json: str):
+    def process_tweet(self, tweet_json: str, current_coin):
         tweet_json = json.loads(tweet_json)
         self.logger.info("Tweet received\n", json.dumps(tweet_json, indent=4, sort_keys=True), "\n")
         tweet_text = tweet_json['data']['text']
@@ -127,9 +127,9 @@ class ElonBot:
                 return self.trade(ticker)
         return None
 
-    def run(self, timeout: int = 24 * 3600) -> None:
+    def run(self, coin: Coin, timeout: int = 24 * 3600) -> None:
         if self.process_tweet_text is not None:
-            self.process_tweet(self.process_tweet_text)
+            self.process_tweet(self.process_tweet_text, current_coin)
             return
         reset_twitter_subscription_rules(self.user)
         while True:
