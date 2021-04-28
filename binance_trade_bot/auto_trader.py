@@ -110,7 +110,8 @@ class AutoTrader:
         Check Elons tweets to see if he's done anything crazy related to crypto
         """
         if self.elon_bot is not None
-            self.elon_bot.run()				
+            self.elon_bot.run()
+            self.update_values()
 
     def _get_ratios(self, coin: Coin, coin_price: float, all_tickers: AllTickers):
         """
