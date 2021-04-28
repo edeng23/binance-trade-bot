@@ -106,11 +106,11 @@ class AutoTrader:
         raise NotImplementedError()
 
     def elon_bot(self)
-				"""
-				Check Elons tweets to see if he's done anything crazy related to crypto
-				"""
-				if self.elon_bot is not None
-						self.elon_bot.run()				
+        """
+        Check Elons tweets to see if he's done anything crazy related to crypto
+        """
+        if self.elon_bot is not None
+            self.elon_bot.run()				
 
     def _get_ratios(self, coin: Coin, coin_price: float, all_tickers: AllTickers):
         """
