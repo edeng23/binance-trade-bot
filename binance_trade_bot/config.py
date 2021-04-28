@@ -70,3 +70,12 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
 
         self.SELL_TIMEOUT = os.environ.get("SELL_TIMEOUT") or config.get(USER_CFG_SECTION, "sell_timeout")
         self.BUY_TIMEOUT = os.environ.get("BUY_TIMEOUT") or config.get(USER_CFG_SECTION, "buy_timeout")
+
+        self.TWITTER_BEARER_TOKEN = = os.environ.get("TWITTER_BEARER_TOKEN") or config.get(USER_CFG_SECTION, "twitter_bearer_token")
+        self.GOOGLE_APPLICATION_CREDENTIALS = = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS") or config.get(USER_CFG_SECTION, "google_application_credentials")
+        self.ELON_TWITTER_USERNAME = os.environ.get("ELON_TWITTER_USERNAME") or config.get(USER_CFG_SECTION, "elon_twitter_username")
+        self.ELON_CRYPTO_RULES = os.environ.get("ELON_CRYPTO_RULES") or config.get(USER_CFG_SECTION, "elon_crypto_rules")
+        self.ELON_MARGIN_TYPE = os.environ.get("ELON_MARGIN_TYPE") or config.get(USER_CFG_SECTION, "elon_margin_type")
+        self.ELON_AUTO_BUY_DELAY_SECONDS = os.environ.get("ELON_AUTO_BUY_DELAY_SECONDS") or config.get(USER_CFG_SECTION, "elon_auto_buy_delay_seconds")
+        self.ELON_AUTO_SELL_DELAY_SECONDS = os.environ.get("ELON_AUTO_SELL_DELAY_SECONDS") or config.get(USER_CFG_SECTION, "elon_auto_sell_delay_seconds")
+        self.ELON_ORDER_SIZE_MAX = os.environ.get("ELON_ORDER_SIZE_MAX") or config.get(USER_CFG_SECTION, "elon_order_size_max")
