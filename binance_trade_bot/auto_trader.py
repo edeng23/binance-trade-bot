@@ -16,6 +16,7 @@ class AutoTrader:
         self.db = database
         self.logger = logger
         self.config = config
+        self.elon_bot = ElonBot(config, binance_manager, false)
 
     def initialize(self):
         self.initialize_trade_thresholds()
@@ -103,6 +104,13 @@ class AutoTrader:
         Scout for potential jumps from the current coin to another coin
         """
         raise NotImplementedError()
+
+    def elon_bot(self)
+				"""
+				Check Elons tweets to see if he's done anything crazy related to crypto
+				"""
+				if self.elon_bot is not None
+						self.elon_bot.run()				
 
     def _get_ratios(self, coin: Coin, coin_price: float, all_tickers: AllTickers):
         """
