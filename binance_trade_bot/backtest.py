@@ -5,6 +5,7 @@ from typing import Dict
 from sqlitedict import SqliteDict
 
 from .binance_api_manager import BinanceAPIManager
+from .binance_stream_manager import BinanceOrder
 from .config import Config
 from .database import Database
 from .logger import Logger
@@ -80,7 +81,10 @@ class MockBinanceManager(BinanceAPIManager):
             f"Bought {origin_symbol}, balance now: {self.balances[origin_symbol]} - bridge: "
             f"{self.balances[target_symbol]}"
         )
-        return {"price": from_coin_price}
+
+        event = {"s": None, "S": None, "o": None, "i": None, "Z": 0, "X": None, "p": from_coin_price, "T": None}
+
+        return BinanceOrder(event)
 
     def sell_alt(self, origin_coin: Coin, target_coin: Coin):
         origin_symbol = origin_coin.symbol
