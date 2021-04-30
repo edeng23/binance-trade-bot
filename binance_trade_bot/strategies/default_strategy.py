@@ -14,8 +14,6 @@ class Strategy(AutoTrader):
         """
         Scout for potential jumps from the current coin to another coin
         """
-        all_tickers = self.manager.get_all_market_tickers()
-
         current_coin = self.db.get_current_coin()
         # Display on the console, the current coin+Bridge, so users can see *some* activity and not think the bot has
         # stopped. Not logging though to reduce log size.
@@ -25,13 +23,13 @@ class Strategy(AutoTrader):
             end="\r",
         )
 
-        current_coin_price = all_tickers.get_price(current_coin + self.config.BRIDGE)
+        current_coin_price = self.manager.get_ticker_price(current_coin + self.config.BRIDGE)
 
         if current_coin_price is None:
             self.logger.info("Skipping scouting... current coin {} not found".format(current_coin + self.config.BRIDGE))
             return
 
-        self._jump_to_best_coin(current_coin, current_coin_price, all_tickers)
+        self._jump_to_best_coin(current_coin, current_coin_price)
 
     def bridge_scout(self):
         current_coin = self.db.get_current_coin()
@@ -63,6 +61,5 @@ class Strategy(AutoTrader):
             if self.config.CURRENT_COIN_SYMBOL == "":
                 current_coin = self.db.get_current_coin()
                 self.logger.info(f"Purchasing {current_coin} to begin trading")
-                all_tickers = self.manager.get_all_market_tickers()
-                self.manager.buy_alt(current_coin, self.config.BRIDGE, all_tickers)
+                self.manager.buy_alt(current_coin, self.config.BRIDGE)
                 self.logger.info("Ready to start trading")

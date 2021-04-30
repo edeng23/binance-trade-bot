@@ -21,7 +21,7 @@ class Logger:
 
         # logging to console
         ch = logging.StreamHandler()
-        ch.setLevel(logging.DEBUG)
+        ch.setLevel(logging.INFO)
         ch.setFormatter(formatter)
         self.Logger.addHandler(ch)
 
@@ -51,5 +51,5 @@ class Logger:
     def error(self, message, notification=True):
         self.log(message, "error", notification)
 
-    def debug(self, message, notification=True):
+    def debug(self, message, notification=False):
         self.log(message, "debug", notification)

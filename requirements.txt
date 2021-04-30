@@ -10,3 +10,4 @@ eventlet==0.30.2
 python-socketio[client]==5.0.4
 cachetools==4.2.1
 sqlitedict==1.7.0
+twisted==21.2.0
