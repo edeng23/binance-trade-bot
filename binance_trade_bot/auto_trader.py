@@ -104,6 +104,8 @@ class AutoTrader:
         """
         raise NotImplementedError()
 
+    
+
     def _get_ratios(self, coin: Coin, coin_price: float, all_tickers: AllTickers):
         """
         Given a coin, get the current price ratio for every other enabled coin
