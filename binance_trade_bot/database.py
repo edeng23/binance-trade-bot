@@ -124,6 +124,17 @@ class Database:
             session.expunge(pair)
             return pair
 
+    def get_price_old(self, alt_coin_id: Union[Coin, str]):
+        session: Session
+        with self.db_session() as session:
+            trade: Trade = session.query(Trade).filter(Trade.alt_coin_id == alt_coin_id.symbol,
+                                                       Trade.state == 'COMPLETE'). \
+                order_by(Trade.datetime.desc()).first()
+            session.expunge(trade)
+            if trade.selling: return
+            price: float = trade.crypto_trade_amount / trade.alt_trade_amount
+            return price
+
     def get_pairs_from(self, from_coin: Union[Coin, str], only_enabled=True) -> List[Pair]:
         from_coin = self.get_coin(from_coin)
         session: Session

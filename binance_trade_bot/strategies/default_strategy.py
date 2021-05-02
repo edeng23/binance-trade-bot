@@ -31,6 +31,14 @@ class Strategy(AutoTrader):
             self.logger.info("Skipping scouting... current coin {} not found".format(current_coin + self.config.BRIDGE))
             return
 
+        old_price: float = self.db.get_price_old(current_coin)
+
+        if old_price > 0 and current_coin_price < old_price:"
+            old = "{:.6f}".format(old_price)
+            current = "{:.6f}".format(current_coin_price)"
+            print(f"Skipping scouting... Current price {current} lower than bought price {old}")
+            return
+
         self._jump_to_best_coin(current_coin, current_coin_price, all_tickers)
 
     def bridge_scout(self):

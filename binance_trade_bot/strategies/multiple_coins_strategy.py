@@ -17,6 +17,9 @@ class Strategy(AutoTrader):
 
         if current_coin is not None:
             current_coin_symbol = current_coin.symbol
+        else:
+            current_coin = self.config.CURRENT_COIN_SYMBOL
+            current_coin_symbol = self.config.CURRENT_COIN_SYMBOL
 
         for coin in self.db.get_coins():
             current_coin_balance = self.manager.get_currency_balance(coin.symbol)
@@ -37,7 +40,7 @@ class Strategy(AutoTrader):
             # has stopped. Not logging though to reduce log size.
             print(
                 f"{datetime.now()} - CONSOLE - INFO - I am scouting the best trades. "
-                f"Current coin: {current_coin + self.config.BRIDGE} ",
+                f"Current coin: {current_coin, self.config.BRIDGE} ",
                 end="\r",
             )
 
