@@ -41,7 +41,7 @@ class Logger:
             self.Logger.debug(message)
 
         if notification and self.NotificationHandler.enabled:
-            self.NotificationHandler.send_notification(message)
+            self.NotificationHandler.send_notification(str(message))
 
     def info(self, message, notification=True):
         self.log(message, "info", notification)
