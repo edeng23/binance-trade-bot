@@ -1,46 +1,21 @@
-import time
 from typing import Dict, Set
 
-from autobahn.twisted.websocket import connectWS
-from binance.client import Client
-from binance.websockets import BinanceClientFactory, BinanceClientProtocol, BinanceSocketManager
-from twisted.internet import reactor, ssl
+from unicorn_binance_websocket_api import BinanceWebSocketApiManager
 
 from .logger import Logger
 
 
-class CustomBinanceSocketManager(BinanceSocketManager):
-    """
-    A custom implementation that fixes disconnection detection
-    """
-
-    def _start_socket(self, path, callback, prefix="ws/"):
-        if path in self._conns:
-            return False
-
-        factory_url = self.STREAM_URL + prefix + path
-        factory = BinanceClientFactory(factory_url)
-        factory.protocol = BinanceClientProtocol
-        factory.callback = callback
-        factory.reconnect = True
-        factory.setProtocolOptions(autoPingInterval=5, autoPingTimeout=5)
-        context_factory = ssl.ClientContextFactory()
-
-        self._conns[path] = connectWS(factory, context_factory)
-        return path
-
-
 class BinanceOrder:  # pylint: disable=too-few-public-methods
-    def __init__(self, event):
-        self.event = event
-        self.symbol = event["s"]
-        self.side = event["S"]
-        self.order_type = event["o"]
-        self.id = event["i"]
-        self.cumulative_quote_qty = float(event["Z"])
-        self.status = event["X"]
-        self.price = float(event["p"])
-        self.time = event["T"]
+    def __init__(self, report):
+        self.event = report
+        self.symbol = report["symbol"]
+        self.side = report["side"]
+        self.order_type = report["order_type"]
+        self.id = report["order_id"]
+        self.cumulative_quote_qty = float(report["cumulative_quote_asset_transacted_quantity"])
+        self.status = report["current_order_status"]
+        self.price = float(report["order_price"])
+        self.time = report["transaction_time"]
 
     def __repr__(self):
         return f"<BinanceOrder {self.event}>"
@@ -54,70 +29,31 @@ class BinanceCache:  # pylint: disable=too-few-public-methods
 
 
 class BinanceStreamManager:
-    def __init__(self, cache: BinanceCache, client: Client, logger: Logger):
+    def __init__(self, cache: BinanceCache, api_key: str, api_secret: str, logger: Logger):
         self.cache = cache
         self.logger = logger
-        self.bm = CustomBinanceSocketManager(client)
+        self.bwam = BinanceWebSocketApiManager(process_stream_data=self.process_stream_data, output_default="UnicornFy")
+        self.bwam.create_stream(["!userData"], ["arr"], api_key=api_key, api_secret=api_secret)
+        self.bwam.create_stream(["!miniTicker"], ["arr"], api_key=api_key, api_secret=api_secret)
 
-        self.ticker_price_socket_conn_key = self._start_ticker_values_socket()
-        self.user_socket_conn_key = self._start_user_socket()
-
-        self.bm.start()
-
-    def retry(self, func, *args, **kwargs):
-        attempts = 0
-        time.sleep(1 + attempts * 5)
-        while attempts < 20:
-            try:
-                return func(*args, **kwargs)
-            except Exception as e:  # pylint: disable=broad-except
-                self.logger.warning(f"Failed to connect to websocket. Trying Again (attempt {attempts}/20)")
-                if attempts == 0:
-                    self.logger.info(e)
-                attempts += 1
-        return None
-
-    def _start_ticker_values_socket(self):
-        self.logger.debug(f"Starting ticker socket")
-        conn = self.bm.start_ticker_socket(self._process_ticker_values)
-        if conn:
-            return conn
-        return self.retry(self._start_ticker_values_socket)
-
-    def _start_user_socket(self):
-        self.logger.debug(f"Starting user socket")
-        conn = self.bm.start_user_socket(self._process_user_socket)
-        if conn:
-            return conn
-        return self.retry(self._start_user_socket)
-
-    def _process_ticker_values(self, msg):
-        if "e" in msg and msg["e"] == "error":
-            self.logger.debug(f"Ticker socket error: {msg}")
-            self.bm.stop_socket(self.ticker_price_socket_conn_key)
-            self.ticker_price_socket_conn_key = self._start_ticker_values_socket()
-            self.cache.ticker_values.clear()
-            return
-
-        for ticker in msg:
-            self.cache.ticker_values[ticker["s"]] = float(ticker["c"])
-
-    def _process_user_socket(self, msg):
-        self.logger.debug(f"User socket message: {msg}")
-        if msg["e"] == "error":
-            self.bm.stop_socket(self.user_socket_conn_key)
-            self.user_socket_conn_key = self._start_user_socket()
-            self.cache.balances.clear()
-            return
-        if msg["e"] == "outboundAccountPosition":
-            for bal in msg["B"]:
-                self.cache.balances[bal["a"]] = float(bal["f"])
-        elif msg["e"] == "balanceUpdate":
-            del self.cache.balances[msg["a"]]
-        elif msg["e"] == "executionReport":
-            order = BinanceOrder(msg)
+    def process_stream_data(self, stream_data, stream_buffer_name=False):  # pylint: disable=unused-argument
+        event_type = stream_data["event_type"]
+        if event_type == "executionReport":
+            self.logger.debug(f"execution report: {stream_data}")
+            order = BinanceOrder(stream_data)
             self.cache.orders[order.id] = order
+        elif event_type == "balanceUpdate":
+            self.logger.debug(f"Balance update: {stream_data}")
+            del self.cache.balances[stream_data["asset"]]
+        elif event_type == "outboundAccountPosition":
+            self.logger.debug(f"outboundAccountPosition: {stream_data}")
+            for bal in stream_data["balances"]:
+                self.cache.balances[bal["asset"]] = float(bal["free"])
+        elif event_type == "24hrMiniTicker":
+            for event in stream_data["data"]:
+                self.cache.ticker_values[event["symbol"]] = float(event["close_price"])
+        else:
+            self.logger.error(f"Unknown event type found: {event_type}\n{stream_data}")
 
     def close(self):
-        self.bm.close()
-        reactor.stop()
+        self.bwam.stop_manager_with_all_streams()

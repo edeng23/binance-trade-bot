@@ -1,3 +1,4 @@
+from collections import defaultdict
 from datetime import datetime, timedelta
 from traceback import format_exc
 from typing import Dict
@@ -28,6 +29,9 @@ class MockBinanceManager(BinanceAPIManager):
         self.config = config
         self.datetime = start_date or datetime(2021, 1, 1)
         self.balances = start_balances or {config.BRIDGE.symbol: 100}
+
+    def setup_websockets(self):
+        pass  # No websockets are needed for backtesting
 
     def increment(self, interval=1):
         self.datetime += timedelta(minutes=interval)
@@ -82,7 +86,7 @@ class MockBinanceManager(BinanceAPIManager):
             f"{self.balances[target_symbol]}"
         )
 
-        event = {"s": None, "S": None, "o": None, "i": None, "Z": 0, "X": None, "p": from_coin_price, "T": None}
+        event = defaultdict(lambda: None, order_price=from_coin_price, cumulative_quote_asset_transacted_quantity=0)
 
         return BinanceOrder(event)
 
