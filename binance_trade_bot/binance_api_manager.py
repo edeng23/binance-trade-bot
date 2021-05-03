@@ -1,5 +1,6 @@
 import math
 import time
+import traceback
 from typing import Dict, Optional
 
 from binance.client import Client
@@ -116,10 +117,10 @@ class BinanceAPIManager:
         while attempts < 20:
             try:
                 return func(*args, **kwargs)
-            except Exception as e:  # pylint: disable=broad-except
+            except Exception:  # pylint: disable=broad-except
                 self.logger.warning(f"Failed to Buy/Sell. Trying Again (attempt {attempts}/20)")
                 if attempts == 0:
-                    self.logger.warning(e)
+                    self.logger.warning(traceback.format_exc())
                 attempts += 1
         return None
 
