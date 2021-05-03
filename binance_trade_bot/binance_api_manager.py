@@ -26,7 +26,13 @@ class BinanceAPIManager:
         self.config = config
 
         self.cache = BinanceCache()
-        self.stream_manager = BinanceStreamManager(self.cache, self.binance_client, self.logger)
+        self.stream_manager: Optional[BinanceStreamManager] = None
+        self.setup_websockets()
+
+    def setup_websockets(self):
+        self.stream_manager = BinanceStreamManager(
+            self.cache, self.config.BINANCE_API_KEY, self.config.BINANCE_API_SECRET_KEY, self.logger
+        )
 
     @cached(cache=TTLCache(maxsize=1, ttl=43200))
     def get_trade_fees(self) -> Dict[str, float]:
