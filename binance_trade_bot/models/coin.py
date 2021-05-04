@@ -7,10 +7,12 @@ class Coin(Base):
     __tablename__ = "coins"
     symbol = Column(String, primary_key=True)
     enabled = Column(Boolean)
+    active = Column(Boolean)
 
     def __init__(self, symbol, enabled=True):
         self.symbol = symbol
         self.enabled = enabled
+        self.active = False
 
     def __add__(self, other):
         if isinstance(other, str):
@@ -23,4 +25,4 @@ class Coin(Base):
         return f"<{self.symbol}>"
 
     def info(self):
-        return {"symbol": self.symbol, "enabled": self.enabled}
+        return {"symbol": self.symbol, "enabled": self.enabled, "active": self.active}

@@ -205,7 +205,16 @@ class BinanceAPIManager:
         from_coin_price = from_coin_price or self.get_all_market_tickers().get_price(origin_symbol + target_symbol)
 
         origin_tick = self.get_alt_tick(origin_symbol, target_symbol)
-        return math.floor(target_balance * 10 ** origin_tick / from_coin_price) / float(10 ** origin_tick)
+
+        active_coins_count = len(self.db.get_active_coins())
+        quantity = math.floor( target_balance * 10 ** origin_tick / from_coin_price) / float(10 ** origin_tick )
+
+        # TODO: Actually use maths for this
+        if self.config.TWO_ACTIVE_COINS == "yes" and active_coins_count == 0:
+            self.logger.info(f"!!! HALVING AMOUNT TO BUY")
+            quantity = quantity / 2
+
+        return quantity
 
     def _buy_alt(self, origin_coin: Coin, target_coin: Coin, all_tickers):
         """
@@ -247,6 +256,9 @@ class BinanceAPIManager:
 
         self.logger.info(f"Bought {origin_symbol}")
         trade_log.set_complete(stat["cummulativeQuoteQty"])
+
+        # Set this coin to active
+        self.db.set_coin_to_active(origin_coin)
 
         return order
 
@@ -302,5 +314,8 @@ class BinanceAPIManager:
         self.logger.info(f"Sold {origin_symbol}")
 
         trade_log.set_complete(stat["cummulativeQuoteQty"])
+
+        # Set this coin to inactive
+        self.db.set_coin_to_inactive(origin_coin)
 
         return order

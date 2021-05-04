@@ -145,6 +145,31 @@ class Database:
             session.expunge_all()
             return pairs
 
+    def get_active_coins(self):
+        session: Session
+        with self.db_session() as session:
+            coins = session.query(Coin).filter(Coin.active).all()
+            session.expunge_all()
+            return coins
+
+    def set_coin_to_active(self, bought_coin):
+        session: Session
+        with self.db_session() as session:
+            bought_coin.active = True
+            session.add(bought_coin)
+            session.flush()
+            self.logger.info(f"--- Activating coin: {bought_coin}")
+            self.send_update(bought_coin)
+
+    def set_coin_to_inactive(self, sold_coin):
+        session: Session
+        with self.db_session() as session:
+            sold_coin.active = False
+            session.add(sold_coin)
+            session.flush()
+            self.logger.info(f"--- Deactivating coin: {sold_coin}")
+            self.send_update(sold_coin)
+
     def log_scout(
         self,
         pair: Pair,
@@ -257,7 +282,7 @@ class Database:
             os.rename(".current_coin_table", ".current_coin_table.old")
             self.logger.info(".current_coin_table renamed to .current_coin_table.old - " "You can now delete this file")
 
-
+# TODO: Can I move this out to a model class?
 class TradeLog:
     def __init__(self, db: Database, from_coin: Coin, to_coin: Coin, selling: bool):
         self.db = db

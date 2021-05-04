@@ -94,6 +94,10 @@ class MockBinanceManager(BinanceAPIManager):
             f"Bought {origin_symbol}, balance now: {self.balances[origin_symbol]} - bridge: "
             f"{self.balances[target_symbol]}"
         )
+
+        # Set this coin to active
+        self.db.set_coin_to_active(origin_coin)
+
         return {"price": from_coin_price}
 
     def sell_alt(self, origin_coin: Coin, target_coin: Coin, all_tickers: AllTickers):
@@ -113,6 +117,10 @@ class MockBinanceManager(BinanceAPIManager):
             f"Sold {origin_symbol}, balance now: {self.balances[origin_symbol]} - bridge: "
             f"{self.balances[target_symbol]}"
         )
+
+        # Set this coin to inactive
+        self.db.set_coin_to_inactive(origin_coin)
+
         return {"price": from_coin_price}
 
     def collate_coins(self, target_symbol: str):
