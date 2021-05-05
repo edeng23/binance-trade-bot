@@ -32,7 +32,7 @@ class BinanceAPIManager:
 
     def setup_websockets(self):
         self.stream_manager = BinanceStreamManager(
-            self.cache, self.config.BINANCE_API_KEY, self.config.BINANCE_API_SECRET_KEY, self.logger
+            self.cache, self.config.BINANCE_API_KEY, self.config.BINANCE_API_SECRET_KEY, self.binance_client, self.logger
         )
 
     @cached(cache=TTLCache(maxsize=1, ttl=43200))
@@ -142,7 +142,7 @@ class BinanceAPIManager:
     def get_min_notional(self, origin_symbol: str, target_symbol: str):
         return float(self.get_symbol_filter(origin_symbol, target_symbol, "MIN_NOTIONAL")["minNotional"])
 
-    def wait_for_order(
+    def _wait_for_order(
         self, order_id, origin_symbol: str, target_symbol: str
     ) -> Optional[BinanceOrder]:  # pylint: disable=unsubscriptable-object
         while True:
@@ -195,8 +195,13 @@ class BinanceAPIManager:
                 time.sleep(1)
 
         self.logger.debug(f"Order filled: {order_status}")
-
         return order_status
+
+    def wait_for_order(
+        self, order_id, origin_symbol: str, target_symbol: str
+    ) -> Optional[BinanceOrder]:  # pylint: disable=unsubscriptable-object
+        with self.stream_manager.acquire_order_guard(origin_symbol, target_symbol, int(order_id)):
+            return self._wait_for_order(order_id, origin_symbol, target_symbol)
 
     def _should_cancel_order(self, order_status):
         minutes = (time.time() - order_status.time / 1000) / 60
