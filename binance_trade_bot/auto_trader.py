@@ -24,7 +24,6 @@ class AutoTrader:
         """
         Jump from the source coin to the destination coin through bridge coin
         """
-        self.logger.info(f"--- Active coin list {self.db.get_active_coins()}")
 
         can_sell = False
         balance = self.manager.get_currency_balance(pair.from_coin.symbol)
@@ -136,7 +135,7 @@ class AutoTrader:
             ) - pair.ratio
         return ratio_dict
 
-    def _jump_to_best_coin(self, coin: Coin, coin_price: float, all_tickers: AllTickers):
+    def _jump_to_best_coin(self, coin: Coin, coin_price: float, all_tickers: AllTickers, excluded_coins: None):
         """
         Given a coin, search for a coin to jump to
         """
@@ -150,18 +149,19 @@ class AutoTrader:
         # if we have any viable options, pick the one with the biggest ratio
         if ratio_dict:
             best_pair = max(ratio_dict, key=ratio_dict.get)
-            # Do not allow us to trade with another active coin
-            for active_coin in self.db.get_active_coins():
-                if active_coin.symbol == best_pair.to_coin_id:
+
+            # Do not allow us to trade with another ALT that is excluded
+            for excluded_coin in excluded_coins:
+                if excluded_coin.symbol == best_pair.to_coin_id:
                     can_trade_this_coin = False
 
             if can_trade_this_coin:
                 self.logger.info(f"Will be jumping from {coin} to {best_pair.to_coin_id}")
                 self.transaction_through_bridge(best_pair, all_tickers)
             else:
-                self.logger.info(f"--- Skipping trade for {coin}... new coin {best_pair.to_coin_id} is already active")
+                self.logger.info(f"--- Skipping trade for {coin}... new coin {best_pair.to_coin_id} is excluded")
 
-    def bridge_scout(self):
+    def bridge_scout(self, excluded_coins: None):
         """
         If we have any bridge coin leftover, buy a coin with it that we won't immediately trade out of
         """
@@ -176,10 +176,10 @@ class AutoTrader:
             if current_coin_price is None:
                 continue
 
-            # Do not allow us to trade with another active coin
-            for active_coin in self.db.get_active_coins():
-                if active_coin.symbol == coin.symbol:
-                    can_trade_this_coin = False
+            # Do not allow us to buy an excluded ALT with bridge coin
+            for excluded_coin in excluded_coins:
+               if excluded_coin.symbol == coin.symbol:
+                   can_trade_this_coin = False
 
             ratio_dict = self._get_ratios(coin, current_coin_price, all_tickers)
             if not any(v > 0 for v in ratio_dict.values()):
@@ -190,7 +190,7 @@ class AutoTrader:
                         self.manager.buy_alt(coin, self.config.BRIDGE, all_tickers)
                         return coin
                     else:
-                        self.logger.info(f"--- Skipping bridge scouting {coin}... optional coin {active_coin.symbol} is already active")
+                        self.logger.info(f"--- Skipping bridge scouting {coin}... optional coin {excluded_coin.symbol} is excluded")
         return None
 
     def update_values(self):
