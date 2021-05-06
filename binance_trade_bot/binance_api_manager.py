@@ -206,13 +206,15 @@ class BinanceAPIManager:
 
         origin_tick = self.get_alt_tick(origin_symbol, target_symbol)
 
-        active_coins_count = len(self.db.get_active_coins())
         quantity = math.floor( target_balance * 10 ** origin_tick / from_coin_price) / float(10 ** origin_tick )
 
-        # TODO: Actually use maths for this
-        if self.config.TWO_ACTIVE_COINS == "yes" and active_coins_count == 0:
-            self.logger.info(f"!!! HALVING AMOUNT TO BUY")
-            quantity = quantity / 2
+        active_coins_count = len(self.db.get_active_coins())
+        coin_slots_remaining = int(self.config.DESIRED_ACTIVE_COIN_COUNT) - active_coins_count
+        if coin_slots_remaining > 0:
+            self.logger.info(f"!!! {coin_slots_remaining}/{self.config.DESIRED_ACTIVE_COIN_COUNT} coin slots remaining, dividing quantity by {coin_slots_remaining}")
+            quantity = quantity / coin_slots_remaining
+        else:
+            self.logger.info(f"!!! ERROR: We should never see this")
 
         return quantity
 

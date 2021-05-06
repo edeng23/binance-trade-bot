@@ -10,6 +10,5 @@ scout_sleep_time=5
 strategy=default
 buy_timeout=0
 sell_timeout=0
-# This can only be set to yes when the strategy is multiple_active_coins
-# If you set this to yes with multiple_coins the bot will only use 50% of your balance
-two_active_coins=no
+# This must be set to 1 unless multiple_active_coins strategy it being used
+desired_active_coin_count=1

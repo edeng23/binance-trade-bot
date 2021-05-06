@@ -40,5 +40,5 @@ class Strategy(AutoTrader):
             self._jump_to_best_coin(coin, coin_price, all_tickers)
 
         active_coins_count = len(self.db.get_active_coins())
-        if active_coins_count < 2:
+        if active_coins_count < int(self.config.DESIRED_ACTIVE_COIN_COUNT):
             self.bridge_scout()
