@@ -70,3 +70,5 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
 
         self.SELL_TIMEOUT = os.environ.get("SELL_TIMEOUT") or config.get(USER_CFG_SECTION, "sell_timeout")
         self.BUY_TIMEOUT = os.environ.get("BUY_TIMEOUT") or config.get(USER_CFG_SECTION, "buy_timeout")
+
+        self.DESIRED_ACTIVE_COIN_COUNT = os.environ.get("DESIRED_ACTIVE_COIN_COUNT") or config.get(USER_CFG_SECTION, "desired_active_coin_count")
