@@ -29,6 +29,10 @@ def main():
     db.set_coins(config.SUPPORTED_COIN_LIST)
     db.migrate_old_state()
 
+    current_coin = db.get_current_coin()
+    if current_coin:
+        logger.info(f"Current coin: {current_coin}")
+
     trader.initialize()
 
     schedule = SafeScheduler(logger)

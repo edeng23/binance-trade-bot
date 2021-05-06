@@ -48,7 +48,7 @@ class BinanceAPIManager:
         amount_trading = (
             self._sell_quantity(origin_coin.symbol, target_coin.symbol)
             if selling
-            else self._buy_quantity(origin_coin.symbol, target_coin.symbol)
+            else self.buy_quantity(origin_coin.symbol, target_coin.symbol)
         )
         fee_amount = amount_trading * base_fee * 0.75
         if origin_coin.symbol == "BNB":
@@ -198,7 +198,7 @@ class BinanceAPIManager:
     def buy_alt(self, origin_coin: Coin, target_coin: Coin, all_tickers: AllTickers):
         return self.retry(self._buy_alt, origin_coin, target_coin, all_tickers)
 
-    def _buy_quantity(
+    def buy_quantity(
         self, origin_symbol: str, target_symbol: str, target_balance: float = None, from_coin_price: float = None
     ):
         target_balance = target_balance or self.get_currency_balance(target_symbol)
@@ -219,7 +219,7 @@ class BinanceAPIManager:
         target_balance = self.get_currency_balance(target_symbol)
         from_coin_price = all_tickers.get_price(origin_symbol + target_symbol)
 
-        order_quantity = self._buy_quantity(origin_symbol, target_symbol, target_balance, from_coin_price)
+        order_quantity = self.buy_quantity(origin_symbol, target_symbol, target_balance, from_coin_price)
         self.logger.info(f"BUY QTY {order_quantity}")
 
         # Try to buy until successful

@@ -147,6 +147,9 @@ class AutoTrader:
             best_pair = max(ratio_dict, key=ratio_dict.get)
             self.logger.info(f"Will be jumping from {coin} to {best_pair.to_coin_id}")
             self.transaction_through_bridge(best_pair, all_tickers)
+            return True
+
+        return False
 
     def bridge_scout(self):
         """

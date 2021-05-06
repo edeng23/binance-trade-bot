@@ -2,6 +2,9 @@ import random
 import sys
 from datetime import datetime
 
+from binance.exceptions import BinanceAPIException
+from numpy import format_float_positional
+
 from binance_trade_bot.auto_trader import AutoTrader
 
 
@@ -31,7 +34,46 @@ class Strategy(AutoTrader):
             self.logger.info("Skipping scouting... current coin {} not found".format(current_coin + self.config.BRIDGE))
             return
 
-        self._jump_to_best_coin(current_coin, current_coin_price, all_tickers)
+        jump = self._jump_to_best_coin(current_coin, current_coin_price, all_tickers)
+
+        if not jump:
+            boost_balance = self.manager.get_currency_balance(self.config.BOOST_SYMBOL)
+            if boost_balance > 15:
+                order = self.db.get_last_order(current_coin, self.config.BRIDGE, 0, "COMPLETE")
+                price = order.crypto_trade_amount / order.alt_trade_amount
+
+                if order is not None and ((current_coin_price - price) / current_coin_price) * 100 > 5:
+                    order_quantity = self.manager.buy_quantity(
+                        current_coin.symbol, self.config.BOOST_SYMBOL, boost_balance
+                    )
+                    order_quantity = format_float_positional(order_quantity, trim="-")
+
+                    boost_order_buy = None
+                    while boost_order_buy is None:
+                        try:
+                            boost_order_buy = self.manager.binance_client.order_market_buy(
+                                symbol=current_coin.symbol + self.config.BOOST_SYMBOL, quantity=order_quantity
+                            )
+                            self.logger.info(boost_order_buy)
+                        except BinanceAPIException as e:
+                            self.logger.info(e)
+
+                    self.logger.info(f"Boosting .... Bought {order_quantity} {current_coin.symbol}")
+
+                    # sell at last order price
+                    boost_order_sell = None
+                    while boost_order_sell is None:
+                        try:
+                            boost_order_sell = self.manager.binance_client.order_limit_sell(
+                                symbol=current_coin.symbol + self.config.BOOST_SYMBOL,
+                                quantity=order_quantity,
+                                price=price,
+                            )
+                            self.logger.info(boost_order_sell)
+                        except BinanceAPIException as e:
+                            self.logger.info(e)
+
+                    self.logger.info(f"Boosting .... Selling {order_quantity} {current_coin.symbol}")
 
     def bridge_scout(self):
         current_coin = self.db.get_current_coin()

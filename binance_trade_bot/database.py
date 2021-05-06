@@ -92,7 +92,8 @@ class Database:
         session: Session
         with self.db_session() as session:
             coin = session.query(Coin).get(coin)
-            session.expunge(coin)
+            if coin:
+                session.expunge(coin)
             return coin
 
     def set_current_coin(self, coin: Union[Coin, str]):
@@ -144,6 +145,24 @@ class Database:
             pairs = pairs.all()
             session.expunge_all()
             return pairs
+
+    def get_last_order(self, alt_coin: Union[Coin, str], crypto_coin: Union[Coin, str], selling: bool, state: str):
+        session: Session
+        with self.db_session() as session:
+            trade: Trade = (
+                session.query(Trade)
+                .filter(
+                    Trade.alt_coin == alt_coin,
+                    Trade.crypto_coin == crypto_coin,
+                    Trade.selling == selling,
+                    Trade.state == state,
+                )
+                .order_by(Trade.id.desc())
+                .first()
+            )
+            if trade:
+                session.expunge(trade)
+            return trade
 
     def log_scout(
         self,

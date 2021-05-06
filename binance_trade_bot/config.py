@@ -14,6 +14,7 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
         config = configparser.ConfigParser()
         config["DEFAULT"] = {
             "bridge": "USDT",
+            "boost": "BUSD",
             "scout_multiplier": "5",
             "scout_sleep_time": "5",
             "hourToKeepScoutHistory": "1",
@@ -31,6 +32,9 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
 
         self.BRIDGE_SYMBOL = os.environ.get("BRIDGE_SYMBOL") or config.get(USER_CFG_SECTION, "bridge")
         self.BRIDGE = Coin(self.BRIDGE_SYMBOL, False)
+
+        self.BOOST_SYMBOL = os.environ.get("BOOST_SYMBOL") or config.get(USER_CFG_SECTION, "boost")
+        self.BOOST = Coin(self.BOOST_SYMBOL, False)
 
         # Prune settings
         self.SCOUT_HISTORY_PRUNE_TIME = float(
