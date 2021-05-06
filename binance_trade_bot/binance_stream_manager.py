@@ -29,6 +29,7 @@ class BinanceOrder:  # pylint: disable=too-few-public-methods
 class BinanceCache:  # pylint: disable=too-few-public-methods
     ticker_values: Dict[str, float] = {}
     balances: Dict[str, float] = {}
+    balances_mutex: threading.Lock = threading.Lock()
     non_existent_tickers: Set[str] = set()
     orders: Dict[str, BinanceOrder] = {}
 
@@ -88,7 +89,8 @@ class BinanceStreamManager:
             self.cache.orders[fake_report["order_id"]] = BinanceOrder(fake_report)
 
     def _invalidate_balances(self):
-        self.cache.balances.clear()
+        with self.cache.balances_mutex:
+            self.cache.balances.clear()
 
     def _stream_processor(self):
         while True:
@@ -120,11 +122,13 @@ class BinanceStreamManager:
             self.cache.orders[order.id] = order
         elif event_type == "balanceUpdate":  # !userData
             self.logger.debug(f"Balance update: {stream_data}")
-            del self.cache.balances[stream_data["asset"]]
+            with self.cache.balances_mutex:
+                del self.cache.balances[stream_data["asset"]]
         elif event_type == "outboundAccountPosition":  # !userData
             self.logger.debug(f"outboundAccountPosition: {stream_data}")
-            for bal in stream_data["balances"]:
-                self.cache.balances[bal["asset"]] = float(bal["free"])
+            with self.cache.balances_mutex:
+                for bal in stream_data["balances"]:
+                    self.cache.balances[bal["asset"]] = float(bal["free"])
         elif event_type == "24hrMiniTicker":
             for event in stream_data["data"]:
                 self.cache.ticker_values[event["symbol"]] = float(event["close_price"])
