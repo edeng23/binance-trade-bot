@@ -36,7 +36,7 @@ class Strategy(AutoTrader):
             # has stopped. Not logging though to reduce log size.
             print(
                 f"{datetime.now()} - CONSOLE - INFO - I am scouting the best trades. "
-                f"Current coin: {current_coin + self.config.BRIDGE} ",
+                f"Current coin: {coin + self.config.BRIDGE} ",
                 end="\r",
             )
 
