@@ -67,6 +67,7 @@ class BinanceAPIManager:
         """
         Get ticker price of all coins
         """
+        time.sleep(2)
         return AllTickers(self.binance_client.get_all_tickers())
 
     def get_market_ticker_price(self, ticker_symbol: str):
