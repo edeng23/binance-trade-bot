@@ -7,7 +7,7 @@ from binance.client import Client
 from binance.exceptions import BinanceAPIException
 from cachetools import TTLCache, cached
 
-from .binance_stream_manager import BinanceCache, BinanceOrder, BinanceStreamManager
+from .binance_stream_manager import BinanceCache, BinanceOrder, BinanceStreamManager, OrderGuard
 from .config import Config
 from .database import Database
 from .logger import Logger
@@ -32,7 +32,11 @@ class BinanceAPIManager:
 
     def setup_websockets(self):
         self.stream_manager = BinanceStreamManager(
-            self.cache, self.config.BINANCE_API_KEY, self.config.BINANCE_API_SECRET_KEY, self.binance_client, self.logger
+            self.cache,
+            self.config.BINANCE_API_KEY,
+            self.config.BINANCE_API_SECRET_KEY,
+            self.binance_client,
+            self.logger,
         )
 
     @cached(cache=TTLCache(maxsize=1, ttl=43200))
@@ -199,9 +203,9 @@ class BinanceAPIManager:
         return order_status
 
     def wait_for_order(
-        self, order_id, origin_symbol: str, target_symbol: str
+        self, order_id, origin_symbol: str, target_symbol: str, order_guard: OrderGuard
     ) -> Optional[BinanceOrder]:  # pylint: disable=unsubscriptable-object
-        with self.stream_manager.acquire_order_guard(origin_symbol, target_symbol, int(order_id)):
+        with order_guard:
             return self._wait_for_order(order_id, origin_symbol, target_symbol)
 
     def _should_cancel_order(self, order_status):
@@ -259,6 +263,7 @@ class BinanceAPIManager:
 
         # Try to buy until successful
         order = None
+        order_guard = self.stream_manager.acquire_order_guard()
         while order is None:
             try:
                 order = self.binance_client.order_limit_buy(
@@ -275,7 +280,8 @@ class BinanceAPIManager:
 
         trade_log.set_ordered(origin_balance, target_balance, order_quantity)
 
-        order = self.wait_for_order(order["orderId"], origin_symbol, target_symbol)
+        order_guard.set_order(origin_symbol, target_symbol, int(order["orderId"]))
+        order = self.wait_for_order(order["orderId"], origin_symbol, target_symbol, order_guard)
 
         if order is None:
             return None
@@ -315,6 +321,7 @@ class BinanceAPIManager:
 
         self.logger.info(f"Balance is {origin_balance}")
         order = None
+        order_guard = self.stream_manager.acquire_order_guard()
         while order is None:
             # Should sell at calculated price to avoid lost coin
             order = self.binance_client.order_limit_sell(
@@ -326,7 +333,8 @@ class BinanceAPIManager:
 
         trade_log.set_ordered(origin_balance, target_balance, order_quantity)
 
-        order = self.wait_for_order(order["orderId"], origin_symbol, target_symbol)
+        order_guard.set_order(origin_symbol, target_symbol, int(order["orderId"]))
+        order = self.wait_for_order(order["orderId"], origin_symbol, target_symbol, order_guard)
 
         if order is None:
             return None
