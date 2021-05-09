@@ -35,12 +35,22 @@ class BinanceCache:  # pylint: disable=too-few-public-methods
 
 
 class OrderGuard:
-    def __init__(self, pending_orders: Set[Tuple[str, int]], origin_symbol: str, target_symbol: str, order_id: int):
+    def __init__(self, pending_orders: Set[Tuple[str, int]], mutex: threading.Lock):
         self.pending_orders = pending_orders
+        self.mutex = mutex
+        # lock immediately because OrderGuard
+        # should be entered and put tag that shouldn't be missed
+        self.mutex.acquire()
+        self.tag = None
+
+    def set_order(self, origin_symbol: str, target_symbol: str, order_id: int):
         self.tag = (origin_symbol + target_symbol, order_id)
 
     def __enter__(self):
+        if self.tag is None:
+            raise Exception("OrderGuard wasn't properly set")
         self.pending_orders.add(self.tag)
+        self.mutex.release()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.pending_orders.remove(self.tag)
@@ -57,21 +67,24 @@ class BinanceStreamManager:
         self.bwApiManager.create_stream(["arr"], ["!userData"], api_key=api_key, api_secret=api_secret)
         self.binance_client = binance_client
         self.pending_orders: Set[Tuple[str, int]] = set()
+        self.pending_orders_mutex: threading.Lock = threading.Lock()
         self._processorThread = threading.Thread(target=self._stream_processor)
         self._processorThread.start()
 
-    def acquire_order_guard(self, origin_symbol: str, target_symbol: str, order_id: int):
-        return OrderGuard(self.pending_orders, origin_symbol, target_symbol, order_id)
+    def acquire_order_guard(self):
+        return OrderGuard(self.pending_orders, self.pending_orders_mutex)
 
     def _fetch_pending_orders(self):
-        orders = self.pending_orders.copy()
-        for (symbol, order_id) in orders:
+        pending_orders: Set[Tuple[str, int]]
+        with self.pending_orders_mutex:
+            pending_orders = self.pending_orders.copy()
+        for (symbol, order_id) in pending_orders:
             order = None
             while True:
                 try:
                     order = self.binance_client.get_order(symbol=symbol, orderId=order_id)
-                except (BinanceRequestException, BinanceAPIException):
-                    pass
+                except (BinanceRequestException, BinanceAPIException) as e:
+                    self.logger.error(f"Got exception during fetching pending order: {e}")
                 if order is not None:
                     break
                 time.sleep(1)
