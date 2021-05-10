@@ -1,5 +1,14 @@
 #!python3
+# PYTHON_ARGCOMPLETE_OK
 import time
+
+# Allow to run without argcomplete
+try:
+    from argcomplete import autocomplete
+
+    ARG_COMPLETE = True
+except ModuleNotFoundError:
+    ARG_COMPLETE = False
 
 from .binance_api_manager import BinanceAPIManager
 from .config import Config
@@ -10,10 +19,22 @@ from .strategies import get_strategy
 
 
 def main():
+    parser = Config.get_parser()
+
+    parser.add_argument("--verbose_config", action="store_true", help="Verbose Config on startup")
+
+    if ARG_COMPLETE:
+        autocomplete(parser)
+    args = parser.parse_args()
+
+    config = Config(args.__dict__)
+
+    if args.verbose_config:
+        config.verbose()
+
     logger = Logger()
     logger.info("Starting")
 
-    config = Config()
     db = Database(logger, config)
     manager = BinanceAPIManager(config, db, logger)
     strategy = get_strategy(config.STRATEGY)

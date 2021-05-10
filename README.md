@@ -59,6 +59,10 @@ Create a .cfg file named `user.cfg` based off `.user.cfg.example`, then add your
 -   **strategy** - The trading strategy to use. See [`binance_trade_bot/strategies`](binance_trade_bot/strategies/README.md) for more information
 -   **buy_timeout/sell_timeout** - Controls how many minutes to wait before cancelling a limit order (buy/sell) and returning to "scout" mode. 0 means that the order will never be cancelled prematurely.
 
+#### CLI Arguments
+
+All of the options provided in `user.cfg` can also be configured using cli arguments, use `--help` to see more.
+
 #### Environment Variables
 
 All of the options provided in `user.cfg` can also be configured using environment variables.

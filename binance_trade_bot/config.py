@@ -1,16 +1,35 @@
 # Config consts
 import configparser
 import os
+from argparse import ArgumentParser
+from typing import Dict
 
 from .models import Coin
 
 CFG_FL_NAME = "user.cfg"
 USER_CFG_SECTION = "binance_user_config"
 
+CONFIG_TO_ENV = {
+    "bridge": "BRIDGE_SYMBOL",
+    "hourToKeepScoutHistory": "HOURS_TO_KEEP_SCOUTING_HISTORY",
+    "scout_multiplier": "SCOUT_MULTIPLIER",
+    "scout_sleep_time": "SCOUT_SLEEP_TIME",
+    "api_key": "API_KEY",
+    "api_secret_key": "API_SECRET_KEY",
+    "tld": "TLD",
+    "current_coin": "CURRENT_COIN_SYMBOL",
+    "strategy": "STRATEGY",
+    "sell_timeout": "SELL_TIMEOUT",
+    "buy_timeout": "BUY_TIMEOUT",
+}
+
 
 class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attributes
-    def __init__(self):
+    def __init__(self, config_values: Dict = None):
         # Init config
+
+        if config_values is None:
+            config_values = {}
         config = configparser.ConfigParser()
         config["DEFAULT"] = {
             "bridge": "USDT",
@@ -29,26 +48,20 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
         else:
             config.read(CFG_FL_NAME)
 
-        self.BRIDGE_SYMBOL = os.environ.get("BRIDGE_SYMBOL") or config.get(USER_CFG_SECTION, "bridge")
+        self.BRIDGE_SYMBOL = Config._get_option("bridge", config, config_values)
         self.BRIDGE = Coin(self.BRIDGE_SYMBOL, False)
 
         # Prune settings
-        self.SCOUT_HISTORY_PRUNE_TIME = float(
-            os.environ.get("HOURS_TO_KEEP_SCOUTING_HISTORY") or config.get(USER_CFG_SECTION, "hourToKeepScoutHistory")
-        )
+        self.SCOUT_HISTORY_PRUNE_TIME = float(Config._get_option("hourToKeepScoutHistory", config, config_values))
 
         # Get config for scout
-        self.SCOUT_MULTIPLIER = float(
-            os.environ.get("SCOUT_MULTIPLIER") or config.get(USER_CFG_SECTION, "scout_multiplier")
-        )
-        self.SCOUT_SLEEP_TIME = int(
-            os.environ.get("SCOUT_SLEEP_TIME") or config.get(USER_CFG_SECTION, "scout_sleep_time")
-        )
+        self.SCOUT_MULTIPLIER = float(Config._get_option("scout_multiplier", config, config_values))
+        self.SCOUT_SLEEP_TIME = int(Config._get_option("scout_sleep_time", config, config_values))
 
         # Get config for binance
-        self.BINANCE_API_KEY = os.environ.get("API_KEY") or config.get(USER_CFG_SECTION, "api_key")
-        self.BINANCE_API_SECRET_KEY = os.environ.get("API_SECRET_KEY") or config.get(USER_CFG_SECTION, "api_secret_key")
-        self.BINANCE_TLD = os.environ.get("TLD") or config.get(USER_CFG_SECTION, "tld")
+        self.BINANCE_API_KEY = Config._get_option("api_key", config, config_values)
+        self.BINANCE_API_SECRET_KEY = Config._get_option("api_secret_key", config, config_values)
+        self.BINANCE_TLD = Config._get_option("tld", config, config_values)
 
         # Get supported coin list from the environment
         supported_coin_list = [
@@ -64,9 +77,36 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
                     supported_coin_list.append(line)
         self.SUPPORTED_COIN_LIST = supported_coin_list
 
-        self.CURRENT_COIN_SYMBOL = os.environ.get("CURRENT_COIN_SYMBOL") or config.get(USER_CFG_SECTION, "current_coin")
+        self.CURRENT_COIN_SYMBOL = Config._get_option("current_coin", config, config_values)
 
-        self.STRATEGY = os.environ.get("STRATEGY") or config.get(USER_CFG_SECTION, "strategy")
+        self.STRATEGY = Config._get_option("strategy", config, config_values)
 
-        self.SELL_TIMEOUT = os.environ.get("SELL_TIMEOUT") or config.get(USER_CFG_SECTION, "sell_timeout")
-        self.BUY_TIMEOUT = os.environ.get("BUY_TIMEOUT") or config.get(USER_CFG_SECTION, "buy_timeout")
+        self.SELL_TIMEOUT = Config._get_option("sell_timeout", config, config_values)
+        self.BUY_TIMEOUT = Config._get_option("buy_timeout", config, config_values)
+
+    @staticmethod
+    def _get_option(option_key, config, config_values):
+        return (
+            config_values.get(option_key)
+            or os.environ.get(CONFIG_TO_ENV[option_key])
+            or config.get(USER_CFG_SECTION, option_key)
+        )
+
+    @staticmethod
+    def get_parser():
+        # Create parser for config and return it
+
+        parser = ArgumentParser("Binance Trading Bot")
+        for option in CONFIG_TO_ENV:
+            parser.add_argument(f"--{option}")
+
+        return parser
+
+    def verbose(self):
+        # Print config values
+
+        config_values = self.__dict__.copy()
+        del config_values["BINANCE_API_KEY"]
+        del config_values["BINANCE_API_SECRET_KEY"]
+
+        print("\n".join([f"{k}: {v}" for k, v in config_values.items()]))
