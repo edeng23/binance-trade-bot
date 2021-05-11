@@ -317,7 +317,6 @@ class BinanceAPIManager:
 
         origin_balance = self.get_currency_balance(origin_symbol)
         target_balance = self.get_currency_balance(target_symbol)
-        from_coin_price = self.get_ticker_price(origin_symbol + target_symbol)
 
         order_quantity = self._sell_quantity(origin_symbol, target_symbol, origin_balance)
         self.logger.info(f"Selling {order_quantity} of {origin_symbol}")
@@ -327,9 +326,7 @@ class BinanceAPIManager:
         order_guard = self.stream_manager.acquire_order_guard()
         while order is None:
             # Should sell at calculated price to avoid lost coin
-            order = self.binance_client.order_limit_sell(
-                symbol=origin_symbol + target_symbol, quantity=order_quantity, price=from_coin_price
-            )
+            order = self.binance_client.order_market_sell(symbol=origin_symbol + target_symbol, quantity=order_quantity)
 
         self.logger.info("order")
         self.logger.info(order)
