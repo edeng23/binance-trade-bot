@@ -62,9 +62,9 @@ class BinanceStreamManager:
     ):
         self.cache = cache
         self.logger = logger
-        self.bwApiManager = BinanceWebSocketApiManager(output_default="UnicornFy", enable_stream_signal_buffer=True)
-        self.bwApiManager.create_stream(["arr"], ["!miniTicker"], api_key=api_key, api_secret=api_secret)
-        self.bwApiManager.create_stream(["arr"], ["!userData"], api_key=api_key, api_secret=api_secret)
+        self.bw_api_manager = BinanceWebSocketApiManager(output_default="UnicornFy", enable_stream_signal_buffer=True)
+        self.bw_api_manager.create_stream(["arr"], ["!miniTicker"], api_key=api_key, api_secret=api_secret)
+        self.bw_api_manager.create_stream(["arr"], ["!userData"], api_key=api_key, api_secret=api_secret)
         self.binance_client = binance_client
         self.pending_orders: Set[Tuple[str, int]] = set()
         self.pending_orders_mutex: threading.Lock = threading.Lock()
@@ -107,17 +107,17 @@ class BinanceStreamManager:
 
     def _stream_processor(self):
         while True:
-            if self.bwApiManager.is_manager_stopping():
+            if self.bw_api_manager.is_manager_stopping():
                 sys.exit()
 
-            stream_signal = self.bwApiManager.pop_stream_signal_from_stream_signal_buffer()
-            stream_data = self.bwApiManager.pop_stream_data_from_stream_buffer()
+            stream_signal = self.bw_api_manager.pop_stream_signal_from_stream_signal_buffer()
+            stream_data = self.bw_api_manager.pop_stream_data_from_stream_buffer()
 
             if stream_signal is not False:
                 signal_type = stream_signal["type"]
                 stream_id = stream_signal["stream_id"]
                 if signal_type == "CONNECT":
-                    stream_info = self.bwApiManager.get_stream_info(stream_id)
+                    stream_info = self.bw_api_manager.get_stream_info(stream_id)
                     if "!userData" in stream_info["markets"]:
                         self.logger.debug("Connect for userdata arrived", False)
                         self._fetch_pending_orders()
@@ -149,4 +149,4 @@ class BinanceStreamManager:
             self.logger.error(f"Unknown event type found: {event_type}\n{stream_data}")
 
     def close(self):
-        self.bwApiManager.stop_manager_with_all_streams()
+        self.bw_api_manager.stop_manager_with_all_streams()
