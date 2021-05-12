@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from .binance_api_manager import BinanceAPIManager
 from .config import Config
-from .database import Database
+from .database import Database, LogScout
 from .logger import Logger
 from .models import Coin, CoinValue, Pair
 
@@ -109,6 +109,7 @@ class AutoTrader:
         """
         ratio_dict: Dict[Pair, float] = {}
 
+        scout_logs = []
         for pair in self.db.get_pairs_from(coin):
             optional_coin_price = self.manager.get_ticker_price(pair.to_coin + self.config.BRIDGE)
 
@@ -118,7 +119,7 @@ class AutoTrader:
                 )
                 continue
 
-            self.db.log_scout(pair, pair.ratio, coin_price, optional_coin_price)
+            scout_logs.append(LogScout(pair, pair.ratio, coin_price, optional_coin_price))
 
             # Obtain (current coin)/(optional coin)
             coin_opt_coin_ratio = coin_price / optional_coin_price
@@ -130,6 +131,7 @@ class AutoTrader:
             ratio_dict[pair] = (
                 coin_opt_coin_ratio - transaction_fee * self.config.SCOUT_MULTIPLIER * coin_opt_coin_ratio
             ) - pair.ratio
+        self.db.batch_log_scout(scout_logs)
         return ratio_dict
 
     def _jump_to_best_coin(self, coin: Coin, coin_price: float):
@@ -174,15 +176,14 @@ class AutoTrader:
         """
         now = datetime.now()
 
-        session: Session
-        with self.db.db_session() as session:
-            coins: List[Coin] = session.query(Coin).all()
-            for coin in coins:
-                balance = self.manager.get_currency_balance(coin.symbol)
-                if balance == 0:
-                    continue
-                usd_value = self.manager.get_ticker_price(coin + "USDT")
-                btc_value = self.manager.get_ticker_price(coin + "BTC")
-                cv = CoinValue(coin, balance, usd_value, btc_value, datetime=now)
-                session.add(cv)
-                self.db.send_update(cv)
+        coins = self.db.get_coins(False)
+        cv_batch = []
+        for coin in coins:
+            balance = self.manager.get_currency_balance(coin.symbol)
+            if balance == 0:
+                continue
+            usd_value = self.manager.get_ticker_price(coin + "USDT")
+            btc_value = self.manager.get_ticker_price(coin + "BTC")
+            cv = CoinValue(coin, balance, usd_value, btc_value, datetime=now)
+            cv_batch.append(cv)
+        self.db.batch_update_coin_values(cv_batch)
