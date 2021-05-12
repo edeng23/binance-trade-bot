@@ -23,6 +23,7 @@ class AllTickers:  # pylint: disable=too-few-public-methods
 
 class BinanceAPIManager:
     def __init__(self, config: Config, db: Database, logger: Logger):
+        # initializing the client class calls `ping` API endpoint, verifying the connection
         self.binance_client = Client(
             config.BINANCE_API_KEY,
             config.BINANCE_API_SECRET_KEY,
@@ -62,6 +63,12 @@ class BinanceAPIManager:
         if bnb_balance >= fee_amount_bnb:
             return base_fee * 0.75
         return base_fee
+
+    def get_account(self):
+        """
+        Get account information
+        """
+        return self.binance_client.get_account()
 
     def get_all_market_tickers(self) -> AllTickers:
         """
