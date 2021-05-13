@@ -53,10 +53,12 @@ class OrderGuard:
         self.tag = (origin_symbol + target_symbol, order_id)
 
     def __enter__(self):
-        if self.tag is None:
-            raise Exception("OrderGuard wasn't properly set")
-        self.pending_orders.add(self.tag)
-        self.mutex.release()
+        try:
+            if self.tag is None:
+                raise Exception("OrderGuard wasn't properly set")
+            self.pending_orders.add(self.tag)
+        finally:
+            self.mutex.release()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.pending_orders.remove(self.tag)
