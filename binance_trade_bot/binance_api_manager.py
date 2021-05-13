@@ -101,18 +101,21 @@ class BinanceAPIManager:
         """
         Get balance of a specific coin
         """
-        with self.cache.balances_mutex:
-            balance = self.cache.balances.get(currency_symbol, None)
+        with self.cache.open_balances() as cache_balances:
+            balance = cache_balances.get(currency_symbol, None)
             if force or balance is None:
-                self.cache.balances = {
-                    currency_balance["asset"]: float(currency_balance["free"])
-                    for currency_balance in self.binance_client.get_account()["balances"]
-                }
-                self.logger.debug(f"Fetched all balances: {self.cache.balances}")
-                if currency_symbol not in self.cache.balances:
-                    self.cache.balances[currency_symbol] = 0.0
+                cache_balances.clear()
+                cache_balances.update(
+                    {
+                        currency_balance["asset"]: float(currency_balance["free"])
+                        for currency_balance in self.binance_client.get_account()["balances"]
+                    }
+                )
+                self.logger.debug(f"Fetched all balances: {cache_balances}")
+                if currency_symbol not in cache_balances:
+                    cache_balances[currency_symbol] = 0.0
                     return 0.0
-                return self.cache.balances.get(currency_symbol, 0.0)
+                return cache_balances.get(currency_symbol, 0.0)
 
             return balance
 
@@ -251,8 +254,8 @@ class BinanceAPIManager:
         origin_symbol = origin_coin.symbol
         target_symbol = target_coin.symbol
 
-        with self.cache.balances_mutex:
-            self.cache.balances.clear()
+        with self.cache.open_balances() as balances:
+            balances.clear()
 
         origin_balance = self.get_currency_balance(origin_symbol)
         target_balance = self.get_currency_balance(target_symbol)
@@ -309,8 +312,8 @@ class BinanceAPIManager:
         origin_symbol = origin_coin.symbol
         target_symbol = target_coin.symbol
 
-        with self.cache.balances_mutex:
-            self.cache.balances.clear()
+        with self.cache.open_balances() as balances:
+            balances.clear()
 
         origin_balance = self.get_currency_balance(origin_symbol)
         target_balance = self.get_currency_balance(target_symbol)
