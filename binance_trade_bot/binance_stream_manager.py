@@ -1,6 +1,7 @@
 import sys
 import threading
 import time
+from contextlib import contextmanager
 from typing import Dict, Set, Tuple
 
 import binance.client
@@ -28,10 +29,15 @@ class BinanceOrder:  # pylint: disable=too-few-public-methods
 
 class BinanceCache:  # pylint: disable=too-few-public-methods
     ticker_values: Dict[str, float] = {}
-    balances: Dict[str, float] = {}
-    balances_mutex: threading.Lock = threading.Lock()
+    _balances: Dict[str, float] = {}
+    _balances_mutex: threading.Lock = threading.Lock()
     non_existent_tickers: Set[str] = set()
     orders: Dict[str, BinanceOrder] = {}
+
+    @contextmanager
+    def open_balances(self):
+        with self._balances_mutex:
+            yield self._balances
 
 
 class OrderGuard:
@@ -102,8 +108,8 @@ class BinanceStreamManager:
             self.cache.orders[fake_report["order_id"]] = BinanceOrder(fake_report)
 
     def _invalidate_balances(self):
-        with self.cache.balances_mutex:
-            self.cache.balances.clear()
+        with self.cache.open_balances() as balances:
+            balances.clear()
 
     def _stream_processor(self):
         while True:
@@ -135,13 +141,13 @@ class BinanceStreamManager:
             self.cache.orders[order.id] = order
         elif event_type == "balanceUpdate":  # !userData
             self.logger.debug(f"Balance update: {stream_data}")
-            with self.cache.balances_mutex:
-                del self.cache.balances[stream_data["asset"]]
+            with self.cache.open_balances() as balances:
+                del balances[stream_data["asset"]]
         elif event_type == "outboundAccountPosition":  # !userData
             self.logger.debug(f"outboundAccountPosition: {stream_data}")
-            with self.cache.balances_mutex:
+            with self.cache.open_balances() as balances:
                 for bal in stream_data["balances"]:
-                    self.cache.balances[bal["asset"]] = float(bal["free"])
+                    balances[bal["asset"]] = float(bal["free"])
         elif event_type == "24hrMiniTicker":
             for event in stream_data["data"]:
                 self.cache.ticker_values[event["symbol"]] = float(event["close_price"])
