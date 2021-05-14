@@ -1,6 +1,7 @@
-# Config consts
 import configparser
 import os
+
+import binance.client
 
 from .models import Coin
 
@@ -9,6 +10,9 @@ USER_CFG_SECTION = "binance_user_config"
 
 
 class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attributes
+    ORDER_TYPE_MARKET = "market"
+    ORDER_TYPE_LIMIT = "limit"
+
     def __init__(self):
         # Init config
         config = configparser.ConfigParser()
@@ -21,6 +25,8 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
             "strategy": "default",
             "sell_timeout": "0",
             "buy_timeout": "0",
+            "sell_order_type": self.ORDER_TYPE_MARKET,
+            "buy_order_type": self.ORDER_TYPE_LIMIT,
         }
 
         if not os.path.exists(CFG_FL_NAME):
@@ -70,3 +76,28 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
 
         self.SELL_TIMEOUT = os.environ.get("SELL_TIMEOUT") or config.get(USER_CFG_SECTION, "sell_timeout")
         self.BUY_TIMEOUT = os.environ.get("BUY_TIMEOUT") or config.get(USER_CFG_SECTION, "buy_timeout")
+
+        order_type_map = {
+            self.ORDER_TYPE_LIMIT: binance.client.Client.ORDER_TYPE_LIMIT,
+            self.ORDER_TYPE_MARKET: binance.client.Client.ORDER_TYPE_MARKET,
+        }
+
+        sell_order_type = os.environ.get("SELL_ORDER_TYPE") or config.get(
+            USER_CFG_SECTION, "sell_order_type", fallback=self.ORDER_TYPE_MARKET
+        )
+        if sell_order_type not in order_type_map:
+            raise Exception(
+                f"{self.ORDER_TYPE_LIMIT} or {self.ORDER_TYPE_MARKET} expected, got {sell_order_type}"
+                "for sell_order_type"
+            )
+        self.SELL_ORDER_TYPE = order_type_map[sell_order_type]
+
+        buy_order_type = os.environ.get("BUY_ORDER_TYPE") or config.get(
+            USER_CFG_SECTION, "buy_order_type", fallback=self.ORDER_TYPE_LIMIT
+        )
+        if buy_order_type not in order_type_map:
+            raise Exception(
+                f"{self.ORDER_TYPE_LIMIT} or {self.ORDER_TYPE_MARKET} expected, got {buy_order_type}"
+                "for buy_order_type"
+            )
+        self.BUY_ORDER_TYPE = order_type_map[buy_order_type]

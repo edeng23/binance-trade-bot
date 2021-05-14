@@ -10,3 +10,5 @@ scout_sleep_time=1
 strategy=default
 buy_timeout=0
 sell_timeout=0
+buy_order_type=limit
+sell_order_type=market

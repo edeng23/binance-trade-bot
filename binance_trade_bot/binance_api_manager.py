@@ -1,7 +1,7 @@
 import math
 import time
 import traceback
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 
 from binance.client import Client
 from binance.exceptions import BinanceAPIException
@@ -245,6 +245,18 @@ class BinanceAPIManager:
         origin_tick = self.get_alt_tick(origin_symbol, target_symbol)
         return math.floor(target_balance * 10 ** origin_tick / from_coin_price) / float(10 ** origin_tick)
 
+    def _make_order(self, side: str, symbol: str, quantity: Union[str, float], price: Union[str, float]):
+        params = {
+            "symbol": symbol,
+            "side": side,
+            "quantity": quantity,
+            "type": self.config.BUY_ORDER_TYPE if side == Client.SIDE_BUY else self.config.SELL_ORDER_TYPE,
+        }
+        if params["type"] == Client.ORDER_TYPE_LIMIT:
+            params["timeInForce"] = self.binance_client.TIME_IN_FORCE_GTC
+            params["price"] = price
+        return self.binance_client.create_order(**params)
+
     def _buy_alt(self, origin_coin: Coin, target_coin: Coin):
         """
         Buy altcoin
@@ -268,7 +280,8 @@ class BinanceAPIManager:
         order_guard = self.stream_manager.acquire_order_guard()
         while order is None:
             try:
-                order = self.binance_client.order_limit_buy(
+                order = self._make_order(
+                    side=Client.SIDE_BUY,
                     symbol=origin_symbol + target_symbol,
                     quantity=order_quantity,
                     price=from_coin_price,
@@ -316,6 +329,7 @@ class BinanceAPIManager:
 
         origin_balance = self.get_currency_balance(origin_symbol)
         target_balance = self.get_currency_balance(target_symbol)
+        from_coin_price = self.get_ticker_price(origin_symbol + target_symbol)
 
         order_quantity = self._sell_quantity(origin_symbol, target_symbol, origin_balance)
         self.logger.info(f"Selling {order_quantity} of {origin_symbol}")
@@ -324,8 +338,19 @@ class BinanceAPIManager:
         order = None
         order_guard = self.stream_manager.acquire_order_guard()
         while order is None:
-            # Should sell at calculated price to avoid lost coin
-            order = self.binance_client.order_market_sell(symbol=origin_symbol + target_symbol, quantity=order_quantity)
+            try:
+                order = self._make_order(
+                    side=Client.SIDE_SELL,
+                    symbol=origin_symbol + target_symbol,
+                    quantity=order_quantity,
+                    price=from_coin_price,
+                )
+                self.logger.info(order)
+            except BinanceAPIException as e:
+                self.logger.info(e)
+                time.sleep(1)
+            except Exception as e:  # pylint: disable=broad-except
+                self.logger.warning(f"Unexpected Error: {e}")
 
         self.logger.info("order")
         self.logger.info(order)
