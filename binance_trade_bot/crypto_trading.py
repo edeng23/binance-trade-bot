@@ -29,6 +29,7 @@ def main():
         return
     trader = strategy(manager, db, logger, config)
     logger.info(f"Chosen strategy: {config.STRATEGY}")
+    logger.info(f"Buy type: {config.BUY_ORDER_TYPE}, Sell type: {config.SELL_ORDER_TYPE}")
 
     logger.info("Creating database schema if it doesn't already exist")
     db.create_database()
