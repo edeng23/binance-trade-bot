@@ -150,8 +150,8 @@ class BinanceStreamManager:
             self.logger.debug(f"Balance update: {stream_data}")
             with self.cache.open_balances() as balances:
                 del balances[stream_data["asset"]]
-        elif event_type == "outboundAccountPosition":  # !userData
-            self.logger.debug(f"outboundAccountPosition: {stream_data}")
+        elif event_type in ("outboundAccountPosition", "outboundAccountInfo"):  # !userData
+            self.logger.debug(f"{event_type}: {stream_data}")
             with self.cache.open_balances() as balances:
                 for bal in stream_data["balances"]:
                     balances[bal["asset"]] = float(bal["free"])
