@@ -33,8 +33,7 @@ class BinanceAPIManager:
     def setup_websockets(self):
         self.stream_manager = BinanceStreamManager(
             self.cache,
-            self.config.BINANCE_API_KEY,
-            self.config.BINANCE_API_SECRET_KEY,
+            self.config,
             self.binance_client,
             self.logger,
         )
