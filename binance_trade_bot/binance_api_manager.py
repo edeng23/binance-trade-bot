@@ -247,7 +247,7 @@ class BinanceAPIManager:
 
     @staticmethod
     def float_as_decimal_str(num):
-        return "{:0.0{}f}".format(num, 8)
+        return f"{num:0.08f}".rstrip("0").rstrip(".")  # remove trailing zeroes too
 
     def _make_order(
         self,
