@@ -149,7 +149,9 @@ class BinanceStreamManager:
         elif event_type == "balanceUpdate":  # !userData
             self.logger.debug(f"Balance update: {stream_data}")
             with self.cache.open_balances() as balances:
-                del balances[stream_data["asset"]]
+                asset = stream_data["asset"]
+                if asset in balances:
+                    del balances[stream_data["asset"]]
         elif event_type in ("outboundAccountPosition", "outboundAccountInfo"):  # !userData
             self.logger.debug(f"{event_type}: {stream_data}")
             with self.cache.open_balances() as balances:
