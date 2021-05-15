@@ -58,6 +58,9 @@ Create a .cfg file named `user.cfg` based off `.user.cfg.example`, then add your
 -   **scout_multiplier** - Controls the value by which the difference between the current state of coin ratios and previous state of ratios is multiplied. For bigger values, the bot will wait for bigger margins to arrive before making a trade.
 -   **strategy** - The trading strategy to use. See [`binance_trade_bot/strategies`](binance_trade_bot/strategies/README.md) for more information
 -   **buy_timeout/sell_timeout** - Controls how many minutes to wait before cancelling a limit order (buy/sell) and returning to "scout" mode. 0 means that the order will never be cancelled prematurely.
+-   **scout_sleep_time** - Controls how many seconds bot should wait between analysis of current prices. Since the bot now operates on websockets this value should be set to something low (like 1), the reasons to set it above 1 are when you observe high CPU usage by bot or you got api errors about requests weight limit.
+-   **buy_order_type** - Controls the type of placed buy orders, types available: market, limit (default=limit)
+-   **sell_order_type** - Controls the type of placed sell orders, types available: market, limit (default=market)
 
 #### Environment Variables
 
@@ -70,11 +73,13 @@ BRIDGE_SYMBOL: USDT
 API_KEY: vmPUZE6mv9SD5VNHk4HlWFsOr6aKE2zvsw0MuIgwCIPy6utIco14y7Ju91duEh8A
 API_SECRET_KEY: NhqPtmdSJYdKjVHjA7PZj4Mge3R5YNiP1e3UZjInClVN65XAbvqqM6A7H5fATj0j
 SCOUT_MULTIPLIER: 5
-SCOUT_SLEEP_TIME: 5
+SCOUT_SLEEP_TIME: 1
 TLD: com
 STRATEGY: default
-buy_timeout=0
-sell_timeout=0
+BUY_TIMEOUT: 0
+SELL_TIMEOUT: 0
+BUY_ORDER_TYPE: limit
+SELL_ORDER_TYPE: market
 ```
 
 ### Paying Fees with BNB

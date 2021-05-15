@@ -1,10 +1,12 @@
+from collections import defaultdict
 from datetime import datetime, timedelta
 from traceback import format_exc
 from typing import Dict
 
 from sqlitedict import SqliteDict
 
-from .binance_api_manager import AllTickers, BinanceAPIManager
+from .binance_api_manager import BinanceAPIManager
+from .binance_stream_manager import BinanceOrder
 from .config import Config
 from .database import Database
 from .logger import Logger
@@ -12,14 +14,6 @@ from .models import Coin, Pair
 from .strategies import get_strategy
 
 cache = SqliteDict("data/backtest_cache.db")
-
-
-class FakeAllTickers(AllTickers):  # pylint: disable=too-few-public-methods
-    def __init__(self, manager: "MockBinanceManager"):  # pylint: disable=super-init-not-called
-        self.manager = manager
-
-    def get_price(self, ticker_symbol):
-        return self.manager.get_market_ticker_price(ticker_symbol)
 
 
 class MockBinanceManager(BinanceAPIManager):
@@ -36,19 +30,16 @@ class MockBinanceManager(BinanceAPIManager):
         self.datetime = start_date or datetime(2021, 1, 1)
         self.balances = start_balances or {config.BRIDGE.symbol: 100}
 
+    def setup_websockets(self):
+        pass  # No websockets are needed for backtesting
+
     def increment(self, interval=1):
         self.datetime += timedelta(minutes=interval)
-
-    def get_all_market_tickers(self):
-        """
-        Get ticker price of all coins
-        """
-        return FakeAllTickers(self)
 
     def get_fee(self, origin_coin: Coin, target_coin: Coin, selling: bool):
         return 0.0075
 
-    def get_market_ticker_price(self, ticker_symbol: str):
+    def get_ticker_price(self, ticker_symbol: str):
         """
         Get ticker price of a specific coin
         """
@@ -71,18 +62,18 @@ class MockBinanceManager(BinanceAPIManager):
             val = cache.get(key, None)
         return val
 
-    def get_currency_balance(self, currency_symbol: str):
+    def get_currency_balance(self, currency_symbol: str, force=False):
         """
         Get balance of a specific coin
         """
         return self.balances.get(currency_symbol, 0)
 
-    def buy_alt(self, origin_coin: Coin, target_coin: Coin, all_tickers: AllTickers):
+    def buy_alt(self, origin_coin: Coin, target_coin: Coin):
         origin_symbol = origin_coin.symbol
         target_symbol = target_coin.symbol
 
         target_balance = self.get_currency_balance(target_symbol)
-        from_coin_price = all_tickers.get_price(origin_symbol + target_symbol)
+        from_coin_price = self.get_ticker_price(origin_symbol + target_symbol)
 
         order_quantity = self._buy_quantity(origin_symbol, target_symbol, target_balance, from_coin_price)
         target_quantity = order_quantity * from_coin_price
@@ -94,14 +85,17 @@ class MockBinanceManager(BinanceAPIManager):
             f"Bought {origin_symbol}, balance now: {self.balances[origin_symbol]} - bridge: "
             f"{self.balances[target_symbol]}"
         )
-        return {"price": from_coin_price}
 
-    def sell_alt(self, origin_coin: Coin, target_coin: Coin, all_tickers: AllTickers):
+        event = defaultdict(lambda: None, order_price=from_coin_price, cumulative_quote_asset_transacted_quantity=0)
+
+        return BinanceOrder(event)
+
+    def sell_alt(self, origin_coin: Coin, target_coin: Coin):
         origin_symbol = origin_coin.symbol
         target_symbol = target_coin.symbol
 
         origin_balance = self.get_currency_balance(origin_symbol)
-        from_coin_price = all_tickers.get_price(origin_symbol + target_symbol)
+        from_coin_price = self.get_ticker_price(origin_symbol + target_symbol)
 
         order_quantity = self._sell_quantity(origin_symbol, target_symbol, origin_balance)
         target_quantity = order_quantity * from_coin_price
@@ -118,16 +112,16 @@ class MockBinanceManager(BinanceAPIManager):
     def collate_coins(self, target_symbol: str):
         total = 0
         for coin, balance in self.balances.items():
+            if coin == target_symbol:
+                total += balance
+                continue
             if coin == self.config.BRIDGE.symbol:
-                if coin == target_symbol:
-                    total += balance
-                else:
-                    price = self.get_market_ticker_price(target_symbol + coin)
-                    if price is None:
-                        continue
-                    total += balance / price
+                price = self.get_ticker_price(target_symbol + coin)
+                if price is None:
+                    continue
+                total += balance / price
             else:
-                price = self.get_market_ticker_price(coin + target_symbol)
+                price = self.get_ticker_price(coin + target_symbol)
                 if price is None:
                     continue
                 total += price * balance
@@ -175,7 +169,7 @@ def backtest(
 
     starting_coin = db.get_coin(starting_coin or config.SUPPORTED_COIN_LIST[0])
     if manager.get_currency_balance(starting_coin.symbol) == 0:
-        manager.buy_alt(starting_coin, config.BRIDGE, manager.get_all_market_tickers())
+        manager.buy_alt(starting_coin, config.BRIDGE)
     db.set_current_coin(starting_coin)
 
     strategy = get_strategy(config.STRATEGY)
