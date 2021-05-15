@@ -267,6 +267,7 @@ class BinanceAPIManager:
             params["timeInForce"] = self.binance_client.TIME_IN_FORCE_GTC
             params["price"] = self.float_as_decimal_str(price)
         elif side == Client.SIDE_BUY:
+            del params["quantity"]
             params["quoteOrderQty"] = self.float_as_decimal_str(quote_quantity)
         return self.binance_client.create_order(**params)
 
