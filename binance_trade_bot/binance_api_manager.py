@@ -1,7 +1,7 @@
 import math
 import time
 import traceback
-from typing import Dict, Optional, Union
+from typing import Dict, Optional
 
 from binance.client import Client
 from binance.exceptions import BinanceAPIException
@@ -246,16 +246,16 @@ class BinanceAPIManager:
         return math.floor(target_balance * 10 ** origin_tick / from_coin_price) / float(10 ** origin_tick)
 
     @staticmethod
-    def float_as_decimal_str(num):
+    def float_as_decimal_str(num: float):
         return f"{num:0.08f}".rstrip("0").rstrip(".")  # remove trailing zeroes too
 
     def _make_order(
         self,
         side: str,
         symbol: str,
-        quantity: Union[str, float],
-        price: Union[str, float],
-        quote_quantity: Union[str, float],
+        quantity: float,
+        price: float,
+        quote_quantity: float,
     ):
         params = {
             "symbol": symbol,
