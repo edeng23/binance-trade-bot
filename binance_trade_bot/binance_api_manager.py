@@ -245,7 +245,14 @@ class BinanceAPIManager:
         origin_tick = self.get_alt_tick(origin_symbol, target_symbol)
         return math.floor(target_balance * 10 ** origin_tick / from_coin_price) / float(10 ** origin_tick)
 
-    def _make_order(self, side: str, symbol: str, quantity: Union[str, float], price: Union[str, float]):
+    def _make_order(
+        self,
+        side: str,
+        symbol: str,
+        quantity: Union[str, float],
+        price: Union[str, float],
+        quote_quantity: Union[str, float],
+    ):
         params = {
             "symbol": symbol,
             "side": side,
@@ -255,6 +262,8 @@ class BinanceAPIManager:
         if params["type"] == Client.ORDER_TYPE_LIMIT:
             params["timeInForce"] = self.binance_client.TIME_IN_FORCE_GTC
             params["price"] = price
+        elif side == Client.SIDE_BUY:
+            params["quoteOrderQty"] = quote_quantity
         return self.binance_client.create_order(**params)
 
     def _buy_alt(self, origin_coin: Coin, target_coin: Coin):
@@ -284,6 +293,7 @@ class BinanceAPIManager:
                     side=Client.SIDE_BUY,
                     symbol=origin_symbol + target_symbol,
                     quantity=order_quantity,
+                    quote_quantity=target_balance,
                     price=from_coin_price,
                 )
                 self.logger.info(order)
@@ -343,6 +353,7 @@ class BinanceAPIManager:
                     side=Client.SIDE_SELL,
                     symbol=origin_symbol + target_symbol,
                     quantity=order_quantity,
+                    quote_quantity=target_balance,
                     price=from_coin_price,
                 )
                 self.logger.info(order)
