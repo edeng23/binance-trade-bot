@@ -166,6 +166,20 @@ class AutoTrader:
             else:
                 self.logger.info(f"--- Skipping trade for {coin}... new coin {best_pair.to_coin_id} is excluded")
 
+    def _sell_coin_for_profit(self, coin: Coin, coin_price: float, all_tickers: AllTickers):
+        latest_coin_trade = self.db.find_latest_coin_trade(coin.symbol)
+        last_total_purchased_price = latest_coin_trade.crypto_trade_amount
+        total_value_of_coin_now = coin_price * latest_coin_trade.crypto_starting_balance
+
+        current_coin_percentage_increase = ( (100.0 / last_total_purchased_price ) * total_value_of_coin_now ) - 100
+
+        # TODO: Do not hardcode
+        if current_coin_percentage_increase > 7.5:
+            self.logger.info(f"Profit clause met {coin} - increased {current_coin_percentage_increase}%!")
+            if self.manager.sell_alt(coin, self.config.BRIDGE, all_tickers) is None:
+                self.logger.info("Couldn't sell, going back to scouting mode...")
+                return None
+
     def bridge_scout(self, excluded_coins: None):
         """
         If we have any bridge coin leftover, buy a coin with it that we won't immediately trade out of
