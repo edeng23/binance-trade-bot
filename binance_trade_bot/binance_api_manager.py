@@ -251,8 +251,6 @@ class BinanceAPIManager:
         if coin_slots_remaining > 0:
             self.logger.info(f"!!! {coin_slots_remaining}/{self.config.DESIRED_ACTIVE_COIN_COUNT} coin slots remaining, dividing quantity by {coin_slots_remaining}")
             quantity = quantity / coin_slots_remaining
-        else:
-            self.logger.info(f"!!! ERROR: We should never see this")
 
         return quantity
 
