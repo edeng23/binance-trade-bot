@@ -6,9 +6,12 @@ bridge=USDT
 tld=com
 hourToKeepScoutHistory=1
 scout_multiplier=5
-scout_sleep_time=5
+scout_sleep_time=1
 strategy=default
 buy_timeout=0
 sell_timeout=0
+buy_order_type=limit
+sell_order_type=market
+
 # This must be set to 1 unless multiple_active_coins strategy it being used
 desired_active_coin_count=1
