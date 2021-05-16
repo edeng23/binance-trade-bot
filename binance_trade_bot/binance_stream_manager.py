@@ -23,6 +23,7 @@ class BinanceOrder:  # pylint: disable=too-few-public-methods
         self.status = report["current_order_status"]
         self.price = float(report["order_price"])
         self.time = report["transaction_time"]
+        self.cumulative_filled_quantity = float(report["cumulative_filled_quantity"])
 
     def __repr__(self):
         return f"<BinanceOrder {self.event}>"

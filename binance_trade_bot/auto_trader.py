@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict
 
 from sqlalchemy.orm import Session
 
@@ -42,7 +42,11 @@ class AutoTrader:
         result = self.manager.buy_alt(pair.to_coin, self.config.BRIDGE)
         if result is not None:
             self.db.set_current_coin(pair.to_coin)
-            self.update_trade_threshold(pair.to_coin, result.price)
+            price = result.price
+            if abs(price) < 1e-15:
+                price = result.cumulative_filled_quantity / result.cumulative_quote_qty
+
+            self.update_trade_threshold(pair.to_coin, price)
             return result
 
         self.logger.info("Couldn't buy, going back to scouting mode...")

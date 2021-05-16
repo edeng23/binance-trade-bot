@@ -308,6 +308,10 @@ class BinanceAPIManager:
             except Exception as e:  # pylint: disable=broad-except
                 self.logger.warning(f"Unexpected Error: {e}")
 
+        executed_qty = float(order.get("executedQty", 0))
+        if executed_qty > 0 and order["status"] == "FILLED":
+            order_quantity = executed_qty  # Market buys provide QTY of actually bought asset
+
         trade_log.set_ordered(origin_balance, target_balance, order_quantity)
 
         order_guard.set_order(origin_symbol, target_symbol, int(order["orderId"]))
