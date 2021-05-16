@@ -37,7 +37,11 @@ class AutoTrader:
             self.logger.info("Couldn't sell, going back to scouting mode...")
             return None
 
-        result = self.manager.buy_alt(pair.to_coin, self.config.BRIDGE, all_tickers)
+        result = None
+
+        # Only try to buy if balance exists
+        if balance:
+            result = self.manager.buy_alt(pair.to_coin, self.config.BRIDGE, all_tickers)
 
         if result is not None:
             self.db.set_current_coin(pair.to_coin)
