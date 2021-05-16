@@ -166,7 +166,7 @@ class AutoTrader:
             else:
                 self.logger.info(f"--- Skipping trade for {coin}... new coin {best_pair.to_coin_id} is excluded")
 
-    def _sell_coin_for_profit(self, coin: Coin, coin_price: float, all_tickers: AllTickers):
+    def _sell_coin_for_profit(self, coin: Coin, coin_price: float):
         latest_coin_trade = self.db.find_latest_coin_trade(coin.symbol)
         last_total_purchased_price = latest_coin_trade.crypto_trade_amount
         total_value_of_coin_now = coin_price * latest_coin_trade.crypto_starting_balance
