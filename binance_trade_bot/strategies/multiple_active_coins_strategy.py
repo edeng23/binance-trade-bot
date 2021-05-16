@@ -14,7 +14,7 @@ class Strategy(AutoTrader):
             current_coin_balance = self.manager.get_currency_balance(coin.symbol)
 
             # Gets the price of this coin from previously fetched price list via Binance API
-            coin_price = self.manager.get_ticker_price(current_coin + self.config.BRIDGE)
+            coin_price = self.manager.get_ticker_price(coin + self.config.BRIDGE)
 
             # This is just in case you have a coin in your DB that doesn't exist on Binance
             if coin_price is None:
