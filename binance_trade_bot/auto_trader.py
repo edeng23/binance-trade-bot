@@ -176,7 +176,7 @@ class AutoTrader:
         # TODO: Do not hardcode
         if current_coin_percentage_increase > 7.5:
             self.logger.info(f"Profit clause met {coin} - increased {current_coin_percentage_increase}%!")
-            if self.manager.sell_alt(coin, self.config.BRIDGE, all_tickers) is None:
+            if self.manager.sell_alt(coin, self.config.BRIDGE) is None:
                 self.logger.info("Couldn't sell, going back to scouting mode...")
                 return None
 
@@ -199,7 +199,7 @@ class AutoTrader:
                if excluded_coin.symbol == coin.symbol:
                    can_trade_this_coin = False
 
-            ratio_dict = self._get_ratios(coin, current_coin_price, all_tickers)
+            ratio_dict = self._get_ratios(coin, current_coin_price)
             if not any(v > 0 for v in ratio_dict.values()):
                 # There will only be one coin where all the ratios are negative. When we find it, buy it if we can
                 if bridge_balance > self.manager.get_min_notional(coin.symbol, self.config.BRIDGE.symbol):
