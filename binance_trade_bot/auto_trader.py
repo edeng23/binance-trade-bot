@@ -149,22 +149,24 @@ class AutoTrader:
         # keep only ratios bigger than zero
         ratio_dict = {k: v for k, v in ratio_dict.items() if v > 0}
 
-        can_trade_this_coin = True
-
         # if we have any viable options, pick the one with the biggest ratio
         if ratio_dict:
-            best_pair = max(ratio_dict, key=ratio_dict.get)
+            coin_options = sorted(ratio_dict, key=ratio_dict.get, reverse=True)
 
-            # Do not allow us to trade with another ALT that is excluded
-            for excluded_coin in excluded_coins:
-                if excluded_coin.symbol == best_pair.to_coin_id:
-                    can_trade_this_coin = False
+            for coin_option in coin_options:
+                can_trade_this_coin = True
+                print(f"--- Coin option to trade: {coin_option}")
 
-            if can_trade_this_coin:
-                self.logger.info(f"Will be jumping from {coin} to {best_pair.to_coin_id}")
-                self.transaction_through_bridge(best_pair)
-            else:
-                self.logger.info(f"--- Skipping trade for {coin}... new coin {best_pair.to_coin_id} is excluded")
+                # Do not allow us to trade with another ALT that is excluded
+                for excluded_coin in excluded_coins:
+                    if excluded_coin.symbol == coin_option.to_coin_id:
+                        can_trade_this_coin = False
+
+                if can_trade_this_coin:
+                    self.logger.info(f"Will be jumping from {coin} to {coin_option.to_coin_id}")
+                    self.transaction_through_bridge(coin_option)
+                else:
+                    self.logger.info(f"--- Skipping trade for {coin}... new coin {coin_option.to_coin_id} is excluded")
 
     def _sell_coin_for_profit(self, coin: Coin, coin_price: float):
         latest_coin_trade = self.db.find_latest_coin_trade(coin.symbol)
