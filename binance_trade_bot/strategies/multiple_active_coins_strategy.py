@@ -34,7 +34,7 @@ class Strategy(AutoTrader):
             # has stopped. Not logging though to reduce log size.
             self.logger.info(f"Scouting for best trades. Current ticker: {coin + self.config.BRIDGE} ", False)
 
-            self.logger.info(f"--- Active coin list {self.db.get_active_coins()}")
+            print(f"--- Active coin list {self.db.get_active_coins()}")
             self._jump_to_best_coin(coin, coin_price, self.db.get_active_coins())
 
         active_coins_count = len(self.db.get_active_coins())
