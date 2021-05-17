@@ -86,7 +86,12 @@ class MockBinanceManager(BinanceAPIManager):
             f"{self.balances[target_symbol]}"
         )
 
-        event = defaultdict(lambda: None, order_price=from_coin_price, cumulative_quote_asset_transacted_quantity=0)
+        event = defaultdict(
+            lambda: None,
+            order_price=from_coin_price,
+            cumulative_quote_asset_transacted_quantity=0.0,
+            cumulative_filled_quantity=0.0,
+        )
 
         return BinanceOrder(event)
 
