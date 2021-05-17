@@ -40,7 +40,7 @@ class BinanceAPIManager:
 
     @cached(cache=TTLCache(maxsize=1, ttl=43200))
     def get_trade_fees(self) -> Dict[str, float]:
-        return {ticker["symbol"]: ticker["taker"] for ticker in self.binance_client.get_trade_fee()["tradeFee"]}
+        return {ticker["symbol"]: float(ticker["takerCommission"]) for ticker in self.binance_client.get_trade_fee()}
 
     @cached(cache=TTLCache(maxsize=1, ttl=60))
     def get_using_bnb_for_fees(self):
