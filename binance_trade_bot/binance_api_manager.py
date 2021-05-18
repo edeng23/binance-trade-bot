@@ -150,7 +150,7 @@ class BinanceAPIManager:
         return float(self.get_symbol_filter(origin_symbol, target_symbol, "MIN_NOTIONAL")["minNotional"])
 
     def _wait_for_order(
-        self, order_id, origin_symbol: str, target_symbol: str
+            self, order_id, origin_symbol: str, target_symbol: str
     ) -> Optional[BinanceOrder]:  # pylint: disable=unsubscriptable-object
         while True:
             order_status: BinanceOrder = self.cache.orders.get(order_id, None)
@@ -205,7 +205,7 @@ class BinanceAPIManager:
         return order_status
 
     def wait_for_order(
-        self, order_id, origin_symbol: str, target_symbol: str, order_guard: OrderGuard
+            self, order_id, origin_symbol: str, target_symbol: str, order_guard: OrderGuard
     ) -> Optional[BinanceOrder]:  # pylint: disable=unsubscriptable-object
         with order_guard:
             return self._wait_for_order(order_id, origin_symbol, target_symbol)
@@ -237,7 +237,7 @@ class BinanceAPIManager:
         return self.retry(self._buy_alt, origin_coin, target_coin)
 
     def _buy_quantity(
-        self, origin_symbol: str, target_symbol: str, target_balance: float = None, from_coin_price: float = None
+            self, origin_symbol: str, target_symbol: str, target_balance: float = None, from_coin_price: float = None
     ):
         target_balance = target_balance or self.get_currency_balance(target_symbol)
         from_coin_price = from_coin_price or self.get_ticker_price(origin_symbol + target_symbol)
@@ -258,9 +258,13 @@ class BinanceAPIManager:
 
         origin_balance = self.get_currency_balance(origin_symbol)
         target_balance = self.get_currency_balance(target_symbol)
-        from_coin_price = self.get_ticker_price(origin_symbol + target_symbol)
+        from_coin_price = '{:0.0{}f}'.format(
+            self.get_ticker_price(origin_symbol + target_symbol)
+            , 8)
 
-        order_quantity = self._buy_quantity(origin_symbol, target_symbol, target_balance, from_coin_price)
+        order_quantity = '{:0.0{}f}'.format(
+            self._buy_quantity(origin_symbol, target_symbol, target_balance, from_coin_price)
+            , 8)
         self.logger.info(f"BUY QTY {order_quantity} of <{origin_symbol}>")
 
         # Try to buy until successful
@@ -316,9 +320,14 @@ class BinanceAPIManager:
 
         origin_balance = self.get_currency_balance(origin_symbol)
         target_balance = self.get_currency_balance(target_symbol)
-        from_coin_price = self.get_ticker_price(origin_symbol + target_symbol)
+        from_coin_price = '{:0.0{}f}'.format(
+            self.get_ticker_price(origin_symbol + target_symbol)
+            , 8)
 
-        order_quantity = self._sell_quantity(origin_symbol, target_symbol, origin_balance)
+        order_quantity = \
+            '{:0.0{}f}'.format(
+                self._sell_quantity(origin_symbol, target_symbol, origin_balance)
+                , 8)
         self.logger.info(f"Selling {order_quantity} of {origin_symbol}")
 
         self.logger.info(f"Balance is {origin_balance}")
