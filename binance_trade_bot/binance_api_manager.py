@@ -265,7 +265,7 @@ class BinanceAPIManager:
         order_quantity_s = '{:0.0{}f}'.format(order_quantity, 8)
         self.logger.info(f"BUY QTY {order_quantity} of <{origin_symbol}>")
 
-        # Try to buy until successful
+        # Try to buy until successful.
         order = None
         order_guard = self.stream_manager.acquire_order_guard()
         while order is None:
