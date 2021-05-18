@@ -262,7 +262,7 @@ class BinanceAPIManager:
         from_coin_price_s = '{:0.0{}f}'.format(from_coin_price, 8)
 
         order_quantity = self._buy_quantity(origin_symbol, target_symbol, target_balance, from_coin_price)
-        order_quantity_s = '{:0.0{}f}'.format(order_quantity, 8)
+        order_quantity_s = '{:0.0{}f}'.format(order_quantity, 6)
         self.logger.info(f"BUY QTY {order_quantity} of <{origin_symbol}>")
 
         # Try to buy until successful.
@@ -322,7 +322,7 @@ class BinanceAPIManager:
         from_coin_price_s = '{:0.0{}f}'.format(from_coin_price, 8)
 
         order_quantity = self._sell_quantity(origin_symbol, target_symbol, origin_balance)
-        order_quantity_s = '{:0.0{}f}'.format(order_quantity, 8)
+        order_quantity_s = '{:0.0{}f}'.format(order_quantity, 6)
 
         self.logger.info(f"Selling {order_quantity} of {origin_symbol}")
 
