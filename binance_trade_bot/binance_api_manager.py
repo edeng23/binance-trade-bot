@@ -263,6 +263,10 @@ class BinanceAPIManager:
 
         order_quantity = self._buy_quantity(origin_symbol, target_symbol, target_balance, from_coin_price)
         order_quantity = quantity = float(round(order_quantity, 6))
+
+        if order_quantity * from_coin_price < self.get_min_notional(origin_symbol, target_symbol):
+            return None
+
         order_quantity_s = '{:0.0{}f}'.format(order_quantity, 6)
         self.logger.info(f"BUY QTY {order_quantity} of <{origin_symbol}>")
 
