@@ -61,5 +61,7 @@ class Strategy(AutoTrader):
             if self.config.CURRENT_COIN_SYMBOL == "":
                 current_coin = self.db.get_current_coin()
                 self.logger.info(f"Purchasing {current_coin} to begin trading")
-                self.manager.buy_alt(current_coin, self.config.BRIDGE)
+                self.manager.buy_alt(
+                    current_coin, self.config.BRIDGE, self.manager.get_ticker_price(current_coin + self.config.BRIDGE)
+                )
                 self.logger.info("Ready to start trading")

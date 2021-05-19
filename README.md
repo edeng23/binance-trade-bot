@@ -1,7 +1,7 @@
 # binance-trade-bot
 
 ![github](https://img.shields.io/github/workflow/status/edeng23/binance-trade-bot/binance-trade-bot)
-![docker](https://img.shields.io/docker/pulls/edeng23/binance-trade-bot)
+![docker](https://img.shields.io/docker/pulls/idkravitz/binance-trade-bot)
 
 > Automated cryptocurrency trading bot
 
@@ -106,7 +106,7 @@ python -m binance_trade_bot
 
 ### Docker
 
-The official image is available [here](https://hub.docker.com/r/edeng23/binance-trade-bot) and will update on every new change.
+The official image is available [here](https://hub.docker.com/r/idkravitz/binance-trade-bot) and will update on every new change.
 
 ```shell
 docker-compose up
