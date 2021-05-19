@@ -166,12 +166,14 @@ class AutoTrader:
             if current_coin_price is None:
                 continue
 
-            ratio_dict, prices = self._get_ratios(coin, current_coin_price)
+            ratio_dict, _ = self._get_ratios(coin, current_coin_price)
             if not any(v > 0 for v in ratio_dict.values()):
                 # There will only be one coin where all the ratios are negative. When we find it, buy it if we can
                 if bridge_balance > self.manager.get_min_notional(coin.symbol, self.config.BRIDGE.symbol):
                     self.logger.info(f"Will be purchasing {coin} using bridge coin")
-                    self.manager.buy_alt(coin, self.config.BRIDGE, prices[coin.symbol])
+                    self.manager.buy_alt(
+                        coin, self.config.BRIDGE, self.manager.get_ticker_price(coin + self.config.BRIDGE)
+                    )
                     return coin
         return None
 
