@@ -40,7 +40,7 @@ class BinanceAPIManager:
 
     @cached(cache=TTLCache(maxsize=1, ttl=43200))
     def get_trade_fees(self) -> Dict[str, float]:
-        return {ticker["symbol"]: ticker["taker"] for ticker in self.binance_client.get_trade_fee()["tradeFee"]}
+        return {ticker["symbol"]: float(ticker["takerCommission"]) for ticker in self.binance_client.get_trade_fee()}
 
     @cached(cache=TTLCache(maxsize=1, ttl=60))
     def get_using_bnb_for_fees(self):
@@ -233,8 +233,8 @@ class BinanceAPIManager:
 
         return False
 
-    def buy_alt(self, origin_coin: Coin, target_coin: Coin) -> BinanceOrder:
-        return self.retry(self._buy_alt, origin_coin, target_coin)
+    def buy_alt(self, origin_coin: Coin, target_coin: Coin, buy_price: float) -> BinanceOrder:
+        return self.retry(self._buy_alt, origin_coin, target_coin, buy_price)
 
     def _buy_quantity(
         self, origin_symbol: str, target_symbol: str, target_balance: float = None, from_coin_price: float = None
@@ -280,11 +280,10 @@ class BinanceAPIManager:
             params["quoteOrderQty"] = self.float_as_decimal_str(quote_quantity)
         return self.binance_client.create_order(**params)
 
-    def _buy_alt(self, origin_coin: Coin, target_coin: Coin):
+    def _buy_alt(self, origin_coin: Coin, target_coin: Coin, buy_price: float):  # pylint: disable=too-many-locals
         """
         Buy altcoin
         """
-        trade_log = self.db.start_trade_log(origin_coin, target_coin, False)
         origin_symbol = origin_coin.symbol
         target_symbol = target_coin.symbol
 
@@ -294,9 +293,14 @@ class BinanceAPIManager:
         origin_balance = self.get_currency_balance(origin_symbol)
         target_balance = self.get_currency_balance(target_symbol)
         from_coin_price = self.get_ticker_price(origin_symbol + target_symbol)
+        if from_coin_price > buy_price:
+            self.logger.info("Buy price became higher, cancel buy")
+            return None
+        from_coin_price = min(buy_price, from_coin_price)
+        trade_log = self.db.start_trade_log(origin_coin, target_coin, False)
 
         order_quantity = self._buy_quantity(origin_symbol, target_symbol, target_balance, from_coin_price)
-        self.logger.info(f"BUY QTY {order_quantity} of [{origin_symbol}]")
+        self.logger.info(f"BUY QTY {order_quantity} of <{origin_symbol}>")
 
         # Try to buy until successful
         order = None
@@ -338,8 +342,8 @@ class BinanceAPIManager:
 
         return order
 
-    def sell_alt(self, origin_coin: Coin, target_coin: Coin) -> BinanceOrder:
-        return self.retry(self._sell_alt, origin_coin, target_coin)
+    def sell_alt(self, origin_coin: Coin, target_coin: Coin, sell_price: float) -> BinanceOrder:
+        return self.retry(self._sell_alt, origin_coin, target_coin, sell_price)
 
     def _sell_quantity(self, origin_symbol: str, target_symbol: str, origin_balance: float = None):
         origin_balance = origin_balance or self.get_currency_balance(origin_symbol)
@@ -347,20 +351,26 @@ class BinanceAPIManager:
         origin_tick = self.get_alt_tick(origin_symbol, target_symbol)
         return math.floor(origin_balance * 10 ** origin_tick) / float(10 ** origin_tick)
 
-    def _sell_alt(self, origin_coin: Coin, target_coin: Coin):
+    def _sell_alt(self, origin_coin: Coin, target_coin: Coin, sell_price: float):  # pylint: disable=too-many-locals
         """
         Sell altcoin
         """
-        trade_log = self.db.start_trade_log(origin_coin, target_coin, True)
         origin_symbol = origin_coin.symbol
         target_symbol = target_coin.symbol
 
+        # get fresh balances
         with self.cache.open_balances() as balances:
             balances.clear()
 
         origin_balance = self.get_currency_balance(origin_symbol)
         target_balance = self.get_currency_balance(target_symbol)
         from_coin_price = self.get_ticker_price(origin_symbol + target_symbol)
+        if from_coin_price < sell_price:
+            self.logger.info("Sell price became lower, skipping sell")
+            return None  # skip selling below price from ratio
+        from_coin_price = max(from_coin_price, sell_price)
+
+        trade_log = self.db.start_trade_log(origin_coin, target_coin, True)
 
         order_quantity = self._sell_quantity(origin_symbol, target_symbol, origin_balance)
         self.logger.info(f"Selling {order_quantity} of {origin_symbol}")
