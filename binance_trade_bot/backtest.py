@@ -68,7 +68,7 @@ class MockBinanceManager(BinanceAPIManager):
         """
         return self.balances.get(currency_symbol, 0)
 
-    def buy_alt(self, origin_coin: Coin, target_coin: Coin):
+    def buy_alt(self, origin_coin: Coin, target_coin: Coin, buy_price: float):
         origin_symbol = origin_coin.symbol
         target_symbol = target_coin.symbol
 
@@ -95,7 +95,7 @@ class MockBinanceManager(BinanceAPIManager):
 
         return BinanceOrder(event)
 
-    def sell_alt(self, origin_coin: Coin, target_coin: Coin):
+    def sell_alt(self, origin_coin: Coin, target_coin: Coin, sell_price: float):
         origin_symbol = origin_coin.symbol
         target_symbol = target_coin.symbol
 
@@ -174,7 +174,7 @@ def backtest(
 
     starting_coin = db.get_coin(starting_coin or config.SUPPORTED_COIN_LIST[0])
     if manager.get_currency_balance(starting_coin.symbol) == 0:
-        manager.buy_alt(starting_coin, config.BRIDGE)
+        manager.buy_alt(starting_coin, config.BRIDGE, 0.0)  # doesn't matter mocking manager don't look at fixed price
     db.set_current_coin(starting_coin)
 
     strategy = get_strategy(config.STRATEGY)
