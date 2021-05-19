@@ -165,7 +165,7 @@ class AutoTrader:
 
                 if can_trade_this_coin:
                     self.logger.info(f"Will be jumping from {coin} to {coin_option.to_coin_id}")
-                    self.transaction_through_bridge(coin_option, coin_price, prices[best_pair.to_coin_id])
+                    self.transaction_through_bridge(coin_option, coin_price, prices[coin_option.to_coin_id])
                 else:
                     self.logger.info(f"--- Skipping trade for {coin}... new coin {coin_option.to_coin_id} is excluded")
 
