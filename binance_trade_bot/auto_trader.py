@@ -171,10 +171,12 @@ class AutoTrader:
                 # There will only be one coin where all the ratios are negative. When we find it, buy it if we can
                 if bridge_balance > self.manager.get_min_notional(coin.symbol, self.config.BRIDGE.symbol):
                     self.logger.info(f"Will be purchasing {coin} using bridge coin")
-                    self.manager.buy_alt(
+                    result = self.manager.buy_alt(
                         coin, self.config.BRIDGE, self.manager.get_ticker_price(coin + self.config.BRIDGE)
                     )
-                    return coin
+                    if result is not None:
+                        self.db.set_current_coin(coin)
+                        return coin
         return None
 
     def update_values(self):
