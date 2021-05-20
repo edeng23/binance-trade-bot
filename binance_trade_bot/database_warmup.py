@@ -42,7 +42,7 @@ class WarmUpDatabase(Database):
 
             # For all the symbols in the config file, add them to the database
             # if they don't exist
-            for symbol in warmup_symbols:
+            for symbol in symbols:
                 coin = next((coin for coin in coins if coin.symbol == symbol), None)
                 if coin is None:
                     session.add(Coin(symbol))
@@ -92,9 +92,14 @@ class WarmUpTrader(AutoTrader):
 
                 pair.ratio = from_coin_price / to_coin_price
 
-def warmup_database(coin_list: List[str] = None, dbPathUri ="sqlite:///data/crypto_trading.db", config: Config = None):
+def warmup_database(coin_list: List[str] = None, db_path = "data/crypto_trading.db", config: Config = None):
     logger = Logger()
     logger.info("Starting database warmup")
+
+    logger.info(f'Will be using {db_path} as database')
+    dbPathUri = f"sqlite:///{db_path}"
+
+   
 
     config = config or Config()
     db = WarmUpDatabase(logger, config, dbPathUri)
@@ -111,8 +116,10 @@ def warmup_database(coin_list: List[str] = None, dbPathUri ="sqlite:///data/cryp
     db.create_database()
     logger.info("Done creating database schema")
 
+    warmup_coin_list = coin_list or get_all_bridge_coins(manager, config)
+    logger.info(f'Going to warm up the following coins: {warmup_coin_list}')
+
     logger.info("Adding coins and pairs to database for warm up")
-    warmup_coin_list: coin_list or List[str] = get_all_bridge_coins(manager, config)
     db.set_coins_to_warmup(config.SUPPORTED_COIN_LIST, warmup_coin_list)
     logger.info("Done adding coins to warm up")
 
