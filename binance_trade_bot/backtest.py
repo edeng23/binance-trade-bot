@@ -46,7 +46,7 @@ class MockBinanceManager(BinanceAPIManager):
         return FakeAllTickers(self)
 
     def get_fee(self, origin_coin: Coin, target_coin: Coin, selling: bool):
-        return 0.0075
+        return 0.00075
 
     def get_market_ticker_price(self, ticker_symbol: str):
         """
