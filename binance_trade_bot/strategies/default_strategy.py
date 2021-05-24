@@ -12,7 +12,7 @@ class Strategy(AutoTrader):
 
     def scout(self):
         # check if previous buy order failed. If so, bridge scout for a new coin.
-        if(self.failed_buy_order):
+        if self.failed_buy_order:
             self.bridge_scout()
 
         """
