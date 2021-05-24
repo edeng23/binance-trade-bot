@@ -100,4 +100,9 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
                 f"{self.ORDER_TYPE_LIMIT} or {self.ORDER_TYPE_MARKET} expected, got {buy_order_type}"
                 "for buy_order_type"
             )
+        if buy_order_type == self.ORDER_TYPE_MARKET:
+            raise Exception(
+                "Market buys are reported to do extreme losses, they are disabled right now,"
+                "comment this line only if you know what you're doing"
+            )
         self.BUY_ORDER_TYPE = order_type_map[buy_order_type]

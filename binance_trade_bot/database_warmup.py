@@ -2,6 +2,7 @@ from typing import List
 from re import search
 
 from sqlalchemy.orm import Session, aliased
+from sqlalchemy.sql.expression import and_
 
 from .logger import Logger
 from .config import Config
@@ -12,7 +13,7 @@ from .models.coin import Coin
 from .models.pair import Pair
 
 class WarmUpManager(BinanceAPIManager):
-    def get_all_symbol_tickers(self):       
+    def get_all_symbol_tickers(self):
         return self.binance_client.get_symbol_ticker()
 
 class WarmUpDatabase(Database):
@@ -37,12 +38,12 @@ class WarmUpDatabase(Database):
             # For all the coins in the database, if the symbol no longer appears
             # in the config file, set the coin as disabled
             for coin in coins:
-                if coin.symbol not in warmup_symbols:
+                if coin.symbol not in symbols:
                     coin.enabled = False
 
             # For all the symbols in the config file, add them to the database
             # if they don't exist
-            for symbol in warmup_symbols:
+            for symbol in symbols:
                 coin = next((coin for coin in coins if coin.symbol == symbol), None)
                 if coin is None:
                     session.add(Coin(symbol))
@@ -58,7 +59,7 @@ class WarmUpDatabase(Database):
             #select all pairs with non exiting pair entry in db and add the missing pair entries
             query = session.query(c1, c2).\
                 join(c2, c2.symbol != c1.symbol).\
-                outerjoin(p, p.from_coin_id == c1.symbol and p.to_coin_id == c2.symbol).\
+                outerjoin(p, and_(p.from_coin_id == c1.symbol, p.to_coin_id == c2.symbol)).\
                 filter(p.id == None)
 
             pairs = query.all()
@@ -92,9 +93,12 @@ class WarmUpTrader(AutoTrader):
 
                 pair.ratio = from_coin_price / to_coin_price
 
-def warmup_database(coin_list: List[str] = None, dbPathUri ="sqlite:///data/crypto_trading.db", config: Config = None):
+def warmup_database(coin_list: List[str] = None, db_path = "data/crypto_trading.db", config: Config = None):
     logger = Logger()
     logger.info("Starting database warmup")
+
+    logger.info(f'Will be using {db_path} as database')
+    dbPathUri = f"sqlite:///{db_path}"
 
     config = config or Config()
     db = WarmUpDatabase(logger, config, dbPathUri)
@@ -111,8 +115,10 @@ def warmup_database(coin_list: List[str] = None, dbPathUri ="sqlite:///data/cryp
     db.create_database()
     logger.info("Done creating database schema")
 
+    warmup_coin_list = coin_list or get_all_bridge_coins(manager, config)
+    logger.info(f'Going to warm up the following coins: {warmup_coin_list}')
+
     logger.info("Adding coins and pairs to database for warm up")
-    warmup_coin_list: coin_list or List[str] = get_all_bridge_coins(manager, config)
     db.set_coins_to_warmup(config.SUPPORTED_COIN_LIST, warmup_coin_list)
     logger.info("Done adding coins to warm up")
 

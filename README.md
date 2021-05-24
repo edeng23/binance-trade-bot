@@ -128,6 +128,33 @@ python backtest.py
 
 Feel free to modify that file to test and compare different settings and time periods
 
+## Database warmup
+
+You can warmup your database with coins wich you might want to add later to your supported coin list. 
+This should prevent uncontrolled jumps when you add a new coin to your supported coin list.
+
+After the execution you should wait one or two trades of the bot before adding any new coin to your list.
+
+By running the script without parameters, it will warm up the bots default database with all available coins for the bridge.
+
+```shell
+pyhton3 database_warmup.py
+```
+
+If you want to specify a separate db file you can use the -d or --dbfile parameter.
+If not provided, the script will use the bots default db file.
+
+```shell
+pyhton3 database_warmup.py -d data/warmup.db
+```
+
+You can also specify the coins you want to warmup with the -c or --coinlist parameter.
+If not provided the script will warmup all coins available for the bridge.
+
+```shell
+pyhton3 database_warmup.py -c 'ADA BTC ETH LTC'
+```
+
 ## Developing
 
 To make sure your code is properly formatted before making a pull request,
