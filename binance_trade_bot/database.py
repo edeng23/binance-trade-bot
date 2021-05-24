@@ -20,7 +20,8 @@ class Database:
         self.logger = logger
         self.config = config
         self.engine = create_engine(uri)
-        self.SessionMaker = sessionmaker(bind=self.engine)
+        self.session_maker = sessionmaker(bind=self.engine)
+        self.scoped_session_factory = scoped_session(self.session_maker)
         self.socketio_client = Client()
 
     def socketio_connect(self):
@@ -38,9 +39,10 @@ class Database:
     @contextmanager
     def db_session(self):
         """
-        Creates a context with an open SQLAlchemy session.
+        Return the thread-local SQLAclhemy session in a context, committing and
+        closing when finished.
         """
-        session: Session = scoped_session(self.SessionMaker)
+        session: Session = self.scoped_session_factory()
         yield session
         session.commit()
         session.close()
