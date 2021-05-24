@@ -2,6 +2,7 @@ from typing import List
 from re import search
 
 from sqlalchemy.orm import Session, aliased
+from sqlalchemy.sql.expression import and_
 
 from .logger import Logger
 from .config import Config
@@ -12,7 +13,7 @@ from .models.coin import Coin
 from .models.pair import Pair
 
 class WarmUpManager(BinanceAPIManager):
-    def get_all_symbol_tickers(self):       
+    def get_all_symbol_tickers(self):
         return self.binance_client.get_symbol_ticker()
 
 class WarmUpDatabase(Database):
@@ -37,7 +38,7 @@ class WarmUpDatabase(Database):
             # For all the coins in the database, if the symbol no longer appears
             # in the config file, set the coin as disabled
             for coin in coins:
-                if coin.symbol not in warmup_symbols:
+                if coin.symbol not in symbols:
                     coin.enabled = False
 
             # For all the symbols in the config file, add them to the database
@@ -58,7 +59,7 @@ class WarmUpDatabase(Database):
             #select all pairs with non exiting pair entry in db and add the missing pair entries
             query = session.query(c1, c2).\
                 join(c2, c2.symbol != c1.symbol).\
-                outerjoin(p, p.from_coin_id == c1.symbol and p.to_coin_id == c2.symbol).\
+                outerjoin(p, and_(p.from_coin_id == c1.symbol, p.to_coin_id == c2.symbol)).\
                 filter(p.id == None)
 
             pairs = query.all()
@@ -98,8 +99,6 @@ def warmup_database(coin_list: List[str] = None, db_path = "data/crypto_trading.
 
     logger.info(f'Will be using {db_path} as database')
     dbPathUri = f"sqlite:///{db_path}"
-
-   
 
     config = config or Config()
     db = WarmUpDatabase(logger, config, dbPathUri)
