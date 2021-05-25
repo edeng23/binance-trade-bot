@@ -4,7 +4,7 @@ import os, sys, getopt
 from binance_trade_bot import warmup_database
 
 if __name__ == "__main__":
-    db_path = None
+    db_path = "data/crypto_trading.db"
     coin_list = None
     try:
       opts, args = getopt.getopt(sys.argv[1:],"hd:c:",["dbpath=","coinlist="])
