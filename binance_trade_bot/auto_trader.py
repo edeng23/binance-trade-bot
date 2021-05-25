@@ -16,6 +16,7 @@ class AutoTrader:
         self.db = database
         self.logger = logger
         self.config = config
+        self.failed_buy_order = False
 
     def initialize(self):
         self.initialize_trade_thresholds()
@@ -46,9 +47,11 @@ class AutoTrader:
                 price = result.cumulative_filled_quantity / result.cumulative_quote_qty
 
             self.update_trade_threshold(pair.to_coin, price)
+            self.failed_buy_order = False
             return result
 
         self.logger.info("Couldn't buy, going back to scouting mode...")
+        self.failed_buy_order = True
         return None
 
     def update_trade_threshold(self, coin: Coin, coin_price: float):
@@ -176,7 +179,10 @@ class AutoTrader:
                     )
                     if result is not None:
                         self.db.set_current_coin(coin)
+                        self.failed_buy_order = False
                         return coin
+                    else:
+                        self.failed_buy_order = True
         return None
 
     def update_values(self):

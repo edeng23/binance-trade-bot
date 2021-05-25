@@ -11,6 +11,10 @@ class Strategy(AutoTrader):
         self.initialize_current_coin()
 
     def scout(self):
+        # check if previous buy order failed. If so, bridge scout for a new coin.
+        if self.failed_buy_order:
+            self.bridge_scout()
+
         """
         Scout for potential jumps from the current coin to another coin
         """
