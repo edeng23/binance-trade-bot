@@ -12,8 +12,8 @@ class Strategy(AutoTrader):
     def initialize(self):
         super().initialize()
         self.initialize_current_coin()
-        self.max_idle_hours = 6
         self.reinit_threshold = datetime(1970, 1, 1)
+        self.logger.info(f"Using {self.config.MAX_IDLE_TIMEOUT} hours as maximum idle timeout after not trading.")
 
     def scout(self):
         # check if previous buy order failed. If so, bridge scout for a new coin.
@@ -24,10 +24,10 @@ class Strategy(AutoTrader):
         with self.db.db_session() as session:
             last_trade = session.query(Trade).order_by(Trade.datetime.desc()).first()
             if last_trade != None:
-                allowed_idle_time = last_trade.datetime + timedelta(hours=self.max_idle_hours)
+                allowed_idle_time = last_trade.datetime + timedelta(hours=self.config.MAX_IDLE_TIMEOUT)
                 base_time: datetime = datetime.now()
                 if base_time >= allowed_idle_time and base_time >= self.reinit_threshold:
-                    self.logger.info(f"Last trade was before {self.max_idle_hours} hours! Going to reinit ratios.")
+                    self.logger.info(f"Last trade was before {self.config.MAX_IDLE_TIMEOUT} hours! Going to reinit ratios.")
                     self.re_initialize_trade_thresholds()
                     self.reinit_threshold = base_time + timedelta(hours=1)
                 
