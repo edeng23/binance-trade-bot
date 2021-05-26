@@ -1,12 +1,12 @@
 import random
 import sys
 from datetime import datetime, timedelta
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, aliased
 from sqlalchemy.sql.expression import and_
 
 
 from binance_trade_bot.auto_trader import AutoTrader
-from binance_trade_bot.database import Pair, Trade
+from binance_trade_bot.database import Pair, Trade, Coin
 
 
 class Strategy(AutoTrader):
@@ -98,7 +98,12 @@ class Strategy(AutoTrader):
         print('************INITIALIZING RATIOS**********')
         session: Session
         with self.db.db_session() as session:
-            for pair in session.query(Pair).filter(and_(Pair.from_coin.enabled, Pair.to_coin.enabled)).all():
+            c1 = aliased(Coin)
+            c2 = aliased(Coin)
+            for pair in session.query(Pair).\
+                join(c1, and_(Pair.from_coin_id == c1.symbol, c1.enabled == True)).\
+                join(c2, and_(Pair.to_coin_id == c2.symbol, c2.enabled == True)).\
+                all():
                 if not pair.from_coin.enabled or not pair.to_coin.enabled:
                     continue
                 #self.logger.info(f"Initializing {pair.from_coin} vs {pair.to_coin}", False)
