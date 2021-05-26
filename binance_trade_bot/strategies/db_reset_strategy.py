@@ -12,7 +12,7 @@ class Strategy(AutoTrader):
     def initialize(self):
         super().initialize()
         self.initialize_current_coin()
-        self.max_idle_hours = 6
+        self.max_idle_hours = 3
         self.reinit_threshold = datetime(1970, 1, 1)
 
     def scout(self):
