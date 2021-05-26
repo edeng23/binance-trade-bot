@@ -31,6 +31,7 @@ class Strategy(AutoTrader):
                 if base_time >= allowed_idle_time and base_time >= self.reinit_threshold:
                     self.logger.info(f"Last trade was before {max_idle_timeout} hours! Going to reinit ratios.")
                     self.re_initialize_trade_thresholds()
+                    self.logger.info("Finished reiniting the ratios.")
                     self.reinit_threshold = base_time + timedelta(hours=1)
                 
 
