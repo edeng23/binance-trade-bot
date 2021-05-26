@@ -64,6 +64,7 @@ class MockBinanceManager(BinanceAPIManager):
         self.config = config
         self.datetime = start_date or datetime(2021, 1, 1)
         self.balances = start_balances or {config.BRIDGE.symbol: 100}
+        self.ignored_symbols = ["BTTBTC"]
 
     def setup_websockets(self):
         pass  # No websockets are needed for backtesting
@@ -108,7 +109,7 @@ class MockBinanceManager(BinanceAPIManager):
         target_date = self.datetime.strftime("%d %b %Y %H:%M:%S")
         key = f"{ticker_symbol} - {target_date}"
         val = cache.get(key, None)
-        if val is None:
+        if val is None and self.ignored_symbols.count(ticker_symbol) == 0:
             end_date = self.datetime + timedelta(minutes=1000)
             if end_date > datetime.now():
                 end_date = datetime.now()
