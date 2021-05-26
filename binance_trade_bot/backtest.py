@@ -2,6 +2,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 from traceback import format_exc
 from typing import Dict
+from sqlalchemy.orm.session import Session
 
 from sqlitedict import SqliteDict
 
@@ -10,7 +11,7 @@ from .binance_stream_manager import BinanceOrder
 from .config import Config
 from .database import Database
 from .logger import Logger
-from .models import Coin, Pair
+from .models import Coin, Pair, Trade, TradeState
 from .strategies import get_strategy
 
 cache = SqliteDict("data/backtest_cache.db")
@@ -37,7 +38,7 @@ class MockBinanceManager(BinanceAPIManager):
         self.datetime += timedelta(minutes=interval)
 
     def get_fee(self, origin_coin: Coin, target_coin: Coin, selling: bool):
-        return 0.0075
+        return 0.00075
 
     def get_ticker_price(self, ticker_symbol: str):
         """
@@ -92,6 +93,18 @@ class MockBinanceManager(BinanceAPIManager):
             cumulative_quote_asset_transacted_quantity=0.0,
             cumulative_filled_quantity=0.0,
         )
+
+        session: Session
+        with self.db.db_session() as session:
+            from_coin = session.merge(origin_coin)
+            to_coin = session.merge(target_coin)
+            trade = Trade(from_coin, to_coin, False)
+            trade.datetime = self.datetime
+            trade.state = TradeState.COMPLETE
+            session.add(trade)
+            # Flush so that SQLAlchemy fills in the id column
+            session.flush()
+            self.db.send_update(trade)
 
         return BinanceOrder(event)
 
