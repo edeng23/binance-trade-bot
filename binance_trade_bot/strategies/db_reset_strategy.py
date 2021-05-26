@@ -25,7 +25,7 @@ class Strategy(AutoTrader):
             last_trade = session.query(Trade).order_by(Trade.datetime.desc()).first()
             if last_trade != None:
                 allowed_idle_time = last_trade.datetime + timedelta(hours=self.max_idle_hours)
-                base_time: datetime = self.manager.datetime or datetime.now()
+                base_time: datetime = datetime.now()
                 if base_time >= allowed_idle_time and base_time >= self.reinit_threshold:
                     self.logger.info(f"Last trade was before {self.max_idle_hours} hours! Going to reinit ratios.")
                     self.re_initialize_trade_thresholds()
