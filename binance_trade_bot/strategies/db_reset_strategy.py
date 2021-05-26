@@ -106,19 +106,21 @@ class Strategy(AutoTrader):
                 all():
                 if not pair.from_coin.enabled or not pair.to_coin.enabled:
                     continue
-                #self.logger.info(f"Initializing {pair.from_coin} vs {pair.to_coin}", False)
+                self.logger.info(f"Initializing {pair.from_coin} vs {pair.to_coin}", False)
 
                 from_coin_price = self.manager.get_ticker_price(pair.from_coin + self.config.BRIDGE)
                 if from_coin_price is None:
                     self.logger.info(
-                        "Skipping initializing {}, symbol not found".format(pair.from_coin + self.config.BRIDGE)
+                        "Skipping initializing {}, symbol not found".format(pair.from_coin + self.config.BRIDGE),
+                        False
                     )
                     continue
 
                 to_coin_price = self.manager.get_ticker_price(pair.to_coin + self.config.BRIDGE)
                 if to_coin_price is None:
                     self.logger.info(
-                        "Skipping initializing {}, symbol not found".format(pair.to_coin + self.config.BRIDGE)
+                        "Skipping initializing {}, symbol not found".format(pair.to_coin + self.config.BRIDGE),
+                        False
                     )
                     continue
 
