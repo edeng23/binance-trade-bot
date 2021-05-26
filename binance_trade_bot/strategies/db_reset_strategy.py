@@ -2,6 +2,7 @@ import random
 import sys
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
+from sqlalchemy.sql.expression import and_
 
 
 from binance_trade_bot.auto_trader import AutoTrader
@@ -96,7 +97,7 @@ class Strategy(AutoTrader):
         print('************INITIALIZING RATIOS**********')
         session: Session
         with self.db.db_session() as session:
-            for pair in session.query(Pair).all():
+            for pair in session.query(Pair).filter(and_(Pair.from_coin.enabled, Pair.to_coin.enabled)).all():
                 if not pair.from_coin.enabled or not pair.to_coin.enabled:
                     continue
                 #self.logger.info(f"Initializing {pair.from_coin} vs {pair.to_coin}", False)
