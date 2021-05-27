@@ -115,12 +115,20 @@ class MockBinanceManager(BinanceAPIManager):
             end_date = self.datetime + timedelta(minutes=1000)
             if end_date > datetime.now():
                 end_date = datetime.now()
-            end_date = end_date.strftime("%d %b %Y %H:%M:%S")
-            self.logger.info(f"Fetching prices for {ticker_symbol} between {self.datetime} and {end_date}")
-            self.get_historical_klines(ticker_symbol, "1m", target_date, end_date, limit=1000)
+            end_date_str = end_date.strftime("%d %b %Y %H:%M:%S")
+            self.logger.info(f"Fetching prices for {ticker_symbol} between {self.datetime} and {end_date_str}")
+            self.get_historical_klines(ticker_symbol, "1m", target_date, end_date_str, limit=1000)
             val = cache.get(key, None)
             if val == None:
                 cache.set(key, "Missing")
+                current_date = self.datetime + timedelta(minutes=1)
+                while current_date <= end_date:
+                    current_date_str = current_date.strftime("%d %b %Y %H:%M:%S")
+                    current_key = f"{ticker_symbol} - {current_date_str}"
+                    current_val = cache.get(current_key, None)
+                    if current_val == None:
+                        cache.set(current_key, "Missing")
+                    current_date = current_date + timedelta(minutes=1)
         return val
 
     def get_currency_balance(self, currency_symbol: str, force=False):
