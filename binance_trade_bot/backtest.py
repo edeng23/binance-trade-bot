@@ -61,7 +61,10 @@ class MockBinanceManager(BinanceAPIManager):
                 end_date = datetime.now()
             end_date = end_date.strftime("%d %b %Y %H:%M:%S")
             self.logger.info(f"Fetching prices for {ticker_symbol} between {self.datetime} and {end_date}")
-            for result in self.binance_client.get_historical_klines(
+
+            # _historical_klines must be used as get_historical_klines has
+            # bugged args (ignores end_date and limit) on python-binance==0.7.11
+            for result in self.binance_client._historical_klines(  # pylint: disable=no-member, protected-access
                 ticker_symbol, "1m", target_date, end_date, limit=1000
             ):
                 date = datetime.utcfromtimestamp(result[0] / 1000).strftime("%d %b %Y %H:%M:%S")
