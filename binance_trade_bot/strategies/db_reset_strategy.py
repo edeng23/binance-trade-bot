@@ -12,8 +12,10 @@ class Strategy(AutoTrader):
     def initialize(self):
         super().initialize()
         self.initialize_current_coin()
-        self.max_idle_hours = 1.5
+        self.max_idle_hours = self.config.MAX_IDLE_HOURS
         self.reinit_threshold = datetime(1970, 1, 1)
+
+        self.logger.info(f"Max Idle Hours {self.max_idle_hours}")
 
     def scout(self):
 
