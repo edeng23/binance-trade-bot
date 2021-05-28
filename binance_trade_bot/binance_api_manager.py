@@ -1,3 +1,4 @@
+from datetime import datetime
 import math
 import time
 import traceback
@@ -30,6 +31,9 @@ class BinanceAPIManager:
         self.cache = BinanceCache()
         self.stream_manager: Optional[BinanceStreamManager] = None
         self.setup_websockets()
+
+    def now(self):
+        return datetime.now()
 
     def setup_websockets(self):
         self.stream_manager = BinanceStreamManager(

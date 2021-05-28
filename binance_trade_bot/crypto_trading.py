@@ -31,7 +31,7 @@ def main():
     logger.info(f"Chosen strategy: {config.STRATEGY}")
     logger.info(f"Buy type: {config.BUY_ORDER_TYPE}, Sell type: {config.SELL_ORDER_TYPE}")
     logger.info(f"Max price changes for buys: {config.BUY_MAX_PRICE_CHANGE}, Max price changes for sells: {config.SELL_MAX_PRICE_CHANGE}")
-    logger.info(f"Using  {config.PRICE_TYPE} prices")
+    logger.info(f"Using {config.PRICE_TYPE} prices")
 
     logger.info("Creating database schema if it doesn't already exist")
     db.create_database()

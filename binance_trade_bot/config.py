@@ -33,7 +33,7 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
             "sell_max_price_change": "0.005",
             "buy_max_price_change": "0.005",
             "price_type": self.PRICE_TYPE_ORDERBOOK,
-            "max_idle_timeout": "3",
+            "max_idle_hours": "3",
         }
 
         if not os.path.exists(CFG_FL_NAME):
@@ -130,5 +130,4 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
             raise Exception(f"{self.PRICE_TYPE_ORDERBOOK} or {self.PRICE_TYPE_TICKER} expected, got {price_type} for price_type")
         self.PRICE_TYPE = price_type
 
-
-        self.MAX_IDLE_TIMEOUT = os.environ.get("MAX_IDLE_TIMEOUT") or config.get(USER_CFG_SECTION, "max_idle_timeout")
+        self.MAX_IDLE_HOURS = os.environ.get("MAX_IDLE_HOURS") or config.get(USER_CFG_SECTION, "max_idle_hours")
