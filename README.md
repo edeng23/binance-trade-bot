@@ -61,6 +61,9 @@ Create a .cfg file named `user.cfg` based off `.user.cfg.example`, then add your
 -   **scout_sleep_time** - Controls how many seconds bot should wait between analysis of current prices. Since the bot now operates on websockets this value should be set to something low (like 1), the reasons to set it above 1 are when you observe high CPU usage by bot or you got api errors about requests weight limit.
 -   **buy_order_type** - Controls the type of placed buy orders, types available: market, limit (default=limit)
 -   **sell_order_type** - Controls the type of placed sell orders, types available: market, limit (default=market)
+-   **buy_max_price_change/sell_max_price_change** - Controls how much price change in decimal percentage is accepted between calculation of ratios and trading.
+-   **price_type** - Controls the type of prices used by the bot, types available: orderbook, ticker (default=orderbook)
+    **max_idle_hours** - Controls the amount of hours for reseting the ratios when the bot has not traded 
 
 #### Environment Variables
 
