@@ -6,6 +6,7 @@ from typing import Dict, Optional
 from binance.client import Client
 from binance.exceptions import BinanceAPIException
 from cachetools import TTLCache, cached
+from sqlalchemy.util.langhelpers import symbol
 
 from .binance_stream_manager import BinanceCache, BinanceOrder, BinanceStreamManager, OrderGuard
 from .config import Config
@@ -79,6 +80,20 @@ class BinanceAPIManager:
         """
         return self.binance_client.get_account()
 
+    def get_buy_price(self, ticker_symbol: str):
+        price_type = self.config.PRICE_TYPE
+        if price_type == Config.PRICE_TYPE_ORDERBOOK:
+            return self.get_ask_price(ticker_symbol)
+        else:
+            return self.get_ticker_price(ticker_symbol)
+            
+    def get_sell_price(self, ticker_symbol: str):
+        price_type = self.config.PRICE_TYPE
+        if price_type == Config.PRICE_TYPE_ORDERBOOK:
+            return self.get_bid_price(ticker_symbol)
+        else:
+            return self.get_ticker_price(ticker_symbol)
+
     def get_ticker_price(self, ticker_symbol: str):
         """
         Get ticker price of a specific coin
@@ -96,7 +111,7 @@ class BinanceAPIManager:
 
         return price
 
-    def get_ticker_price_ask(self, ticker_symbol: str):
+    def get_ask_price(self, ticker_symbol: str):
         """
         Get best ask price of a specific coin
         """
@@ -106,7 +121,7 @@ class BinanceAPIManager:
                 ticker = self.binance_client.get_orderbook_ticker(symbol = ticker_symbol)
                 price = float(ticker['askPrice'])
             except BinanceAPIException as e:
-                if e.code == -1121:
+                if e.code == -1121: # invalid symbol
                     price = None
                 else:
                     raise e
@@ -116,7 +131,7 @@ class BinanceAPIManager:
 
         return price
 
-    def get_ticker_price_bid(self, ticker_symbol: str):
+    def get_bid_price(self, ticker_symbol: str):
         """
         Get best bid price of a specific coin
         """
@@ -126,7 +141,7 @@ class BinanceAPIManager:
                 ticker = self.binance_client.get_orderbook_ticker(symbol = ticker_symbol)
                 price = float(ticker['bidPrice'])
             except BinanceAPIException as e:
-                if e.code == -1121:
+                if e.code == -1121: # invalid symbol
                     price = None
                 else:
                     raise e
@@ -267,7 +282,7 @@ class BinanceAPIManager:
                 return True
 
             if order_status.side == "BUY":
-                current_price = self.get_ticker_price_ask(order_status.symbol)
+                current_price = self.get_buy_price(order_status.symbol)
                 if float(current_price) * (1 - 0.001) > float(order_status.price):
                     return True
 
@@ -280,7 +295,7 @@ class BinanceAPIManager:
         self, origin_symbol: str, target_symbol: str, target_balance: float = None, from_coin_price: float = None
     ):
         target_balance = target_balance or self.get_currency_balance(target_symbol)
-        from_coin_price = from_coin_price or self.get_ticker_price_ask(origin_symbol + target_symbol)
+        from_coin_price = from_coin_price or self.get_buy_price(origin_symbol + target_symbol)
 
         origin_tick = self.get_alt_tick(origin_symbol, target_symbol)
         return math.floor(target_balance * 10 ** origin_tick / from_coin_price) / float(10 ** origin_tick)
@@ -323,7 +338,7 @@ class BinanceAPIManager:
 
         origin_balance = self.get_currency_balance(origin_symbol)
         target_balance = self.get_currency_balance(target_symbol)
-        from_coin_price = self.get_ticker_price_ask(origin_symbol + target_symbol)
+        from_coin_price = self.get_buy_price(origin_symbol + target_symbol)
 
         buy_max_price_change = float(self.config.BUY_MAX_PRICE_CHANGE)
         if from_coin_price > buy_price * (1.0 + buy_max_price_change):
@@ -394,7 +409,7 @@ class BinanceAPIManager:
 
         origin_balance = self.get_currency_balance(origin_symbol)
         target_balance = self.get_currency_balance(target_symbol)
-        from_coin_price = self.get_ticker_price_ask(origin_symbol + target_symbol)
+        from_coin_price = self.get_sell_price(origin_symbol + target_symbol)
 
         sell_max_price_change = float(self.config.SELL_MAX_PRICE_CHANGE)
         if from_coin_price < sell_price * (1.0 - sell_max_price_change):

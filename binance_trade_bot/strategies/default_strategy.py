@@ -27,7 +27,7 @@ class Strategy(AutoTrader):
             end="\r",
         )
 
-        current_coin_price = self.manager.get_ticker_price_bid(current_coin + self.config.BRIDGE)
+        current_coin_price = self.manager.get_sell_price(current_coin + self.config.BRIDGE)
 
         if current_coin_price is None:
             self.logger.info("Skipping scouting... current coin {} not found".format(current_coin + self.config.BRIDGE))
@@ -66,6 +66,6 @@ class Strategy(AutoTrader):
                 current_coin = self.db.get_current_coin()
                 self.logger.info(f"Purchasing {current_coin} to begin trading")
                 self.manager.buy_alt(
-                    current_coin, self.config.BRIDGE, self.manager.get_ticker_price_ask(current_coin + self.config.BRIDGE)
+                    current_coin, self.config.BRIDGE, self.manager.get_buy_price(current_coin + self.config.BRIDGE)
                 )
                 self.logger.info("Ready to start trading")

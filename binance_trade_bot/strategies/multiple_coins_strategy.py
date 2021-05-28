@@ -19,7 +19,7 @@ class Strategy(AutoTrader):
 
         for coin in self.db.get_coins():
             current_coin_balance = self.manager.get_currency_balance(coin.symbol)
-            coin_price = self.manager.get_ticker_price_bid(coin + self.config.BRIDGE)
+            coin_price = self.manager.get_sell_price(coin + self.config.BRIDGE)
 
             if coin_price is None:
                 self.logger.info("Skipping scouting... current coin {} not found".format(coin + self.config.BRIDGE))

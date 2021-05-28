@@ -13,6 +13,9 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
     ORDER_TYPE_MARKET = "market"
     ORDER_TYPE_LIMIT = "limit"
 
+    PRICE_TYPE_ORDERBOOK = "orderbook"
+    PRICE_TYPE_TICKER = "ticker"
+
     def __init__(self):
         # Init config
         config = configparser.ConfigParser()
@@ -29,6 +32,7 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
             "buy_order_type": self.ORDER_TYPE_LIMIT,
             "sell_max_price_change": "0.005",
             "buy_max_price_change": "0.005",
+            "price_type": self.PRICE_TYPE_ORDERBOOK,
             "max_idle_timeout": "3",
         }
 
@@ -113,5 +117,18 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
         self.BUY_ORDER_TYPE = order_type_map[buy_order_type]
 
         self.BUY_MAX_PRICE_CHANGE = os.environ.get("BUY_MAX_PRICE_CHANGE") or config.get(USER_CFG_SECTION, "buy_max_price_change")
+
+        price_types = {
+            self.PRICE_TYPE_ORDERBOOK,
+            self.PRICE_TYPE_TICKER
+        }
+
+        price_type = os.environ.get("PRICE_TYPE") or config.get(
+            USER_CFG_SECTION, "price_type", fallback=self.PRICE_TYPE_ORDERBOOK
+        )
+        if price_type not in price_types:
+            raise Exception(f"{self.PRICE_TYPE_ORDERBOOK} or {self.PRICE_TYPE_TICKER} expected, got {price_type} for price_type")
+        self.PRICE_TYPE = price_type
+
 
         self.MAX_IDLE_TIMEOUT = os.environ.get("MAX_IDLE_TIMEOUT") or config.get(USER_CFG_SECTION, "max_idle_timeout")
