@@ -24,7 +24,7 @@ class Strategy(AutoTrader):
             last_trade = session.query(Trade).order_by(Trade.datetime.desc()).first()
             if last_trade != None:
                 allowed_idle_time = last_trade.datetime + timedelta(hours=self.max_idle_hours)
-                base_time: datetime = self.manager.datetime or datetime.now()
+                base_time: datetime = self.manager.now()
                 if base_time >= allowed_idle_time and base_time >= self.reinit_threshold:
                     self.logger.info(f"Last trade was before {self.max_idle_hours} hours! Going to reinit ratios.")
                     self.re_initialize_trade_thresholds()
@@ -38,7 +38,7 @@ class Strategy(AutoTrader):
         # Display on the console, the current coin+Bridge, so users can see *some* activity and not think the bot has
         # stopped. Not logging though to reduce log size.
         print(
-            f"{datetime.now()} - CONSOLE - INFO - I am scouting the best trades. "
+            f"{self.manager.now()} - CONSOLE - INFO - I am scouting the best trades. "
             f"Current coin: {current_coin + self.config.BRIDGE} ",
             end="\r",
         )

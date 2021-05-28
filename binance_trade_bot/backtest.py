@@ -66,6 +66,9 @@ class MockBinanceManager(BinanceAPIManager):
         self.balances = start_balances or {config.BRIDGE.symbol: 100}
         self.ignored_symbols = ["BTTBTC"]
 
+    def now(self):
+        return self.datetime
+
     def setup_websockets(self):
         pass  # No websockets are needed for backtesting
 
