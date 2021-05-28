@@ -102,8 +102,14 @@ class BinanceAPIManager:
         """
         price = self.cache.ticker_values_ask.get(ticker_symbol, None)
         if price is None and ticker_symbol not in self.cache.non_existent_tickers:
-            ticker = self.binance_client.get_orderbook_ticker(symbol = ticker_symbol)
-            price = float(ticker['askPrice'])
+            try:
+                ticker = self.binance_client.get_orderbook_ticker(symbol = ticker_symbol)
+                price = float(ticker['askPrice'])
+            except BinanceAPIException as e:
+                if e.code == -1121:
+                    price = None
+                else:
+                    raise e
             if price is None:
                 self.logger.info(f"Ticker does not exist: {ticker_symbol} - will not be fetched from now on")
                 self.cache.non_existent_tickers.add(ticker_symbol)
@@ -116,8 +122,14 @@ class BinanceAPIManager:
         """
         price = self.cache.ticker_values_bid.get(ticker_symbol, None)
         if price is None and ticker_symbol not in self.cache.non_existent_tickers:
-            ticker = self.binance_client.get_orderbook_ticker(symbol = ticker_symbol)
-            price = float(ticker['bidPrice'])
+            try:
+                ticker = self.binance_client.get_orderbook_ticker(symbol = ticker_symbol)
+                price = float(ticker['bidPrice'])
+            except BinanceAPIException as e:
+                if e.code == -1121:
+                    price = None
+                else:
+                    raise e
             if price is None:
                 self.logger.info(f"Ticker does not exist: {ticker_symbol} - will not be fetched from now on")
                 self.cache.non_existent_tickers.add(ticker_symbol)
