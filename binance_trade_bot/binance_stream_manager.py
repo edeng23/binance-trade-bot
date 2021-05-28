@@ -82,16 +82,19 @@ class BinanceStreamManager:
             ["arr"], ["!userData"], api_key=config.BINANCE_API_KEY, api_secret=config.BINANCE_API_SECRET_KEY
         )
 
-        supported_coin_list=config.SUPPORTED_COIN_LIST
-        bridge_coin=config.BRIDGE_SYMBOL
-        symbols = []
-        for symbol in supported_coin_list:
-            symbol=symbol.lower()+ bridge_coin.lower()
-            symbols.append(symbol)
 
-        self.bw_api_manager.create_stream(
-            ["bookTicker"], symbols
-        )
+        if config.PRICE_TYPE == Config.PRICE_TYPE_ORDERBOOK:
+            supported_coin_list=config.SUPPORTED_COIN_LIST
+            bridge_coin=config.BRIDGE_SYMBOL
+            symbols = []
+            for symbol in supported_coin_list:
+                symbol=symbol.lower()+ bridge_coin.lower()
+                symbols.append(symbol)
+
+            self.bw_api_manager.create_stream(
+                ["bookTicker"], symbols
+            )
+            
         self.binance_client = binance_client
         self.pending_orders: Set[Tuple[str, int]] = set()
         self.pending_orders_mutex: threading.Lock = threading.Lock()
