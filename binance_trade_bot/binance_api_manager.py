@@ -324,7 +324,9 @@ class BinanceAPIManager:
         origin_balance = self.get_currency_balance(origin_symbol)
         target_balance = self.get_currency_balance(target_symbol)
         from_coin_price = self.get_ticker_price_ask(origin_symbol + target_symbol)
-        if from_coin_price > buy_price * 1.005:
+
+        buy_max_price_change = float(self.config.BUY_MAX_PRICE_CHANGE)
+        if from_coin_price > buy_price * (1.0 + buy_max_price_change):
             self.logger.info("Buy price became higher, cancel buy")
             return None
         #from_coin_price = min(buy_price, from_coin_price)
@@ -393,7 +395,9 @@ class BinanceAPIManager:
         origin_balance = self.get_currency_balance(origin_symbol)
         target_balance = self.get_currency_balance(target_symbol)
         from_coin_price = self.get_ticker_price_ask(origin_symbol + target_symbol)
-        if from_coin_price < sell_price * 0.995:
+
+        sell_max_price_change = float(self.config.SELL_MAX_PRICE_CHANGE)
+        if from_coin_price < sell_price * (1.0 - sell_max_price_change):
             self.logger.info("Sell price became lower, skipping sell")
             return None  # skip selling below price from ratio
         #from_coin_price = max(from_coin_price, sell_price)

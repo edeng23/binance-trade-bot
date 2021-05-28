@@ -27,7 +27,9 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
             "buy_timeout": "0",
             "sell_order_type": self.ORDER_TYPE_MARKET,
             "buy_order_type": self.ORDER_TYPE_LIMIT,
-            "max_idle_timeout": "3"
+            "sell_max_price_change": "0.005",
+            "buy_max_price_change": "0.005",
+            "max_idle_timeout": "3",
         }
 
         if not os.path.exists(CFG_FL_NAME):
@@ -93,6 +95,8 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
             )
         self.SELL_ORDER_TYPE = order_type_map[sell_order_type]
 
+        self.SELL_MAX_PRICE_CHANGE = os.environ.get("SELL_MAX_PRICE_CHANGE") or config.get(USER_CFG_SECTION, "sell_max_price_change")
+
         buy_order_type = os.environ.get("BUY_ORDER_TYPE") or config.get(
             USER_CFG_SECTION, "buy_order_type", fallback=self.ORDER_TYPE_LIMIT
         )
@@ -107,5 +111,7 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
                 "comment this line only if you know what you're doing"
             )
         self.BUY_ORDER_TYPE = order_type_map[buy_order_type]
+
+        self.BUY_MAX_PRICE_CHANGE = os.environ.get("BUY_MAX_PRICE_CHANGE") or config.get(USER_CFG_SECTION, "buy_max_price_change")
 
         self.MAX_IDLE_TIMEOUT = os.environ.get("MAX_IDLE_TIMEOUT") or config.get(USER_CFG_SECTION, "max_idle_timeout")
