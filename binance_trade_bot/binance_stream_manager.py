@@ -175,8 +175,8 @@ class BinanceStreamManager:
             for event in stream_data["data"]:
                 self.cache.ticker_values[event["symbol"]] = float(event["close_price"])
         elif event_type == "bookTicker":
-                self.cache.ticker_values_ask[stream_data["symbol"]] = stream_data["best_ask_price"]
-                self.cache.ticker_values_bid[stream_data["symbol"]] = stream_data["best_bid_price"]
+                self.cache.ticker_values_ask[stream_data["symbol"]] = float(stream_data["best_ask_price"])
+                self.cache.ticker_values_bid[stream_data["symbol"]] = float(stream_data["best_bid_price"])
         else:
             self.logger.error(f"Unknown event type found: {event_type}\n{stream_data}")
 
