@@ -30,7 +30,9 @@ class BinanceOrder:  # pylint: disable=too-few-public-methods
 
 
 class BinanceCache:  # pylint: disable=too-few-public-methods
-    ticker_values: Dict[str, float] = {}
+    ticker_values: Dict[str, float] = {}    
+    ticker_values_ask: Dict[str, float] = {}
+    ticker_values_bid: Dict[str, float] = {}
     _balances: Dict[str, float] = {}
     _balances_mutex: threading.Lock = threading.Lock()
     non_existent_tickers: Set[str] = set()
@@ -78,6 +80,17 @@ class BinanceStreamManager:
         )
         self.bw_api_manager.create_stream(
             ["arr"], ["!userData"], api_key=config.BINANCE_API_KEY, api_secret=config.BINANCE_API_SECRET_KEY
+        )
+
+        supported_coin_list=config.SUPPORTED_COIN_LIST
+        bridge_coin=config.BRIDGE_SYMBOL
+        symbols = []
+        for symbol in supported_coin_list:
+            symbol=symbol.lower()+ bridge_coin.lower()
+            symbols.append(symbol)
+
+        self.bw_api_manager.create_stream(
+            ["bookTicker"], symbols
         )
         self.binance_client = binance_client
         self.pending_orders: Set[Tuple[str, int]] = set()
@@ -136,7 +149,7 @@ class BinanceStreamManager:
                         self.logger.debug("Connect for userdata arrived", False)
                         self._fetch_pending_orders()
                         self._invalidate_balances()
-            if stream_data is not False:
+            if stream_data is not False and "event_type" in stream_data:
                 self._process_stream_data(stream_data)
             if stream_data is False and stream_signal is False:
                 time.sleep(0.01)
@@ -161,6 +174,9 @@ class BinanceStreamManager:
         elif event_type == "24hrMiniTicker":
             for event in stream_data["data"]:
                 self.cache.ticker_values[event["symbol"]] = float(event["close_price"])
+        elif event_type == "bookTicker":
+                self.cache.ticker_values_ask[stream_data["symbol"]] = stream_data["best_ask_price"]
+                self.cache.ticker_values_bid[stream_data["symbol"]] = stream_data["best_bid_price"]
         else:
             self.logger.error(f"Unknown event type found: {event_type}\n{stream_data}")
 

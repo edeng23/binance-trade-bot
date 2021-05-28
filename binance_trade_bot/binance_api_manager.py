@@ -96,6 +96,34 @@ class BinanceAPIManager:
 
         return price
 
+    def get_ticker_price_ask(self, ticker_symbol: str):
+        """
+        Get best ask price of a specific coin
+        """
+        price = self.cache.ticker_values_ask.get(ticker_symbol, None)
+        if price is None and ticker_symbol not in self.cache.non_existent_tickers:
+            ticker = self.binance_client.get_orderbook_ticker(symbol = ticker_symbol)
+            price = float(ticker['askPrice'])
+            if price is None:
+                self.logger.info(f"Ticker does not exist: {ticker_symbol} - will not be fetched from now on")
+                self.cache.non_existent_tickers.add(ticker_symbol)
+
+        return price
+
+    def get_ticker_price_bid(self, ticker_symbol: str):
+        """
+        Get best bid price of a specific coin
+        """
+        price = self.cache.ticker_values_bid.get(ticker_symbol, None)
+        if price is None and ticker_symbol not in self.cache.non_existent_tickers:
+            ticker = self.binance_client.get_orderbook_ticker(symbol = ticker_symbol)
+            price = float(ticker['bidPrice'])
+            if price is None:
+                self.logger.info(f"Ticker does not exist: {ticker_symbol} - will not be fetched from now on")
+                self.cache.non_existent_tickers.add(ticker_symbol)
+        
+        return price
+
     def get_currency_balance(self, currency_symbol: str, force=False) -> float:
         """
         Get balance of a specific coin
@@ -227,7 +255,7 @@ class BinanceAPIManager:
                 return True
 
             if order_status.side == "BUY":
-                current_price = self.get_ticker_price(order_status.symbol)
+                current_price = self.get_ticker_price_ask(order_status.symbol)
                 if float(current_price) * (1 - 0.001) > float(order_status.price):
                     return True
 
@@ -240,7 +268,7 @@ class BinanceAPIManager:
         self, origin_symbol: str, target_symbol: str, target_balance: float = None, from_coin_price: float = None
     ):
         target_balance = target_balance or self.get_currency_balance(target_symbol)
-        from_coin_price = from_coin_price or self.get_ticker_price(origin_symbol + target_symbol)
+        from_coin_price = from_coin_price or self.get_ticker_price_ask(origin_symbol + target_symbol)
 
         origin_tick = self.get_alt_tick(origin_symbol, target_symbol)
         return math.floor(target_balance * 10 ** origin_tick / from_coin_price) / float(10 ** origin_tick)
@@ -283,7 +311,7 @@ class BinanceAPIManager:
 
         origin_balance = self.get_currency_balance(origin_symbol)
         target_balance = self.get_currency_balance(target_symbol)
-        from_coin_price = self.get_ticker_price(origin_symbol + target_symbol)
+        from_coin_price = self.get_ticker_price_ask(origin_symbol + target_symbol)
         if from_coin_price > buy_price:
             self.logger.info("Buy price became higher, cancel buy")
             return None
@@ -352,7 +380,7 @@ class BinanceAPIManager:
 
         origin_balance = self.get_currency_balance(origin_symbol)
         target_balance = self.get_currency_balance(target_symbol)
-        from_coin_price = self.get_ticker_price(origin_symbol + target_symbol)
+        from_coin_price = self.get_ticker_price_ask(origin_symbol + target_symbol)
         if from_coin_price < sell_price:
             self.logger.info("Sell price became lower, skipping sell")
             return None  # skip selling below price from ratio

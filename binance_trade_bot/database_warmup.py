@@ -77,14 +77,14 @@ class WarmUpTrader(AutoTrader):
         session: Session
         with self.db.db_session() as session:
             for pair in session.query(Pair).filter(Pair.ratio.is_(None)).all():
-                from_coin_price = self.manager.get_ticker_price(pair.from_coin + self.config.BRIDGE)
+                from_coin_price = self.manager.get_ticker_price_bid(pair.from_coin + self.config.BRIDGE)
                 if from_coin_price is None:
                     self.logger.info(
                         "Skipping initializing {}, symbol not found".format(pair.from_coin + self.config.BRIDGE)
                     )
                     continue
 
-                to_coin_price = self.manager.get_ticker_price(pair.to_coin + self.config.BRIDGE)
+                to_coin_price = self.manager.get_ticker_price_ask(pair.to_coin + self.config.BRIDGE)
                 if to_coin_price is None:
                     self.logger.info(
                         "Skipping initializing {}, symbol not found".format(pair.to_coin + self.config.BRIDGE)

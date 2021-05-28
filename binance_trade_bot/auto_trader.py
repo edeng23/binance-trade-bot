@@ -66,7 +66,7 @@ class AutoTrader:
         session: Session
         with self.db.db_session() as session:
             for pair in session.query(Pair).filter(Pair.to_coin == coin):
-                from_coin_price = self.manager.get_ticker_price(pair.from_coin + self.config.BRIDGE)
+                from_coin_price = self.manager.get_ticker_price_bid(pair.from_coin + self.config.BRIDGE)
 
                 if from_coin_price is None:
                     self.logger.info(
@@ -87,14 +87,14 @@ class AutoTrader:
                     continue
                 #self.logger.debug(f"Initializing {pair.from_coin} vs {pair.to_coin}")
 
-                from_coin_price = self.manager.get_ticker_price(pair.from_coin + self.config.BRIDGE)
+                from_coin_price = self.manager.get_ticker_price_bid(pair.from_coin + self.config.BRIDGE)
                 if from_coin_price is None:
                     self.logger.info(
                         "Skipping initializing {}, symbol not found".format(pair.from_coin + self.config.BRIDGE)
                     )
                     continue
 
-                to_coin_price = self.manager.get_ticker_price(pair.to_coin + self.config.BRIDGE)
+                to_coin_price = self.manager.get_ticker_price_ask(pair.to_coin + self.config.BRIDGE)
                 if to_coin_price is None:
                     self.logger.info(
                         "Skipping initializing {}, symbol not found".format(pair.to_coin + self.config.BRIDGE)
@@ -118,7 +118,7 @@ class AutoTrader:
 
         scout_logs = []
         for pair in self.db.get_pairs_from(coin):
-            optional_coin_price = self.manager.get_ticker_price(pair.to_coin + self.config.BRIDGE)
+            optional_coin_price = self.manager.get_ticker_price_ask(pair.to_coin + self.config.BRIDGE)
             prices[pair.to_coin_id] = optional_coin_price
 
             if optional_coin_price is None:
@@ -164,7 +164,7 @@ class AutoTrader:
         bridge_balance = self.manager.get_currency_balance(self.config.BRIDGE.symbol)
 
         for coin in self.db.get_coins():
-            current_coin_price = self.manager.get_ticker_price(coin + self.config.BRIDGE)
+            current_coin_price = self.manager.get_ticker_price_bid(coin + self.config.BRIDGE)
 
             if current_coin_price is None:
                 continue
@@ -175,7 +175,7 @@ class AutoTrader:
                 if bridge_balance > self.manager.get_min_notional(coin.symbol, self.config.BRIDGE.symbol):
                     self.logger.info(f"Will be purchasing {coin} using bridge coin")
                     result = self.manager.buy_alt(
-                        coin, self.config.BRIDGE, self.manager.get_ticker_price(coin + self.config.BRIDGE)
+                        coin, self.config.BRIDGE, self.manager.get_ticker_price_bid(coin + self.config.BRIDGE)
                     )
                     if result is not None:
                         self.db.set_current_coin(coin)
@@ -197,8 +197,8 @@ class AutoTrader:
             balance = self.manager.get_currency_balance(coin.symbol)
             if balance == 0:
                 continue
-            usd_value = self.manager.get_ticker_price(coin + "USDT")
-            btc_value = self.manager.get_ticker_price(coin + "BTC")
+            usd_value = self.manager.get_ticker_price_bid(coin + "USDT")
+            btc_value = self.manager.get_ticker_price_bid(coin + "BTC")
             cv = CoinValue(coin, balance, usd_value, btc_value, datetime=now)
             cv_batch.append(cv)
         self.db.batch_update_coin_values(cv_batch)
