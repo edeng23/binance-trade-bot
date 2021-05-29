@@ -105,6 +105,12 @@ class MockBinanceManager(BinanceAPIManager):
             pool = ThreadPool(8)
             results = pool.map(addtocache, links)
 
+    def get_buy_price(self, ticker_symbol: str):
+        return self.get_ticker_price(ticker_symbol)
+
+    def get_sell_price(self, ticker_symbol: str):
+        return self.get_ticker_price(ticker_symbol)
+
     def get_ticker_price(self, ticker_symbol: str):
         """
         Get ticker price of a specific coin
