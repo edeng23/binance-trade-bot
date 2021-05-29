@@ -8,7 +8,8 @@ import requests
 import xmltodict
 import zipfile
 
-from multiprocessing.pool import ThreadPool
+from pebble import ProcessPool
+from concurrent.futures import TimeoutError
 from diskcache import Cache
 
 from .binance_api_manager import BinanceAPIManager
@@ -49,6 +50,7 @@ def addtocache(link):
         date = datetime.utcfromtimestamp(result[0] / 1000).strftime("%d %b %Y %H:%M:%S")
         price = float(result[1])
         cache[f"{ticker_symbol} - {date}"] = price
+    return link
 
 
 class MockBinanceManager(BinanceAPIManager):
@@ -101,9 +103,21 @@ class MockBinanceManager(BinanceAPIManager):
                 links.append('https://data.binance.vision/' + i['Key'])
         if len(links) == 0 and frame == 'daily':
             return self.get_historical_klines(ticker_symbol, interval, target_date, end_date, limit, frame='monthly')
-        if len(links) >= 1:
-            pool = ThreadPool(8)
-            results = pool.map(addtocache, links)
+
+        while len(links) >= 1:
+            with ProcessPool() as pool:
+                future = pool.map(addtocache, links, timeout=30)
+
+                iterator = future.result()
+
+                while True:
+                    try:
+                        result = next(iterator)
+                        links.remove(result)
+                    except StopIteration:
+                        break
+                    except TimeoutError as error:
+                        self.logger.info(f"Download of prices for {ticker_symbol} between {target_date} and {end_date} took longer than {error.args[1]} seconds. Retrying")
 
     def get_buy_price(self, ticker_symbol: str):
         return self.get_ticker_price(ticker_symbol)

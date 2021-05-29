@@ -14,3 +14,4 @@ unicorn-binance-websocket-api==1.30.0
 unicorn-fy==0.11.0
 xmltodict==0.12.0
 diskcache==5.2.1
+Pebble==4.6.1
