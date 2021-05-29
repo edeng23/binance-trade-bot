@@ -20,7 +20,7 @@ from .logger import Logger
 from .models import Coin, Pair, Trade, TradeState
 from .strategies import get_strategy
 
-cache = Cache("data")
+cache = Cache("data", sizelimit=int(5e9))
 
 
 def download(link):
@@ -46,10 +46,26 @@ def addtocache(link):
     f = download(link)
     lines = mergecsv(f)
     ticker_symbol = link.split('klines/')[-1].split('/')[0]
+    dates = []
     for result in lines:
-        date = datetime.utcfromtimestamp(result[0] / 1000).strftime("%d %b %Y %H:%M:%S")
+        date = datetime.utcfromtimestamp(result[0] / 1000)
+        datestr = date.strftime("%d %b %Y %H:%M:%S")
+        dates.append(date)
         price = float(result[1])
-        cache[f"{ticker_symbol} - {date}"] = price
+        cache[f"{ticker_symbol} - {datestr}"] = price
+
+    if len(dates) > 2:
+        dateDiff =  dates[1] - dates[0]
+
+        lastDate = dates[-1]
+        date = dates[0]
+        while date <= lastDate:
+            datestr = date.strftime("%d %b %Y %H:%M:%S")
+            price = cache.get(f"{ticker_symbol} - {datestr}", None)
+            if price is None:
+                cache[f"{ticker_symbol} - {datestr}"] = "Missing"
+            date += dateDiff
+
     return link
 
 
@@ -67,6 +83,8 @@ class MockBinanceManager(BinanceAPIManager):
         self.datetime = start_date or datetime(2021, 1, 1)
         self.balances = start_balances or {config.BRIDGE.symbol: 100}
         self.ignored_symbols = ["BTTBTC"]
+        self.trades = 0
+        self.paid_fees = {}
 
     def now(self):
         return self.datetime
@@ -118,6 +136,8 @@ class MockBinanceManager(BinanceAPIManager):
                         break
                     except TimeoutError as error:
                         self.logger.info(f"Download of prices for {ticker_symbol} between {target_date} and {end_date} took longer than {error.args[1]} seconds. Retrying")
+                    except ConnectionError as error:
+                        self.logger.info(f"Download of prices for {ticker_symbol} between {target_date} and {end_date} failed. Retrying")
 
     def get_buy_price(self, ticker_symbol: str):
         return self.get_ticker_price(ticker_symbol)
@@ -169,10 +189,12 @@ class MockBinanceManager(BinanceAPIManager):
 
         order_quantity = self._buy_quantity(origin_symbol, target_symbol, target_balance, from_coin_price)
         target_quantity = order_quantity * from_coin_price
+        fee = order_quantity * self.get_fee(origin_coin, target_coin, False)
         self.balances[target_symbol] -= target_quantity
-        self.balances[origin_symbol] = self.balances.get(origin_symbol, 0) + order_quantity * (
-                1 - self.get_fee(origin_coin, target_coin, False)
-        )
+        self.balances[origin_symbol] = self.balances.get(origin_symbol, 0) + order_quantity - fee
+        if origin_symbol not in self.paid_fees.keys():
+            self.paid_fees[origin_symbol] = 0
+        self.paid_fees[origin_symbol] += fee
         self.logger.info(
             f"Bought {origin_symbol}, balance now: {self.balances[origin_symbol]} - bridge: "
             f"{self.balances[target_symbol]}"
@@ -197,6 +219,7 @@ class MockBinanceManager(BinanceAPIManager):
             session.flush()
             self.db.send_update(trade)
 
+        self.trades += 1
         return BinanceOrder(event)
 
     def sell_alt(self, origin_coin: Coin, target_coin: Coin, sell_price: float):
@@ -208,19 +231,30 @@ class MockBinanceManager(BinanceAPIManager):
 
         order_quantity = self._sell_quantity(origin_symbol, target_symbol, origin_balance)
         target_quantity = order_quantity * from_coin_price
-        self.balances[target_symbol] = self.balances.get(target_symbol, 0) + target_quantity * (
-                1 - self.get_fee(origin_coin, target_coin, True)
-        )
+
+        fee = target_quantity * self.get_fee(origin_coin, target_coin, True)
+        self.balances[target_symbol] = self.balances.get(target_symbol, 0) + target_quantity - fee
+        if target_symbol not in self.paid_fees.keys():
+            self.paid_fees[target_symbol] = 0
+        self.paid_fees[target_symbol] += fee
         self.balances[origin_symbol] -= order_quantity
         self.logger.info(
             f"Sold {origin_symbol}, balance now: {self.balances[origin_symbol]} - bridge: "
             f"{self.balances[target_symbol]}"
         )
+        
+        self.trades += 1
         return {"price": from_coin_price}
 
-    def collate_coins(self, target_symbol: str):
+    def collate_coins(self, target_symbol: str):      
+        return self.collate(target_symbol, self.balances)
+
+    def collate_fees(self, target_symbol: str):        
+        return self.collate(target_symbol, self.paid_fees)
+
+    def collate(self, target_symbol: str, balances: dict):
         total = 0
-        for coin, balance in self.balances.items():
+        for coin, balance in balances.items():
             if coin == target_symbol:
                 total += balance
                 continue
@@ -234,8 +268,7 @@ class MockBinanceManager(BinanceAPIManager):
                 if price is None:
                     continue
                 total += price * balance
-        return total
-
+        return total 
 
 class MockDatabase(Database):
     def __init__(self, logger: Logger, config: Config):
