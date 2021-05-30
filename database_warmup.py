@@ -3,6 +3,11 @@ import os, sys, getopt
 
 from binance_trade_bot import warmup_database
 
+def OK():
+    if os.name == 'nt':
+        return 0
+    return os.EX_OK
+
 if __name__ == "__main__":
     db_path = "data/crypto_trading.db"
     coin_list = None
@@ -16,11 +21,11 @@ if __name__ == "__main__":
             print('parameters:')
             print('-d, --dbpath <optional, path to db, if not given the default db path will be used>')
             print('-c, --coinlist <optional, list of coins, e.g \'ADA BTC ETH ...\', if not given all coins available for bridge will be used>')
-            os._exit(os.EX_OK)
+            os._exit(OK())
         elif opt in ("-d", "--dbpath"):
             db_path = arg
         elif opt in ("-c", "--coinlist"):
             coin_list = arg.split()
 
     warmup_database(coin_list, db_path)
-    os._exit(os.EX_OK)
+    os._exit(OK())
