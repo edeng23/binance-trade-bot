@@ -14,6 +14,7 @@ class Strategy(AutoTrader):
         super().initialize()
         self.initialize_current_coin()
         self.reinit_threshold = datetime(1970, 1, 1)
+        self.logger.info(f"CAUTION: The db_reset strategy can lead to losses! A lower idle timeout increases the risk! Use this strategy only if you know what you are doing, did alot of backtests and can live with possible losses.")
         self.logger.info(f"Using {self.config.MAX_IDLE_HOURS} hours as maximum idle timeout after not trading.")
 
     def scout(self):
