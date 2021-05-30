@@ -60,6 +60,9 @@ class BinanceAPIManager:
                 return base_fee
             fee_amount_bnb = fee_amount * origin_price
         bnb_balance = self.get_currency_balance("BNB")
+        if bnb_balance is None:
+            bnb_balance = 0
+
         if bnb_balance >= fee_amount_bnb:
             return base_fee * 0.75
         return base_fee
@@ -212,6 +215,14 @@ class BinanceAPIManager:
         from_coin_price = from_coin_price or self.get_all_market_tickers().get_price(origin_symbol + target_symbol)
 
         origin_tick = self.get_alt_tick(origin_symbol, target_symbol)
+
+        if target_balance is None:
+            target_balance = 0
+        if origin_tick is None:
+            origin_tick = 0
+        if from_coin_price is None:
+            from_coin_price = 1
+
         return math.floor(target_balance * 10 ** origin_tick / from_coin_price) / float(10 ** origin_tick)
 
     def _buy_alt(self, origin_coin: Coin, target_coin: Coin, all_tickers):
@@ -226,6 +237,8 @@ class BinanceAPIManager:
         target_balance = self.get_currency_balance(target_symbol)
         from_coin_price = all_tickers.get_price(origin_symbol + target_symbol)
 
+        if origin_balance is None:
+            origin_balance = 0
         order_quantity = self._buy_quantity(origin_symbol, target_symbol, target_balance, from_coin_price)
         self.logger.info(f"BUY QTY {order_quantity} of <{origin_symbol}>")
 
@@ -261,6 +274,8 @@ class BinanceAPIManager:
         return self.retry(self._sell_alt, origin_coin, target_coin, all_tickers)
 
     def _sell_quantity(self, origin_symbol: str, target_symbol: str, origin_balance: float = None):
+        if origin_balance is None:
+            origin_balance = 0
         origin_balance = origin_balance or self.get_currency_balance(origin_symbol)
 
         origin_tick = self.get_alt_tick(origin_symbol, target_symbol)
@@ -278,6 +293,8 @@ class BinanceAPIManager:
         target_balance = self.get_currency_balance(target_symbol)
         from_coin_price = all_tickers.get_price(origin_symbol + target_symbol)
 
+        if origin_balance is None:
+            origin_balance = 0
         order_quantity = self._sell_quantity(origin_symbol, target_symbol, origin_balance)
         self.logger.info(f"Selling {order_quantity} of {origin_symbol}")
 
