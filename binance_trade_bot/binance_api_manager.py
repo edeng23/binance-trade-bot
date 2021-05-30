@@ -85,14 +85,21 @@ class BinanceAPIManager:
                 return float(ticker["price"])
         return None
 
+    def get_full_balance(self):
+        """
+        Get full balance of the current account
+        """
+        return {
+            currency_balance["asset"]: float(currency_balance.get("free", 0))
+            for currency_balance in self.binance_client.get_account()["balances"]
+            if currency_balance["asset"]
+        }
+
     def get_currency_balance(self, currency_symbol: str):
         """
         Get balance of a specific coin
         """
-        for currency_balance in self.binance_client.get_account()["balances"]:
-            if currency_balance["asset"] == currency_symbol:
-                return float(currency_balance["free"])
-        return None
+        return self.get_full_balance().get(currency_symbol, 0)
 
     def retry(self, func, *args, **kwargs):
         time.sleep(1)
@@ -222,8 +229,9 @@ class BinanceAPIManager:
         origin_symbol = origin_coin.symbol
         target_symbol = target_coin.symbol
 
-        origin_balance = self.get_currency_balance(origin_symbol)
-        target_balance = self.get_currency_balance(target_symbol)
+        full_balance = self.get_full_balance()
+        origin_balance = full_balance.get(origin_symbol, 0)
+        target_balance = full_balance.get(target_symbol, 0)
         from_coin_price = all_tickers.get_price(origin_symbol + target_symbol)
 
         order_quantity = self._buy_quantity(origin_symbol, target_symbol, target_balance, from_coin_price)
@@ -274,8 +282,9 @@ class BinanceAPIManager:
         origin_symbol = origin_coin.symbol
         target_symbol = target_coin.symbol
 
-        origin_balance = self.get_currency_balance(origin_symbol)
-        target_balance = self.get_currency_balance(target_symbol)
+        full_balance = self.get_full_balance()
+        origin_balance = full_balance.get(origin_symbol, 0)
+        target_balance = full_balance.get(target_symbol, 0)
         from_coin_price = all_tickers.get_price(origin_symbol + target_symbol)
 
         order_quantity = self._sell_quantity(origin_symbol, target_symbol, origin_balance)

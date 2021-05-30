@@ -181,8 +181,9 @@ class AutoTrader:
         session: Session
         with self.db.db_session() as session:
             coins: List[Coin] = session.query(Coin).all()
+            full_balance = self.manager.get_full_balance()
             for coin in coins:
-                balance = self.manager.get_currency_balance(coin.symbol)
+                balance = full_balance.get(coin.symbol, 0)
                 if balance == 0:
                     continue
                 usd_value = all_ticker_values.get_price(coin + "USDT")
