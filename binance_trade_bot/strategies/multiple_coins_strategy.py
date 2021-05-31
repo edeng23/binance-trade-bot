@@ -27,7 +27,7 @@ class Strategy(AutoTrader):
 
             min_notional = self.manager.get_min_notional(coin.symbol, self.config.BRIDGE.symbol)
 
-            if coin.symbol != current_coin_symbol and coin_price * current_coin_balance < min_notional:
+            if coin_price * current_coin_balance < min_notional:
                 continue
 
             have_coin = True
