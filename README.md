@@ -141,21 +141,21 @@ After the execution you should wait one or two trades of the bot before adding a
 By running the script without parameters, it will warm up the bots default database with all available coins for the bridge.
 
 ```shell
-pyhton3 database_warmup.py
+python3 database_warmup.py
 ```
 
 If you want to specify a separate db file you can use the -d or --dbfile parameter.
 If not provided, the script will use the bots default db file.
 
 ```shell
-pyhton3 database_warmup.py -d data/warmup.db
+python3 database_warmup.py -d data/warmup.db
 ```
 
 You can also specify the coins you want to warmup with the -c or --coinlist parameter.
 If not provided the script will warmup all coins available for the bridge.
 
 ```shell
-pyhton3 database_warmup.py -c 'ADA BTC ETH LTC'
+python3 database_warmup.py -c 'ADA BTC ETH LTC'
 ```
 
 ## Developing
