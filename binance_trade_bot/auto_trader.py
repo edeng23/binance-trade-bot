@@ -83,13 +83,11 @@ class AutoTrader:
             pairs = session.query(Pair).filter(Pair.ratio.is_(None)).all()
             grouped_pairs = defaultdict(list)
             for pair in pairs:
-                grouped_pairs[pair.from_coin.symbol].append(pair)
+                if pair.from_coin.enabled and pair.to_coin.enabled:
+                    grouped_pairs[pair.from_coin.symbol].append(pair)
             for from_coin_symbol, group in grouped_pairs.items():
                 self.logger.info(f"Initializing {from_coin_symbol} vs [{', '.join([p.to_coin.symbol for p in group])}]")
                 for pair in group:
-                    if not pair.from_coin.enabled or not pair.to_coin.enabled:
-                        continue
-
                     from_coin_price = self.manager.get_ticker_price(pair.from_coin + self.config.BRIDGE)
                     if from_coin_price is None:
                         self.logger.info(
