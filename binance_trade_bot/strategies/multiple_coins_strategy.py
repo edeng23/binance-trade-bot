@@ -10,13 +10,6 @@ class Strategy(AutoTrader):
         """
         have_coin = False
 
-        # last coin bought
-        current_coin = self.db.get_current_coin()
-        current_coin_symbol = ""
-
-        if current_coin is not None:
-            current_coin_symbol = current_coin.symbol
-
         for coin in self.db.get_coins():
             current_coin_balance = self.manager.get_currency_balance(coin.symbol)
             coin_price = self.manager.get_sell_price(coin + self.config.BRIDGE)

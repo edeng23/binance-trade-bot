@@ -11,13 +11,13 @@ class Strategy(AutoTrader):
         self.initialize_current_coin()
 
     def scout(self):
+        """
+        Scout for potential jumps from the current coin to another coin
+        """
         # check if previous buy order failed. If so, bridge scout for a new coin.
         if self.failed_buy_order:
             self.bridge_scout()
 
-        """
-        Scout for potential jumps from the current coin to another coin
-        """
         current_coin = self.db.get_current_coin()
         # Display on the console, the current coin+Bridge, so users can see *some* activity and not think the bot has
         # stopped. Not logging though to reduce log size.
