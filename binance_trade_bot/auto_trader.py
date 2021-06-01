@@ -170,7 +170,7 @@ class AutoTrader:
                 if bridge_balance > self.manager.get_min_notional(coin.symbol, self.config.BRIDGE.symbol):
                     self.logger.info(f"Will be purchasing {coin} using bridge coin")
                     result = self.manager.buy_alt(coin, self.config.BRIDGE, all_tickers)
-                    if result == None:
+                    if result is None:
                         self.failed_buy_order = True
                     else:
                         self.failed_buy_order = False
