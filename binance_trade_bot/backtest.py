@@ -20,7 +20,7 @@ from .logger import Logger
 from .models import Coin, Pair, Trade, TradeState
 from .strategies import get_strategy
 
-cache = Cache("data", size_limit=int(5e10))
+cache = Cache("data", size_limit=int(1e11))
 
 
 def download(link):
@@ -96,7 +96,7 @@ class MockBinanceManager(BinanceAPIManager):
         self.datetime += timedelta(minutes=interval)
 
     def get_fee(self, origin_coin: Coin, target_coin: Coin, selling: bool):
-        return 0.00075
+        return 0.001
 
     def get_historical_klines(self, ticker_symbol='ETCUSDT', interval='1m', target_date=None, end_date=None, limit=None,
                               frame='daily'):
