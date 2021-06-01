@@ -14,6 +14,10 @@ class Strategy(AutoTrader):
         """
         Scout for potential jumps from the current coin to another coin
         """
+        # check if previous buy order failed. If so, bridge scout for a new coin.
+        if self.failed_buy_order:
+            self.bridge_scout()
+
         all_tickers = self.manager.get_all_market_tickers()
 
         current_coin = self.db.get_current_coin()

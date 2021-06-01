@@ -11,13 +11,6 @@ class Strategy(AutoTrader):
         all_tickers = self.manager.get_all_market_tickers()
         have_coin = False
 
-        # last coin bought
-        current_coin = self.db.get_current_coin()
-        current_coin_symbol = ""
-
-        if current_coin is not None:
-            current_coin_symbol = current_coin.symbol
-
         for coin in self.db.get_coins():
             current_coin_balance = self.manager.get_currency_balance(coin.symbol)
             coin_price = all_tickers.get_price(coin + self.config.BRIDGE)
@@ -28,7 +21,7 @@ class Strategy(AutoTrader):
 
             min_notional = self.manager.get_min_notional(coin.symbol, self.config.BRIDGE.symbol)
 
-            if coin.symbol != current_coin_symbol and coin_price * current_coin_balance < min_notional:
+            if coin_price * current_coin_balance < min_notional:
                 continue
 
             have_coin = True
@@ -37,7 +30,7 @@ class Strategy(AutoTrader):
             # has stopped. Not logging though to reduce log size.
             print(
                 f"{datetime.now()} - CONSOLE - INFO - I am scouting the best trades. "
-                f"Current coin: {current_coin + self.config.BRIDGE} ",
+                f"Current coin: {coin + self.config.BRIDGE} ",
                 end="\r",
             )
 

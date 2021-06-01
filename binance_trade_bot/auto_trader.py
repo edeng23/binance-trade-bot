@@ -16,6 +16,7 @@ class AutoTrader:
         self.db = database
         self.logger = logger
         self.config = config
+        self.failed_buy_order = False
 
     def initialize(self):
         self.initialize_trade_thresholds()
@@ -42,9 +43,11 @@ class AutoTrader:
         if result is not None:
             self.db.set_current_coin(pair.to_coin)
             self.update_trade_threshold(pair.to_coin, float(result["price"]), all_tickers)
+            self.failed_buy_order = False
             return result
 
         self.logger.info("Couldn't buy, going back to scouting mode...")
+        self.failed_buy_order = True
         return None
 
     def update_trade_threshold(self, coin: Coin, coin_price: float, all_tickers: AllTickers):
@@ -166,7 +169,11 @@ class AutoTrader:
                 # There will only be one coin where all the ratios are negative. When we find it, buy it if we can
                 if bridge_balance > self.manager.get_min_notional(coin.symbol, self.config.BRIDGE.symbol):
                     self.logger.info(f"Will be purchasing {coin} using bridge coin")
-                    self.manager.buy_alt(coin, self.config.BRIDGE, all_tickers)
+                    result = self.manager.buy_alt(coin, self.config.BRIDGE, all_tickers)
+                    if result is None:
+                        self.failed_buy_order = True
+                    else:
+                        self.failed_buy_order = False
                     return coin
         return None
 
