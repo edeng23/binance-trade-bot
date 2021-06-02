@@ -236,7 +236,8 @@ class BinanceAPIManager:
     def buy_alt(self, origin_coin: Coin, target_coin: Coin) -> BinanceOrder:
         return self.retry(self._buy_alt, origin_coin, target_coin)
 
-    def _buy_quantity(
+    def \
+            _buy_quantity(
             self, origin_symbol: str, target_symbol: str, target_balance: float = None, from_coin_price: float = None
     ):
         target_balance = target_balance or self.get_currency_balance(target_symbol)
