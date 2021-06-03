@@ -96,6 +96,9 @@ class MockBinanceManager(BinanceAPIManager):
         self.datetime += timedelta(minutes=interval)
 
     def get_fee(self, origin_coin: Coin, target_coin: Coin, selling: bool):
+        if self.config.TRADE_FEE != "auto":
+            return float(self.config.TRADE_FEE)
+            
         return 0.001
 
     def get_historical_klines(self, ticker_symbol='ETCUSDT', interval='1m', target_date=None, end_date=None, limit=None,

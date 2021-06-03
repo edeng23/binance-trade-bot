@@ -14,5 +14,6 @@ buy_order_type=limit
 sell_order_type=limit
 sell_max_price_change=0.005
 buy_max_price_change=0.005
+trade_fee=auto
 price_type=orderbook
 max_idle_hours=6
