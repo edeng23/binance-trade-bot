@@ -125,6 +125,10 @@ class BinanceAPIManager:
     def get_min_notional(self, origin_symbol: str, target_symbol: str):
         return float(self.get_symbol_filter(origin_symbol, target_symbol, "MIN_NOTIONAL")["minNotional"])
 
+    @cached(cache=TTLCache(maxsize=2000, ttl=43200))
+    def get_min_qty(self, origin_symbol: str, target_symbol: str):
+        return float(self.get_symbol_filter(origin_symbol, target_symbol, "LOT_SIZE")["minQty"])
+
     def wait_for_order(self, origin_symbol, target_symbol, order_id):
         while True:
             try:
@@ -214,10 +218,56 @@ class BinanceAPIManager:
         origin_tick = self.get_alt_tick(origin_symbol, target_symbol)
         return math.floor(target_balance * 10 ** origin_tick / from_coin_price) / float(10 ** origin_tick)
 
-    def _buy_alt(self, origin_coin: Coin, target_coin: Coin, all_tickers):
+    def _adjust_bnb_balance(self, origin_coin: Coin, target_coin: Coin, all_tickers):
+        base_fee = self.get_trade_fees()[origin_coin + target_coin]
+        if not self.get_using_bnb_for_fees():
+            # No need to adjust bnb balance if not using bnb for fees
+            # The discount is only applied if we have enough BNB to cover the fee
+            return
+
+        amount_trading = self._buy_quantity(origin_coin.symbol, target_coin.symbol)
+
+        fee_amount = amount_trading * base_fee * 0.75
+        if origin_coin.symbol == "BNB":
+            fee_amount_bnb = fee_amount
+        else:
+            origin_price = self.get_ticker_price(origin_coin.symbol + "BNB")
+            if origin_price is None:
+                return
+            fee_amount_bnb = fee_amount * origin_price
+
+        bnb_balance = self.get_currency_balance("BNB")
+
+        if bnb_balance >= fee_amount_bnb:
+            # No need to buy more bnb
+            return
+
+        min_qty = self.get_min_qty("BNB", target_coin.symbol)
+        alt_tick = self.get_alt_tick("BNB", target_coin.symbol)
+        # TODO make 3x as a config item
+        # Put "3x" for 1. buy rate, 2. future sell rate, 3. selling price may large than buy rate if price raised
+        fee_amount_bnb_ceil = math.ceil((fee_amount_bnb * 3 - bnb_balance) * 10 ** alt_tick) / float(10 ** alt_tick)
+
+        min_notional = self.get_min_notional("BNB", target_coin.symbol)
+        bnb_price = self.get_ticker_price("BNB" + target_coin.symbol)
+        # multiply 1.01 considering that price is changing
+        min_qty_for_min_notinal = math.ceil((min_notional / bnb_price) * 1.01 * 10 ** alt_tick) / float(10 ** alt_tick)
+
+        buy_quantity = max(min_qty, fee_amount_bnb_ceil, min_qty_for_min_notinal)
+
+        self.logger.info(f"Needed/available BNB balance: {fee_amount_bnb}/{bnb_balance}, buy quantity: {buy_quantity}...")
+        self.retry(self._buy_alt, Coin("BNB", False), target_coin, all_tickers, buy_quantity)
+
+    def _buy_alt(self, origin_coin: Coin, target_coin: Coin, all_tickers, order_quantity: float = None):
         """
         Buy altcoin
         """
+        # TODO add a config item to see if need to adjust BNB balance
+        AUTO_ADJUST_BNB_BALANCE = True
+        if AUTO_ADJUST_BNB_BALANCE and origin_coin.symbol != "BNB":
+            # Need to adjust BNB only if trying to buy non-BNB coins
+            self._adjust_bnb_balance(origin_coin, target_coin, all_tickers)
+
         trade_log = self.db.start_trade_log(origin_coin, target_coin, False)
         origin_symbol = origin_coin.symbol
         target_symbol = target_coin.symbol
@@ -226,7 +276,8 @@ class BinanceAPIManager:
         target_balance = self.get_currency_balance(target_symbol)
         from_coin_price = all_tickers.get_price(origin_symbol + target_symbol)
 
-        order_quantity = self._buy_quantity(origin_symbol, target_symbol, target_balance, from_coin_price)
+        if order_quantity is None:
+            order_quantity = self._buy_quantity(origin_symbol, target_symbol, target_balance, from_coin_price)
         self.logger.info(f"BUY QTY {order_quantity} of <{origin_symbol}>")
 
         # Try to buy until successful
