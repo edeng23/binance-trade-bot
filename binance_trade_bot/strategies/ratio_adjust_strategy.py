@@ -14,7 +14,7 @@ class Strategy(AutoTrader):
         super().initialize()
         self.initialize_current_coin()
         self.reinit_threshold = self.manager.now()
-        self.logger.info(f"CAUTION: The ratio_adjusst strategy is still work in progress and can lead to losses! Use this strategy only if you know what you are doing, did alot of backtests and can live with possible losses.")
+        self.logger.info(f"CAUTION: The ratio_adjust strategy is still work in progress and can lead to losses! Use this strategy only if you know what you are doing, did alot of backtests and can live with possible losses.")
         self.logger.info(f"Using {self.config.MAX_IDLE_HOURS} hours to reinit the ratios.")
 
     def scout(self):

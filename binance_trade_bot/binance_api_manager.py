@@ -369,7 +369,7 @@ class BinanceAPIManager:
                     quote_quantity=target_balance,
                     price=from_coin_price,
                 )
-                self.logger.info(order)
+                self.logger.info(order, False)
             except BinanceAPIException as e:
                 self.logger.info(e)
                 time.sleep(1)
@@ -441,15 +441,15 @@ class BinanceAPIManager:
                     quote_quantity=target_balance,
                     price=from_coin_price,
                 )
-                self.logger.info(order)
+                self.logger.info(order, False)
             except BinanceAPIException as e:
                 self.logger.info(e)
                 time.sleep(1)
             except Exception as e:  # pylint: disable=broad-except
                 self.logger.warning(f"Unexpected Error: {e}")
 
-        self.logger.info("order")
-        self.logger.info(order)
+        self.logger.info("order", False)
+        self.logger.info(order, False)
 
         trade_log.set_ordered(origin_balance, target_balance, order_quantity)
 
