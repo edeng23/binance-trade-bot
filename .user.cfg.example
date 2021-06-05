@@ -10,3 +10,5 @@ scout_sleep_time=60
 strategy=default
 buy_timeout=0
 sell_timeout=0
+sell_percentage=100
+buy_percentage=100
