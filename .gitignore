@@ -4,7 +4,7 @@
 *.pyc
 __pycache__
 nohup.out
-user.cfg
+#user.cfg
 .idea/
 .vscode/
 .replit
