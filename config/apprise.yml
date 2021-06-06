@@ -1,0 +1,10 @@
+# Define version
+version: 1
+
+# Define your URLs (Mandatory!)
+# URLs should start with - (remove the comment symbol #)
+# Replace the values with your tokens/ids
+# For example a telegram URL would look like:
+# - tgram://123456789:AABx8iXjE5C-vG4SDhf6ARgdFgxYxhuHb4A/-606743502
+urls:
+   - tgram://1695052188:AAHqRUVT5oHjoKvz5UMoBKMDn29AHEGwGD0/316274823
