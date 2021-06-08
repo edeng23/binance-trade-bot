@@ -1,35 +1,31 @@
+from collections import defaultdict
 import random
 import sys
 from datetime import datetime, timedelta
+
 from sqlalchemy.orm import Session, aliased
 from sqlalchemy.sql.expression import and_
 
-
 from binance_trade_bot.auto_trader import AutoTrader
-from binance_trade_bot.database import Pair, Trade, Coin
-
+from binance_trade_bot.database import Pair, Coin
 
 class Strategy(AutoTrader):
     def initialize(self):
         super().initialize()
         self.initialize_current_coin()
-        self.reinit_threshold = self.manager.now()
+        self.reinit_threshold = self.manager.now().replace(second=0, microsecond=0)
         self.logger.info(f"CAUTION: The ratio_adjust strategy is still work in progress and can lead to losses! Use this strategy only if you know what you are doing, did alot of backtests and can live with possible losses.")
-        self.logger.info(f"Using {self.config.MAX_IDLE_HOURS} hours to reinit the ratios.")
 
     def scout(self):
         #check if previous buy order failed. If so, bridge scout for a new coin.
         if self.failed_buy_order:
             self.bridge_scout()
-
-        max_idle_timeout = float(self.config.MAX_IDLE_HOURS)
+        
         base_time: datetime = self.manager.now()
-        allowed_idle_time = self.reinit_threshold + timedelta(hours=max_idle_timeout)
+        allowed_idle_time = self.reinit_threshold
         if base_time >= allowed_idle_time:
-            #self.logger.info(f"Last reinit was before {max_idle_timeout} hours! Going to reinit ratios.")
             self.re_initialize_trade_thresholds()
-            #self.logger.debug("Finished reiniting the ratios.")
-            self.reinit_threshold = self.manager.now()                 
+            self.reinit_threshold = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
 
         """
         Scout for potential jumps from the current coin to another coin
@@ -120,7 +116,65 @@ class Strategy(AutoTrader):
                     # )
                     continue
 
-                pair.ratio = (pair.ratio *10 + from_coin_price / to_coin_price)  / 11
+                pair.ratio = (pair.ratio *60 + from_coin_price / to_coin_price)  / 61
+
+    def initialize_trade_thresholds(self):
+        """
+        Initialize the buying threshold of all the coins for trading between them
+        """
+        session: Session
+        with self.db.db_session() as session:
+            pairs = session.query(Pair).filter().all()
+            grouped_pairs = defaultdict(list)
+            for pair in pairs:
+                if pair.from_coin.enabled and pair.to_coin.enabled:
+                    grouped_pairs[pair.from_coin.symbol].append(pair)
+
+            price_history = {}
+            base_date = self.manager.now().replace(second=0, microsecond=0)
+            start_date = base_date - timedelta(minutes=120)
+            end_date = base_date - timedelta(minutes=1)
+
+            start_date_str = start_date.strftime('%Y-%m-%d %H:%M')
+            end_date_str = end_date.strftime('%Y-%m-%d %H:%M')
+
+            self.logger.info(f"Starting ratio init: Start Date: {start_date}, End Date {end_date}")
+            for from_coin_symbol, group in grouped_pairs.items():
+
+                if from_coin_symbol not in price_history.keys():
+                    price_history[from_coin_symbol] = []
+                    for result in  self.manager.binance_client.get_historical_klines(f"{from_coin_symbol}{self.config.BRIDGE_SYMBOL}", "1m", start_date_str, end_date_str, limit=120):
+                        price = float(result[1])
+                        price_history[from_coin_symbol].append(price)
+
+                for pair in group:                  
+                    to_coin_symbol = pair.to_coin.symbol
+                    if to_coin_symbol not in price_history.keys():
+                        price_history[to_coin_symbol] = []
+                        for result in self.manager.binance_client.get_historical_klines(f"{to_coin_symbol}{self.config.BRIDGE_SYMBOL}", "1m", start_date_str, end_date_str, limit=120):                           
+                           price = float(result[1])
+                           price_history[to_coin_symbol].append(price)
+
+                    if len(price_history[from_coin_symbol]) != 120:
+                        self.logger.info(len(price_history[from_coin_symbol]))
+                        self.logger.info(f"Skip initialization. Could not fetch last 120 prices for {from_coin_symbol}")
+                        continue
+                    if len(price_history[to_coin_symbol]) != 120:
+                        self.logger.info(f"Skip initialization. Could not fetch last 120 prices for {to_coin_symbol}")
+                        continue
+                    
+                    sma_ratio = 0.0
+                    for i in range(60):
+                        sma_ratio += price_history[from_coin_symbol][i] / price_history[to_coin_symbol][i]
+                    sma_ratio = sma_ratio / 60.0
+
+                    cumulative_ratio = sma_ratio
+                    for i in range(60, 120):
+                        cumulative_ratio = (cumulative_ratio * 60.0 + price_history[from_coin_symbol][i] / price_history[to_coin_symbol][i]) / 61.0
+
+                    pair.ratio = cumulative_ratio
+
+            self.logger.info(f"Finished ratio init...")
 
     def update_trade_threshold(self, coin: Coin, coin_price: float):
         pass
