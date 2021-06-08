@@ -1,6 +1,6 @@
 from collections import defaultdict
 from datetime import datetime
-from typing import Dict
+from typing import Dict, List
 
 from sqlalchemy.orm import Session
 
@@ -113,7 +113,7 @@ class AutoTrader:
         """
         raise NotImplementedError()
 
-    def _get_ratios(self, coin: Coin, coin_price):
+    def _get_ratios(self, coin: Coin, coin_price, excluded_coins: List[Coin] = []):
         """
         Given a coin, get the current price ratio for every other enabled coin
         """
@@ -121,7 +121,12 @@ class AutoTrader:
         prices: Dict[str, float] = {}
 
         scout_logs = []
+        excluded_coin_symbols = [c.symbol for c in excluded_coins]
         for pair in self.db.get_pairs_from(coin):
+            #skip excluded coins
+            if pair.to_coin.symbol in excluded_coin_symbols:
+                continue
+
             optional_coin_price = self.manager.get_buy_price(pair.to_coin + self.config.BRIDGE)
             prices[pair.to_coin_id] = optional_coin_price
 
@@ -146,11 +151,11 @@ class AutoTrader:
         self.db.batch_log_scout(scout_logs)
         return (ratio_dict, prices)
 
-    def _jump_to_best_coin(self, coin: Coin, coin_price: float):
+    def _jump_to_best_coin(self, coin: Coin, coin_price: float, excluded_coins: List[Coin] = []):
         """
         Given a coin, search for a coin to jump to
         """
-        ratio_dict, prices = self._get_ratios(coin, coin_price)
+        ratio_dict, prices = self._get_ratios(coin, coin_price, excluded_coins)
 
         # keep only ratios bigger than zero
         ratio_dict = {k: v for k, v in ratio_dict.items() if v > 0}

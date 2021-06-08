@@ -101,6 +101,9 @@ class MockBinanceManager(BinanceAPIManager):
             
         return 0.001
 
+    def get_min_notional(self, origin_symbol: str, target_symbol: str):
+        return 10.0
+
     def get_historical_klines(self, ticker_symbol='ETCUSDT', interval='1m', target_date=None, end_date=None, limit=None,
                               frame='daily'):
         fromdate = datetime.strptime(target_date, "%d %b %Y %H:%M:%S")  # - timedelta(days=1)
