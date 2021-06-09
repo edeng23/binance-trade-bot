@@ -166,7 +166,7 @@ class Strategy(AutoTrader):
                     sma_ratio = 0.0
                     for i in range(100):
                         sma_ratio += price_history[from_coin_symbol][i] / price_history[to_coin_symbol][i]
-                    sma_ratio = sma_ratio / 10.0
+                    sma_ratio = sma_ratio / 100.0
 
                     cumulative_ratio = sma_ratio
                     for i in range(100, 200):
