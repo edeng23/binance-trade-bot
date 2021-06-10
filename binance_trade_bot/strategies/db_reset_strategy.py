@@ -1,6 +1,7 @@
 import random
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+from time import timezone
 from sqlalchemy.orm import Session, aliased
 from sqlalchemy.sql.expression import and_
 
@@ -13,7 +14,7 @@ class Strategy(AutoTrader):
     def initialize(self):
         super().initialize()
         self.initialize_current_coin()
-        self.reinit_threshold = datetime(1970, 1, 1)
+        self.reinit_threshold = datetime(1970, 1, 1, tzinfo=timezone.utc)
         self.logger.info(f"CAUTION: The db_reset strategy can lead to losses! A lower idle timeout increases the risk! Use this strategy only if you know what you are doing, did alot of backtests and can live with possible losses.")
         self.logger.info(f"Using {self.config.MAX_IDLE_HOURS} hours as maximum idle timeout after not trading.")
 
