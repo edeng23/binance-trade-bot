@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import math
 import time
 import traceback
@@ -33,7 +33,7 @@ class BinanceAPIManager:
         self.setup_websockets()
 
     def now(self):
-        return datetime.now()
+        return datetime.now(tz=timezone.utc)
 
     def setup_websockets(self):
         self.stream_manager = BinanceStreamManager(
