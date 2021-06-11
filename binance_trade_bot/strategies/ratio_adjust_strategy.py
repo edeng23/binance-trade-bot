@@ -125,7 +125,7 @@ class Strategy(AutoTrader):
         """
         session: Session
         with self.db.db_session() as session:
-            pairs = session.query(Pair).filter().all()
+            pairs = session.query(Pair).filter(Pair.ratio.is_(None)).all()
             grouped_pairs = defaultdict(list)
             for pair in pairs:
                 if pair.from_coin.enabled and pair.to_coin.enabled:
