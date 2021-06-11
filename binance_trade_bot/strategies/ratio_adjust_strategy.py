@@ -15,7 +15,8 @@ class Strategy(AutoTrader):
         self.initialize_current_coin()
         self.reinit_threshold = self.manager.now().replace(second=0, microsecond=0)
         self.logger.info(f"CAUTION: The ratio_adjust strategy is still work in progress and can lead to losses! Use this strategy only if you know what you are doing, did alot of backtests and can live with possible losses.")
-
+        self.logger.info(f"Ratio adjust weight: {self.config.RATIO_ADJUST_WEIGHT}")
+    
     def scout(self):
         #check if previous buy order failed. If so, bridge scout for a new coin.
         if self.failed_buy_order:
@@ -116,7 +117,7 @@ class Strategy(AutoTrader):
                     # )
                     continue
 
-                pair.ratio = (pair.ratio *100 + from_coin_price / to_coin_price)  / 101
+                pair.ratio = (pair.ratio *self.config.RATIO_ADJUST_WEIGHT + from_coin_price / to_coin_price)  / (self.config.RATIO_ADJUST_WEIGHT + 1)
 
     def initialize_trade_thresholds(self):
         """
@@ -132,7 +133,7 @@ class Strategy(AutoTrader):
 
             price_history = {}
             base_date = self.manager.now().replace(second=0, microsecond=0)
-            start_date = base_date - timedelta(minutes=200)
+            start_date = base_date - timedelta(minutes=self.config.RATIO_ADJUST_WEIGHT*2)
             end_date = base_date - timedelta(minutes=1)
 
             start_date_str = start_date.strftime('%Y-%m-%d %H:%M')
@@ -143,7 +144,7 @@ class Strategy(AutoTrader):
 
                 if from_coin_symbol not in price_history.keys():
                     price_history[from_coin_symbol] = []
-                    for result in  self.manager.binance_client.get_historical_klines(f"{from_coin_symbol}{self.config.BRIDGE_SYMBOL}", "1m", start_date_str, end_date_str, limit=200):
+                    for result in  self.manager.binance_client.get_historical_klines(f"{from_coin_symbol}{self.config.BRIDGE_SYMBOL}", "1m", start_date_str, end_date_str, limit=self.config.RATIO_ADJUST_WEIGHT*2):
                         price = float(result[1])
                         price_history[from_coin_symbol].append(price)
 
@@ -151,26 +152,26 @@ class Strategy(AutoTrader):
                     to_coin_symbol = pair.to_coin.symbol
                     if to_coin_symbol not in price_history.keys():
                         price_history[to_coin_symbol] = []
-                        for result in self.manager.binance_client.get_historical_klines(f"{to_coin_symbol}{self.config.BRIDGE_SYMBOL}", "1m", start_date_str, end_date_str, limit=200):                           
+                        for result in self.manager.binance_client.get_historical_klines(f"{to_coin_symbol}{self.config.BRIDGE_SYMBOL}", "1m", start_date_str, end_date_str, limit=self.config.RATIO_ADJUST_WEIGHT*2):                           
                            price = float(result[1])
                            price_history[to_coin_symbol].append(price)
 
-                    if len(price_history[from_coin_symbol]) != 200:
+                    if len(price_history[from_coin_symbol]) != self.config.RATIO_ADJUST_WEIGHT*2:
                         self.logger.info(len(price_history[from_coin_symbol]))
-                        self.logger.info(f"Skip initialization. Could not fetch last 200 prices for {from_coin_symbol}")
+                        self.logger.info(f"Skip initialization. Could not fetch last {self.config.RATIO_ADJUST_WEIGHT * 2} prices for {from_coin_symbol}")
                         continue
-                    if len(price_history[to_coin_symbol]) != 200:
-                        self.logger.info(f"Skip initialization. Could not fetch last 200 prices for {to_coin_symbol}")
+                    if len(price_history[to_coin_symbol]) != self.config.RATIO_ADJUST_WEIGHT*2:
+                        self.logger.info(f"Skip initialization. Could not fetch last {self.config.RATIO_ADJUST_WEIGHT * 2} prices for {to_coin_symbol}")
                         continue
                     
                     sma_ratio = 0.0
-                    for i in range(100):
+                    for i in range(self.config.RATIO_ADJUST_WEIGHT):
                         sma_ratio += price_history[from_coin_symbol][i] / price_history[to_coin_symbol][i]
-                    sma_ratio = sma_ratio / 100.0
+                    sma_ratio = sma_ratio / self.config.RATIO_ADJUST_WEIGHT
 
                     cumulative_ratio = sma_ratio
-                    for i in range(100, 200):
-                        cumulative_ratio = (cumulative_ratio * 100.0 + price_history[from_coin_symbol][i] / price_history[to_coin_symbol][i]) / 101.0
+                    for i in range(self.config.RATIO_ADJUST_WEIGHT, self.config.RATIO_ADJUST_WEIGHT * 2):
+                        cumulative_ratio = (cumulative_ratio * self.config.RATIO_ADJUST_WEIGHT + price_history[from_coin_symbol][i] / price_history[to_coin_symbol][i]) / (self.config.RATIO_ADJUST_WEIGHT + 1)
 
                     pair.ratio = cumulative_ratio
 

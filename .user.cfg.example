@@ -17,3 +17,4 @@ buy_max_price_change=0.005
 trade_fee=auto
 price_type=orderbook
 max_idle_hours=6
+ratio_adjust_weight=100
