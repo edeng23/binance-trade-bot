@@ -23,3 +23,9 @@ Some premade strategies are listed below:
 
 ## `multiple_coins`
 The bot is less likely to get stuck
+
+## `db_reset`
+Resets the ratios of the coins when the bod has not traded since **max_idle_hours**. Caution! This can lead to losses.
+
+## `ratio_reset`
+Calculates a cumulative ratio with a weight of **ratio_adjust_weight** for the ratio of every minute. Caution! This can lead to losses.

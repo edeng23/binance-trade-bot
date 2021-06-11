@@ -176,6 +176,3 @@ class Strategy(AutoTrader):
                     pair.ratio = cumulative_ratio
 
             self.logger.info(f"Finished ratio init...")
-
-    #def update_trade_threshold(self, coin: Coin, coin_price: float):
-    #    pass
