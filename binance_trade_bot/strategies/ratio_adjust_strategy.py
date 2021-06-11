@@ -177,5 +177,5 @@ class Strategy(AutoTrader):
 
             self.logger.info(f"Finished ratio init...")
 
-    def update_trade_threshold(self, coin: Coin, coin_price: float):
-        pass
+    #def update_trade_threshold(self, coin: Coin, coin_price: float):
+    #    pass
