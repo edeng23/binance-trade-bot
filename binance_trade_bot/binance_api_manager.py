@@ -150,7 +150,7 @@ class BinanceAPIManager:
         return float(self.get_symbol_filter(origin_symbol, target_symbol, "MIN_NOTIONAL")["minNotional"])
 
     def _wait_for_order(
-            self, order_id, origin_symbol: str, target_symbol: str
+        self, order_id, origin_symbol: str, target_symbol: str
     ) -> Optional[BinanceOrder]:  # pylint: disable=unsubscriptable-object
         while True:
             order_status: BinanceOrder = self.cache.orders.get(order_id, None)
@@ -205,7 +205,7 @@ class BinanceAPIManager:
         return order_status
 
     def wait_for_order(
-            self, order_id, origin_symbol: str, target_symbol: str, order_guard: OrderGuard
+        self, order_id, origin_symbol: str, target_symbol: str, order_guard: OrderGuard
     ) -> Optional[BinanceOrder]:  # pylint: disable=unsubscriptable-object
         with order_guard:
             return self._wait_for_order(order_id, origin_symbol, target_symbol)
@@ -236,9 +236,8 @@ class BinanceAPIManager:
     def buy_alt(self, origin_coin: Coin, target_coin: Coin) -> BinanceOrder:
         return self.retry(self._buy_alt, origin_coin, target_coin)
 
-    def \
-            _buy_quantity(
-            self, origin_symbol: str, target_symbol: str, target_balance: float = None, from_coin_price: float = None
+    def _buy_quantity(
+        self, origin_symbol: str, target_symbol: str, target_balance: float = None, from_coin_price: float = None
     ):
         target_balance = target_balance or self.get_currency_balance(target_symbol)
         from_coin_price = from_coin_price or self.get_ticker_price(origin_symbol + target_symbol)
@@ -260,26 +259,19 @@ class BinanceAPIManager:
         origin_balance = self.get_currency_balance(origin_symbol)
         target_balance = self.get_currency_balance(target_symbol)
         from_coin_price = self.get_ticker_price(origin_symbol + target_symbol)
-        from_coin_price_s = '{:0.0{}f}'.format(from_coin_price, 8)
 
         order_quantity = self._buy_quantity(origin_symbol, target_symbol, target_balance, from_coin_price)
-        order_quantity = quantity = float(round(order_quantity, 6))
-
-        if order_quantity * from_coin_price < self.get_min_notional(origin_symbol, target_symbol):
-            return None
-
-        order_quantity_s = '{:0.0{}f}'.format(order_quantity, 6)
         self.logger.info(f"BUY QTY {order_quantity} of <{origin_symbol}>")
 
-        # Try to buy until successful.
+        # Try to buy until successful
         order = None
         order_guard = self.stream_manager.acquire_order_guard()
         while order is None:
             try:
                 order = self.binance_client.order_limit_buy(
                     symbol=origin_symbol + target_symbol,
-                    quantity=order_quantity_s,
-                    price=from_coin_price_s,
+                    quantity=order_quantity,
+                    price=from_coin_price,
                 )
                 self.logger.info(order)
             except BinanceAPIException as e:
@@ -325,12 +317,8 @@ class BinanceAPIManager:
         origin_balance = self.get_currency_balance(origin_symbol)
         target_balance = self.get_currency_balance(target_symbol)
         from_coin_price = self.get_ticker_price(origin_symbol + target_symbol)
-        from_coin_price_s = '{:0.0{}f}'.format(from_coin_price, 8)
 
         order_quantity = self._sell_quantity(origin_symbol, target_symbol, origin_balance)
-        order_quantity = float(round(order_quantity, 6))
-        order_quantity_s = '{:0.0{}f}'.format(order_quantity, 6)
-
         self.logger.info(f"Selling {order_quantity} of {origin_symbol}")
 
         self.logger.info(f"Balance is {origin_balance}")
@@ -339,7 +327,7 @@ class BinanceAPIManager:
         while order is None:
             # Should sell at calculated price to avoid lost coin
             order = self.binance_client.order_limit_sell(
-                symbol=origin_symbol + target_symbol, quantity=order_quantity_s, price=from_coin_price_s
+                symbol=origin_symbol + target_symbol, quantity=order_quantity, price=from_coin_price
             )
 
         self.logger.info("order")
