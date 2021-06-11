@@ -6,6 +6,7 @@ __pycache__
 nohup.out
 #user.cfg
 .idea/
+.env
 .vscode/
 .replit
 venv/
