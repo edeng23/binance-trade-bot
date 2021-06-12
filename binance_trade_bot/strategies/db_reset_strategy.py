@@ -1,7 +1,7 @@
+from binance_trade_bot.models import trade
 import random
 import sys
 from datetime import datetime, timedelta, timezone
-from time import timezone
 from sqlalchemy.orm import Session, aliased
 from sqlalchemy.sql.expression import and_
 
@@ -27,8 +27,9 @@ class Strategy(AutoTrader):
         with self.db.db_session() as session:
             last_trade = session.query(Trade).order_by(Trade.datetime.desc()).first()
             if last_trade != None:
+                last_trade_time = last_trade.datetime.replace(tzinfo=timezone.utc)
                 max_idle_timeout = float(self.config.MAX_IDLE_HOURS)
-                allowed_idle_time = last_trade.datetime + timedelta(hours=max_idle_timeout)
+                allowed_idle_time = last_trade_time + timedelta(hours=max_idle_timeout)
                 base_time: datetime = self.manager.now()
                 if base_time >= allowed_idle_time and base_time >= self.reinit_threshold:
                     self.logger.info(f"Last trade was before {max_idle_timeout} hours! Going to reinit ratios.")
