@@ -45,7 +45,7 @@ class AutoTrader:
             self.db.set_current_coin(pair.to_coin)
             price = result.price
             if abs(price) < 1e-15:
-                price = result.cumulative_filled_quantity / result.cumulative_quote_qty
+                price = result.cumulative_quote_qty / result.cumulative_filled_quantity
 
             self.update_trade_threshold(pair.to_coin, price)
             self.failed_buy_order = False
