@@ -92,6 +92,16 @@ class Strategy(AutoTrader):
                     current_coin, self.config.BRIDGE, self.manager.get_buy_price(current_coin + self.config.BRIDGE)
                 )
                 self.logger.info("Ready to start trading")
+            else:
+                current_balance = self.manager.get_currency_balance(current_coin_symbol)
+                sell_price = self.manager.get_sell_price(current_coin_symbol + self.config.BRIDGE.symbol)
+                if current_balance and current_balance * sell_price < self.manager.get_min_notional(current_coin_symbol, self.config.BRIDGE.symbol):
+                    self.logger.info(f"Purchasing {current_coin_symbol} to begin trading")
+                    current_coin = self.db.get_current_coin()
+                    self.manager.buy_alt(
+                        current_coin, self.config.BRIDGE, self.manager.get_buy_price(current_coin + self.config.BRIDGE)
+                    )
+                    self.logger.info("Ready to start trading")
 
     def re_initialize_trade_thresholds(self):
         """
