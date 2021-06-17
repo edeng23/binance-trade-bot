@@ -124,6 +124,7 @@ class BinanceStreamManager:
                 "order_type": order["type"],
                 "order_id": order["orderId"],
                 "cumulative_quote_asset_transacted_quantity": float(order["cummulativeQuoteQty"]),
+                "cumulative_filled_quantity": float(order["executedQty"]),
                 "current_order_status": order["status"],
                 "order_price": float(order["price"]),
                 "transaction_time": order["time"],
