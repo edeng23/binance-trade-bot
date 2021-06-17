@@ -42,16 +42,18 @@ class AutoTrader:
         result = self.manager.buy_alt(pair.to_coin, self.config.BRIDGE)
         if result is not None:
             self.db.set_current_coin(pair.to_coin)
-            self.update_trade_threshold(pair.to_coin, result.price)
+            self.update_trade_threshold(pair, result.price)
             return result
 
         self.logger.info("Couldn't buy, going back to scouting mode...")
         return None
 
-    def update_trade_threshold(self, coin: Coin, coin_price: float):
+    def update_trade_threshold(self, newPair: Pair, coin_price: float):
         """
         Update all the coins with the threshold of buying the current held coin
         """
+
+        coin = newPair.to_coin
 
         if coin_price is None:
             self.logger.info("Skipping update... current coin {} not found".format(coin + self.config.BRIDGE))
@@ -59,6 +61,10 @@ class AutoTrader:
 
         session: Session
         with self.db.db_session() as session:
+            inverse_pair = session.query(Pair).filter((Pair.from_coin == newPair.to_coin) & (Pair.to_coin == newPair.from_coin)).one()
+            to_price = self.manager.get_ticker_price(inverse_pair.to_coin + self.config.BRIDGE)
+            inverse_pair.ratio = coin_price / to_price
+
             for pair in session.query(Pair).filter(Pair.to_coin == coin):
                 from_coin_price = self.manager.get_ticker_price(pair.from_coin + self.config.BRIDGE)
 
