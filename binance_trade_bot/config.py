@@ -34,6 +34,7 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
             "sell_max_price_change": "0.005",
             "buy_max_price_change": "0.005",
             "price_type": self.PRICE_TYPE_ORDERBOOK,
+            "accept_losses": "false",
             "max_idle_hours": "3",
             "ratio_adjust_weight":"100"
         }
@@ -138,5 +139,8 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
         if price_type not in price_types:
             raise Exception(f"{self.PRICE_TYPE_ORDERBOOK} or {self.PRICE_TYPE_TICKER} expected, got {price_type} for price_type")
         self.PRICE_TYPE = price_type
+
+        accept_losses_str = os.environ.get("ACCEPT_LOSSES") or config.get(USER_CFG_SECTION, "accept_losses")
+        self.ACCEPT_LOSSES = accept_losses_str == 'true'
 
         self.MAX_IDLE_HOURS = os.environ.get("MAX_IDLE_HOURS") or config.get(USER_CFG_SECTION, "max_idle_hours")

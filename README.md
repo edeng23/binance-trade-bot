@@ -64,6 +64,7 @@ Create a .cfg file named `user.cfg` based off `.user.cfg.example`, then add your
 -   **sell_order_type** - Controls the type of placed sell orders, types available: market, limit (default=market)
 -   **buy_max_price_change/sell_max_price_change** - Controls how much price change in decimal percentage is accepted between calculation of ratios and trading.
 -   **price_type** - Controls the type of prices used by the bot, types available: orderbook, ticker (default=orderbook). Please note that using the orderbook prices increase the CPU usage.
+-   **accept_losses** - Needs to be set to true for highly risky and gamling strategies. Otherwise the bot wont start.
 -   **max_idle_hours** - Controls the amount of hours for reseting the ratios when the bot has not traded (only used in db_reset strategy)
 -   **ratio_adjust_weight** - Controls the weight of the cumulative moving ratio avarage in the ratio_adjust strategy (only used in ratio_adjust strategy)
 

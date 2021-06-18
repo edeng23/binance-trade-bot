@@ -12,10 +12,16 @@ from binance_trade_bot.database import Pair, Trade, Coin
 
 class Strategy(AutoTrader):
     def initialize(self):
+        self.logger.info(f"CAUTION: The db_reset strategy can lead to losses! A lower idle timeout increases the risk! Use this strategy only if you know what you are doing, did alot of backtests and can live with possible losses.")
+
+        if self.config.ACCEPT_LOSSES != True:
+            self.logger.error("You need accept losses by setting accept_losses=true in the user.cfg or setting the environment variable ACCEPT_LOSSES to true in order to use this strategy!")
+            raise Exception()
+
         super().initialize()
         self.initialize_current_coin()
         self.reinit_threshold = datetime(1970, 1, 1, tzinfo=timezone.utc)
-        self.logger.info(f"CAUTION: The db_reset strategy can lead to losses! A lower idle timeout increases the risk! Use this strategy only if you know what you are doing, did alot of backtests and can live with possible losses.")
+
         self.logger.info(f"Using {self.config.MAX_IDLE_HOURS} hours as maximum idle timeout after not trading.")
 
     def scout(self):
