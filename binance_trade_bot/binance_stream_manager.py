@@ -66,10 +66,13 @@ class BinanceOrder:  # pylint: disable=too-few-public-methods
 class BinanceCache:  # pylint: disable=too-few-public-methods
     def __init__(self):
         self.ticker_values: Dict[str, float] = {}
+        self.ticker_values_ask: Dict[str, float] = {}
+        self.ticker_values_bid: Dict[str, float] = {}
         self._balances: Dict[str, float] = {}
         self._balances_mutex: ThreadSafeAsyncLock = ThreadSafeAsyncLock()
         self.non_existent_tickers: Set[str] = set()
         self.balances_changed_event = threading.Event()
+        self.orders: Dict[str, BinanceOrder] = {}
 
     def attach_loop(self):
         self._balances_mutex.attach_loop()

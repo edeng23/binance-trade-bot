@@ -31,7 +31,14 @@ class AbstractOrderBalanceManager(ABC):
     def create_order(self, **params):
         pass
 
-    def make_order(self, side: str, symbol: str, quantity: float, quote_quantity: float):
+    def make_order(
+        self, 
+        side: str, 
+        symbol: str, 
+        quantity: float,
+        price: float,
+        quote_quantity: float
+    ):
         params = {
             "symbol": symbol,
             "side": side,
@@ -84,7 +91,14 @@ class PaperOrderBalanceManager(AbstractOrderBalanceManager):
     def create_order(self, **params):
         return {}
 
-    def make_order(self, side: str, symbol: str, quantity: float, quote_quantity: float):
+    def make_order(
+        self, 
+        side: str, 
+        symbol: str, 
+        quantity: float,
+        price: float, 
+        quote_quantity: float
+    ):
         symbol_base = symbol[: -len(self.bridge)]
         if side == Client.SIDE_SELL:
             self.balances[self.bridge] = self.get_currency_balance(self.bridge) + quote_quantity * 0.999
@@ -93,20 +107,36 @@ class PaperOrderBalanceManager(AbstractOrderBalanceManager):
             self.balances[self.bridge] = self.get_currency_balance(self.bridge) - quote_quantity
             self.balances[symbol_base] = self.get_currency_balance(symbol_base) + quantity * 0.999
         self.cache.balances_changed_event.set()
-        super().make_order(side, symbol, quantity, quote_quantity)
+        super().make_order(side, symbol, quantity, price, quote_quantity)
         if side == Client.SIDE_BUY:
             # we do it only after buy for transaction speed
             # probably should be a better idea to make it a postponed call
             self._write_persist()
 
-        self.fake_order_id += 1
+        self.fake_order_id += 1       
+
+        forder = BinanceOrder(
+            defaultdict(
+                lambda: "",
+                order_id=str(self.fake_order_id),
+                current_order_status="FILLED",
+                executedQty=str(quantity),
+                cumulative_filled_quantity=str(quote_quantity),
+                cumulative_quote_asset_transacted_quantity="0",
+                order_price=str(price),
+                side=side,
+                type=Client.ORDER_TYPE_MARKET,
+            )
+        )
+        self.cache.orders[str(self.fake_order_id)] = forder
+
         return defaultdict(
             lambda: "",
             orderId=str(self.fake_order_id),
             status="FILLED",
             executedQty=str(quantity),
-            cummulativeQuoteQty=str(quote_quantity),
-            price="0",
+            cumulative_filled_quantity=str(quote_quantity),
+            price=str(price),
             side=side,
             type=Client.ORDER_TYPE_MARKET,
         )
