@@ -108,10 +108,7 @@ class Strategy(AutoTrader):
         with self.db.db_session() as session:
             c1 = aliased(Coin)
             c2 = aliased(Coin)
-            for pair in session.query(Pair).\
-                join(c1, and_(Pair.from_coin_id == c1.symbol, c1.enabled == True)).\
-                join(c2, and_(Pair.to_coin_id == c2.symbol, c2.enabled == True)).\
-                all():
+            for pair in session.query(Pair).all():
                 if not pair.from_coin.enabled or not pair.to_coin.enabled:
                     continue
                 #self.logger.debug(f"Initializing {pair.from_coin} vs {pair.to_coin}", False)
