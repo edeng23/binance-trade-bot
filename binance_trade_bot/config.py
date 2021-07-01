@@ -27,6 +27,7 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
             "tld": "com",
             "trade_fee": "auto",
             "strategy": "default",
+            "enable_paper_trading": "false",
             "sell_timeout": "0",
             "buy_timeout": "0",
             "sell_order_type": self.ORDER_TYPE_MARKET,
@@ -91,6 +92,9 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
 
         self.STRATEGY = os.environ.get("STRATEGY") or config.get(USER_CFG_SECTION, "strategy")
 
+        enable_paper_trading_str = os.environ.get("ENABLE_PAPER_TRADING") or config.get(USER_CFG_SECTION, "enable_paper_trading")
+        self.ENABLE_PAPER_TRADING = enable_paper_trading_str == "true" or enable_paper_trading_str == "True"
+
         self.SELL_TIMEOUT = os.environ.get("SELL_TIMEOUT") or config.get(USER_CFG_SECTION, "sell_timeout")
         self.BUY_TIMEOUT = os.environ.get("BUY_TIMEOUT") or config.get(USER_CFG_SECTION, "buy_timeout")
 
@@ -141,6 +145,6 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
         self.PRICE_TYPE = price_type
 
         accept_losses_str = os.environ.get("ACCEPT_LOSSES") or config.get(USER_CFG_SECTION, "accept_losses")
-        self.ACCEPT_LOSSES = accept_losses_str == 'true'
+        self.ACCEPT_LOSSES = accept_losses_str == 'true' or accept_losses_str == 'True'
 
         self.MAX_IDLE_HOURS = os.environ.get("MAX_IDLE_HOURS") or config.get(USER_CFG_SECTION, "max_idle_hours")
