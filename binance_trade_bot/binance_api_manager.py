@@ -1,8 +1,12 @@
 from datetime import datetime, timezone
+import json
 import math
+import os
 import time
 import traceback
-from typing import Dict, Optional
+from abc import ABC, abstractmethod
+from collections import defaultdict
+from typing import Callable, Dict, Optional
 
 from binance.client import Client
 from binance.exceptions import BinanceAPIException
@@ -15,22 +19,205 @@ from .database import Database
 from .logger import Logger
 from .models import Coin
 
+def float_as_decimal_str(num: float):
+    return f"{num:0.08f}".rstrip("0").rstrip(".")  # remove trailing zeroes too
+
+class AbstractOrderBalanceManager(ABC):
+    @abstractmethod
+    def get_currency_balance(self, currency_symbol: str, force=False):
+        pass
+
+    @abstractmethod
+    def create_order(self, **params):
+        pass
+
+    def make_order(self, side: str, symbol: str, quantity: float, quote_quantity: float):
+        params = {
+            "symbol": symbol,
+            "side": side,
+            "quantity": float_as_decimal_str(quantity),
+            "type": Client.ORDER_TYPE_MARKET,
+        }
+        if side == Client.SIDE_BUY:
+            del params["quantity"]
+            params["quoteOrderQty"] = float_as_decimal_str(quote_quantity)
+        return self.create_order(**params)
+
+class PaperOrderBalanceManager(AbstractOrderBalanceManager):
+    PERSIST_FILE_PATH = "data/paper_wallet.json"
+
+    def __init__(
+        self,
+        bridge_symbol: str,
+        client: Client,
+        cache: BinanceCache,
+        initial_balances: Dict[str, float],
+        read_persist=True,
+    ):
+        self.balances = initial_balances
+        self.bridge = bridge_symbol
+        self.client = client
+        self.cache = cache
+        self.fake_order_id = 0
+        if read_persist:
+            data = self._read_persist()
+            if data is not None:
+                if "balances" in data:
+                    self.balances = data["balances"]
+                    self.fake_order_id = data["fake_order_id"]
+                else:
+                    self.balances = data  # to support older format
+
+    def _read_persist(self):
+        if os.path.exists(self.PERSIST_FILE_PATH):
+            with open(self.PERSIST_FILE_PATH) as json_file:
+                return json.load(json_file)
+        return None
+
+    def _write_persist(self):
+        with open(self.PERSIST_FILE_PATH, "w") as json_file:
+            json.dump({"balances": self.balances, "fake_order_id": self.fake_order_id}, json_file)
+
+    def get_currency_balance(self, currency_symbol: str, force=False):
+        return self.balances.get(currency_symbol, 0.0)
+
+    def create_order(self, **params):
+        return {}
+
+    def make_order(self, side: str, symbol: str, quantity: float, quote_quantity: float):
+        symbol_base = symbol[: -len(self.bridge)]
+        if side == Client.SIDE_SELL:
+            self.balances[self.bridge] = self.get_currency_balance(self.bridge) + quote_quantity * 0.999
+            self.balances[symbol_base] = self.get_currency_balance(symbol_base) - quantity
+        else:
+            self.balances[self.bridge] = self.get_currency_balance(self.bridge) - quote_quantity
+            self.balances[symbol_base] = self.get_currency_balance(symbol_base) + quantity * 0.999
+        self.cache.balances_changed_event.set()
+        super().make_order(side, symbol, quantity, quote_quantity)
+        if side == Client.SIDE_BUY:
+            # we do it only after buy for transaction speed
+            # probably should be a better idea to make it a postponed call
+            self._write_persist()
+
+        self.fake_order_id += 1
+        return defaultdict(
+            lambda: "",
+            orderId=str(self.fake_order_id),
+            status="FILLED",
+            executedQty=str(quantity),
+            cummulativeQuoteQty=str(quote_quantity),
+            price="0",
+            side=side,
+            type=Client.ORDER_TYPE_MARKET,
+        )
+
+class BinanceOrderBalanceManager(AbstractOrderBalanceManager):
+    def __init__(self, logger: Logger, config: Config, binance_client: Client, cache: BinanceCache):
+        self.logger = logger
+        self.config = config
+        self.binance_client = binance_client
+        self.cache = cache
+
+    def make_order(
+        self,
+        side: str,
+        symbol: str,
+        quantity: float,
+        price: float,
+        quote_quantity: float,
+    ):
+        params = {
+            "symbol": symbol,
+            "side": side,
+            "quantity": float_as_decimal_str(quantity),
+            "type": self.config.BUY_ORDER_TYPE if side == Client.SIDE_BUY else self.config.SELL_ORDER_TYPE,
+        }
+        if params["type"] == Client.ORDER_TYPE_LIMIT:
+            params["timeInForce"] = self.binance_client.TIME_IN_FORCE_GTC
+            params["price"] = float_as_decimal_str(price)
+        elif side == Client.SIDE_BUY:
+            del params["quantity"]
+            params["quoteOrderQty"] = float_as_decimal_str(quote_quantity)
+        return self.create_order(**params)
+
+    def create_order(self, **params):
+        return self.binance_client.create_order(**params)
+
+    def get_currency_balance(self, currency_symbol: str, force=False):
+        """
+        Get balance of a specific coin
+        """
+        with self.cache.open_balances() as cache_balances:
+            balance = cache_balances.get(currency_symbol, None)
+            if force or balance is None:
+                cache_balances.clear()
+                cache_balances.update(
+                    {
+                        currency_balance["asset"]: float(currency_balance["free"])
+                        for currency_balance in self.binance_client.get_account()["balances"]
+                    }
+                )
+                self.logger.debug(f"Fetched all balances: {cache_balances}")
+                if currency_symbol not in cache_balances:
+                    cache_balances[currency_symbol] = 0.0
+                    return 0.0
+                return cache_balances.get(currency_symbol, 0.0)
+
+            return balance
 
 class BinanceAPIManager:
-    def __init__(self, config: Config, db: Database, logger: Logger):
+    def __init__(
+        self,
+        client: Client,
+        cache: BinanceCache,
+        config: Config,
+        db: Database,
+        logger: Logger,
+        order_balance_manager: AbstractOrderBalanceManager,
+    ):
+        self.binance_client = client
+        self.db = db
+        self.logger = logger
+        self.config = config
+        self.cache = cache
+        self.order_balance_manager = order_balance_manager
+        self.stream_manager: Optional[BinanceStreamManager] = None
+        self.setup_websockets()
+
+    @staticmethod
+    def _common_factory(
+        config: Config,
+        db: Database,
+        logger: Logger,
+        ob_factory: Callable[[Client, BinanceCache], AbstractOrderBalanceManager],
+    ) -> "BinanceAPIManager":
+        cache = BinanceCache()
         # initializing the client class calls `ping` API endpoint, verifying the connection
-        self.binance_client = Client(
+        client = Client(
             config.BINANCE_API_KEY,
             config.BINANCE_API_SECRET_KEY,
             tld=config.BINANCE_TLD,
         )
-        self.db = db
-        self.logger = logger
-        self.config = config
+        return BinanceAPIManager(client, cache, config, db, logger, ob_factory(client, cache))
 
-        self.cache = BinanceCache()
-        self.stream_manager: Optional[BinanceStreamManager] = None
-        self.setup_websockets()
+    @staticmethod
+    def create_manager(config: Config, db: Database, logger: Logger) -> "BinanceAPIManager":
+        return BinanceAPIManager._common_factory(
+            config, db, logger, lambda client, cache: BinanceOrderBalanceManager(logger, config, client, cache)
+        )
+
+    @staticmethod
+    def create_manager_paper_trading(
+        config: Config, db: Database, logger: Logger, initial_balances: Optional[Dict[str, float]] = None
+    ) -> "BinanceAPIManager":
+        return BinanceAPIManager._common_factory(
+            config,
+            db,
+            logger,
+            lambda client, cache: PaperOrderBalanceManager(
+                config.BRIDGE.symbol, client, cache, initial_balances or {config.BRIDGE.symbol: 100.0}
+            ),
+        )
 
     def now(self):
         return datetime.now(tz=timezone.utc)
@@ -162,23 +349,7 @@ class BinanceAPIManager:
         """
         Get balance of a specific coin
         """
-        with self.cache.open_balances() as cache_balances:
-            balance = cache_balances.get(currency_symbol, None)
-            if force or balance is None:
-                cache_balances.clear()
-                cache_balances.update(
-                    {
-                        currency_balance["asset"]: float(currency_balance["free"])
-                        for currency_balance in self.binance_client.get_account()["balances"]
-                    }
-                )
-                self.logger.debug(f"Fetched all balances: {cache_balances}")
-                if currency_symbol not in cache_balances:
-                    cache_balances[currency_symbol] = 0.0
-                    return 0.0
-                return cache_balances.get(currency_symbol, 0.0)
-
-            return balance
+        return self.order_balance_manager.get_currency_balance(currency_symbol, force)
 
     def retry(self, func, *args, **kwargs):
         for attempt in range(20):
@@ -307,29 +478,7 @@ class BinanceAPIManager:
 
     @staticmethod
     def float_as_decimal_str(num: float):
-        return f"{num:0.08f}".rstrip("0").rstrip(".")  # remove trailing zeroes too
-
-    def _make_order(
-        self,
-        side: str,
-        symbol: str,
-        quantity: float,
-        price: float,
-        quote_quantity: float,
-    ):
-        params = {
-            "symbol": symbol,
-            "side": side,
-            "quantity": self.float_as_decimal_str(quantity),
-            "type": self.config.BUY_ORDER_TYPE if side == Client.SIDE_BUY else self.config.SELL_ORDER_TYPE,
-        }
-        if params["type"] == Client.ORDER_TYPE_LIMIT:
-            params["timeInForce"] = self.binance_client.TIME_IN_FORCE_GTC
-            params["price"] = self.float_as_decimal_str(price)
-        elif side == Client.SIDE_BUY:
-            del params["quantity"]
-            params["quoteOrderQty"] = self.float_as_decimal_str(quote_quantity)
-        return self.binance_client.create_order(**params)
+        return f"{num:0.08f}".rstrip("0").rstrip(".")  # remove trailing zeroes too    
 
     def _buy_alt(self, origin_coin: Coin, target_coin: Coin, buy_price: float):  # pylint: disable=too-many-locals
         """
@@ -360,7 +509,7 @@ class BinanceAPIManager:
         order_guard = self.stream_manager.acquire_order_guard()
         while order is None:
             try:
-                order = self._make_order(
+                order = self.order_balance_manager.make_order(
                     side=Client.SIDE_BUY,
                     symbol=origin_symbol + target_symbol,
                     quantity=order_quantity,
@@ -432,7 +581,7 @@ class BinanceAPIManager:
         order_guard = self.stream_manager.acquire_order_guard()
         while order is None:
             try:
-                order = self._make_order(
+                order = self.order_balance_manager.make_order(
                     side=Client.SIDE_SELL,
                     symbol=origin_symbol + target_symbol,
                     quantity=order_quantity,

@@ -15,7 +15,11 @@ def main():
 
     config = Config()
     db = Database(logger, config)
-    manager = BinanceAPIManager(config, db, logger)
+    if config.ENABLE_PAPER_TRADING:
+        manager = BinanceAPIManager.create_manager_paper_trading(config, db, logger, {config.BRIDGE.symbol: 21_000.0})
+    else:
+        manager = BinanceAPIManager.create_manager(config, db, logger)
+
     # check if we can access API feature that require valid config
     try:
         _ = manager.get_account()
@@ -29,6 +33,11 @@ def main():
         return
     trader = strategy(manager, db, logger, config)
     logger.info(f"Chosen strategy: {config.STRATEGY}")
+    if config.ENABLE_PAPER_TRADING:
+        logger.warning("RUNNING IN PAPER-TRADING MODE")
+    else:
+        logger.warning("RUNNING IN REAL TRADING MODE")
+
     logger.info(f"Buy type: {config.BUY_ORDER_TYPE}, Sell type: {config.SELL_ORDER_TYPE}")
     logger.info(f"Max price changes for buys: {config.BUY_MAX_PRICE_CHANGE}, Max price changes for sells: {config.SELL_MAX_PRICE_CHANGE}")
     logger.info(f"Using {config.PRICE_TYPE} prices")
