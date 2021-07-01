@@ -2,6 +2,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 from traceback import format_exc
 from typing import Dict
+from binance.client import Client
 from sqlalchemy.orm.session import Session
 import io
 import requests
@@ -12,8 +13,8 @@ from pebble import ProcessPool
 from concurrent.futures import TimeoutError
 from diskcache import Cache
 
-from .binance_api_manager import BinanceAPIManager
-from .binance_stream_manager import BinanceOrder
+from .binance_api_manager import BinanceAPIManager, BinanceOrderBalanceManager
+from .binance_stream_manager import BinanceCache, BinanceOrder
 from .config import Config
 from .database import Database
 from .logger import Logger
@@ -72,13 +73,15 @@ def addtocache(link):
 class MockBinanceManager(BinanceAPIManager):
     def __init__(
             self,
+            client: Client,
+            binance_cache: BinanceCache,
             config: Config,
             db: Database,
             logger: Logger,
             start_date: datetime = None,
             start_balances: Dict[str, float] = None,
     ):
-        super().__init__(None, None, config, db, logger, None)
+        super().__init__(client, binance_cache, config, db, logger, BinanceOrderBalanceManager(logger, config, client, binance_cache))
         self.config = config
         self.datetime = start_date or datetime(2021, 1, 1)
         self.balances = start_balances or {config.BRIDGE.symbol: 100}
@@ -313,7 +316,15 @@ def backtest(
     db = MockDatabase(logger, config)
     db.create_database()
     db.set_coins(config.SUPPORTED_COIN_LIST)
-    manager = MockBinanceManager(config, db, logger, start_date, start_balances)
+    manager = MockBinanceManager(        
+        Client(config.BINANCE_API_KEY, config.BINANCE_API_SECRET_KEY, tld=config.BINANCE_TLD),
+        BinanceCache(),
+        config, 
+        db, 
+        logger,
+        start_date,
+        start_balances
+    )
 
     starting_coin = db.get_coin(starting_coin or config.SUPPORTED_COIN_LIST[0])
     if manager.get_currency_balance(starting_coin.symbol) == 0:
