@@ -35,7 +35,7 @@ class MockBinanceManager(BinanceAPIManager):
         self.negative_coin_jumps = 0
         self.paid_fees = {}
         self.coins_trades= {}
-        self.historic_kline_cache = HistoricKlineCache(logger)
+        self.historic_kline_cache = HistoricKlineCache(client, logger)
 
     def now(self):
         return self.datetime.replace(tzinfo=timezone.utc)

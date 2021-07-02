@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 import io
+from binance.client import Client
 import requests
 import xmltodict
 import zipfile
@@ -58,8 +59,9 @@ def addtocache(link):
     return link
 
 class HistoricKlineCache:
-    def __init__(self, logger: Logger):
+    def __init__(self, client: Client, logger: Logger):
         self.logger = logger
+        self.client = client
 
     def __del__(self):
         cache.close()
@@ -80,18 +82,28 @@ class HistoricKlineCache:
         """
         Get historic ticker price of a specific coin
         """
-        target_date = date.strftime("%d %b %Y %H:%M:%S")
+        target_date = date.replace(second=0, microsecond=0).strftime("%d %b %Y %H:%M:%S")
         key = f"{ticker_symbol} - {target_date}"
         val = cache.get(key, None)
         if val == "Missing":
             return None
         if val is None:
-            end_date = date + timedelta(minutes=1000)
+            end_date = date.replace(second=0, microsecond=0) + timedelta(minutes=1000)
             if end_date > datetime.now().replace(tzinfo=timezone.utc):
                 end_date = datetime.now().replace(tzinfo=timezone.utc)
             end_date_str = end_date.strftime("%d %b %Y %H:%M:%S")
-            self.logger.info(f"Fetching prices for {ticker_symbol} between {date} and {end_date_str}")
-            self.get_historical_klines_from_api(ticker_symbol, "1m", target_date, end_date_str, limit=1000)
+            self.logger.info(f"Fetching prices for {ticker_symbol} between {date} and {end_date_str}", False)
+
+            last_day = datetime.now().replace(tzinfo=timezone.utc) - timedelta(days=1)
+            if date >= last_day or end_date >= last_day:
+                data = self.client.get_historical_klines(ticker_symbol,  "1m", target_date, end_date_str, limit=1000)
+                for kline in data:
+                    kl_date = datetime.utcfromtimestamp(kline[0] / 1000)
+                    kl_datestr = kl_date.strftime("%d %b %Y %H:%M:%S")
+                    kl_price = float(kline[1])
+                    cache[f"{ticker_symbol} - {kl_datestr}"] = kl_price
+            else:
+                self.get_historical_klines_from_api(ticker_symbol, "1m", target_date, end_date_str, limit=1000)
             val = cache.get(key, None)
             if val == None:
                 cache.set(key, "Missing")
