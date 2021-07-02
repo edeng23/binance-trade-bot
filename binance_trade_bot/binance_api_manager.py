@@ -122,7 +122,7 @@ class PaperOrderBalanceManager(AbstractOrderBalanceManager):
                 current_order_status="FILLED",
                 executedQty=str(quantity),
                 cumulative_filled_quantity=str(quote_quantity),
-                cumulative_quote_asset_transacted_quantity="0",
+                cumulative_quote_asset_transacted_quantity=str(quote_quantity),
                 order_price=str(price),
                 side=side,
                 type=Client.ORDER_TYPE_MARKET,
