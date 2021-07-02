@@ -1,74 +1,18 @@
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from traceback import format_exc
 from typing import Dict
-from binance.client import Client
 from sqlalchemy.orm.session import Session
-import io
-import requests
-import xmltodict
-import zipfile
-
-from pebble import ProcessPool
-from concurrent.futures import TimeoutError
-from diskcache import Cache
+from binance.client import Client
 
 from .binance_api_manager import BinanceAPIManager, BinanceOrderBalanceManager
 from .binance_stream_manager import BinanceCache, BinanceOrder
+from .historic_kline_cache import HistoricKlineCache
 from .config import Config
 from .database import Database
 from .logger import Logger
 from .models import Coin, Pair, Trade, TradeState
 from .strategies import get_strategy
-
-cache = Cache("data", size_limit=int(1e11))
-
-
-def download(link):
-    r = requests.get(link, headers={
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:88.0) Gecko/20100101 Firefox/88.0',
-        'Accept-Language': 'en-US,en;q=0.5', 'Origin': 'https://data.binance.vision',
-        'Referer': 'https://data.binance.vision/'})
-    with zipfile.ZipFile(io.BytesIO(r.content)) as z:
-        f = z.infolist()[0]
-        return z.open(f).read()
-
-
-def mergecsv(f):
-    res = []
-    for result in f.decode().split('\n'):
-        result = result.rstrip().split(',')
-        if len(result) >= 1 and result[0] != '':
-            res.append([float(x) for x in result])
-    return res
-
-
-def addtocache(link):
-    f = download(link)
-    lines = mergecsv(f)
-    ticker_symbol = link.split('klines/')[-1].split('/')[0]
-    dates = []
-    for result in lines:
-        date = datetime.utcfromtimestamp(result[0] / 1000)
-        datestr = date.strftime("%d %b %Y %H:%M:%S")
-        dates.append(date)
-        price = float(result[1])
-        cache[f"{ticker_symbol} - {datestr}"] = price
-
-    if len(dates) > 2:
-        dateDiff =  dates[1] - dates[0]
-
-        lastDate = dates[-1]
-        date = dates[0]
-        while date <= lastDate:
-            datestr = date.strftime("%d %b %Y %H:%M:%S")
-            price = cache.get(f"{ticker_symbol} - {datestr}", None)
-            if price is None:
-                cache[f"{ticker_symbol} - {datestr}"] = "Missing"
-            date += dateDiff
-
-    return link
-
 
 class MockBinanceManager(BinanceAPIManager):
     def __init__(
@@ -87,10 +31,14 @@ class MockBinanceManager(BinanceAPIManager):
         self.balances = start_balances or {config.BRIDGE.symbol: 100}
         self.ignored_symbols = ["BTTBTC"]
         self.trades = 0
+        self.positve_coin_jumps = 0
+        self.negative_coin_jumps = 0
         self.paid_fees = {}
+        self.coins_trades= {}
+        self.historic_kline_cache = HistoricKlineCache(logger)
 
     def now(self):
-        return self.datetime
+        return self.datetime.replace(tzinfo=timezone.utc)
 
     def setup_websockets(self):
         pass  # No websockets are needed for backtesting
@@ -107,47 +55,6 @@ class MockBinanceManager(BinanceAPIManager):
     def get_min_notional(self, origin_symbol: str, target_symbol: str):
         return 10.0
 
-    def get_historical_klines(self, ticker_symbol='ETCUSDT', interval='1m', target_date=None, end_date=None, limit=None,
-                              frame='daily'):
-        fromdate = datetime.strptime(target_date, "%d %b %Y %H:%M:%S")  # - timedelta(days=1)
-        r = requests.get(
-            f'https://s3-ap-northeast-1.amazonaws.com/data.binance.vision?delimiter=/&prefix=data/spot/{frame}/klines/{ticker_symbol}/{interval}/',
-            headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:88.0) Gecko/20100101 Firefox/88.0',
-                     'Accept-Language': 'en-US,en;q=0.5', 'Origin': 'https://data.binance.vision',
-                     'Referer': 'https://data.binance.vision/'})
-        if 'ListBucketResult' not in r.content.decode():    return []
-        data = xmltodict.parse(r.content)
-        if 'Contents' not in data['ListBucketResult']:    return []
-        links = []
-        for i in data['ListBucketResult']['Contents']:
-            if 'CHECKSUM' in i['Key']:    continue
-            filedate = i['Key'].split(interval)[-1].split('.')[0]
-            if frame == 'daily':
-                filedate = datetime.strptime(filedate, "-%Y-%m-%d")
-            else:
-                filedate = datetime.strptime(filedate, "-%Y-%m")
-            if filedate.date().month == fromdate.date().month and filedate.date().year == fromdate.date().year:
-                links.append('https://data.binance.vision/' + i['Key'])
-        if len(links) == 0 and frame == 'daily':
-            return self.get_historical_klines(ticker_symbol, interval, target_date, end_date, limit, frame='monthly')
-
-        while len(links) >= 1:
-            with ProcessPool() as pool:
-                future = pool.map(addtocache, links, timeout=30)
-
-                iterator = future.result()
-
-                while True:
-                    try:
-                        result = next(iterator)
-                        links.remove(result)
-                    except StopIteration:
-                        break
-                    except TimeoutError as error:
-                        self.logger.info(f"Download of prices for {ticker_symbol} between {target_date} and {end_date} took longer than {error.args[1]} seconds. Retrying")
-                    except ConnectionError as error:
-                        self.logger.info(f"Download of prices for {ticker_symbol} between {target_date} and {end_date} failed. Retrying")
-
     def get_buy_price(self, ticker_symbol: str):
         return self.get_ticker_price(ticker_symbol)
 
@@ -158,30 +65,7 @@ class MockBinanceManager(BinanceAPIManager):
         """
         Get ticker price of a specific coin
         """
-        target_date = self.datetime.strftime("%d %b %Y %H:%M:%S")
-        key = f"{ticker_symbol} - {target_date}"
-        val = cache.get(key, None)
-        if val == "Missing":
-            return None
-        if val is None and self.ignored_symbols.count(ticker_symbol) == 0:
-            end_date = self.datetime + timedelta(minutes=1000)
-            if end_date > datetime.now():
-                end_date = datetime.now()
-            end_date_str = end_date.strftime("%d %b %Y %H:%M:%S")
-            self.logger.info(f"Fetching prices for {ticker_symbol} between {self.datetime} and {end_date_str}")
-            self.get_historical_klines(ticker_symbol, "1m", target_date, end_date_str, limit=1000)
-            val = cache.get(key, None)
-            if val == None:
-                cache.set(key, "Missing")
-                current_date = self.datetime + timedelta(minutes=1)
-                while current_date <= end_date:
-                    current_date_str = current_date.strftime("%d %b %Y %H:%M:%S")
-                    current_key = f"{ticker_symbol} - {current_date_str}"
-                    current_val = cache.get(current_key, None)
-                    if current_val == None:
-                        cache.set(current_key, "Missing")
-                    current_date = current_date + timedelta(minutes=1)
-        return val
+        return self.historic_kline_cache.get_historical_ticker_price(ticker_symbol, self.now())
 
     def get_currency_balance(self, currency_symbol: str, force=False):
         """
@@ -204,10 +88,26 @@ class MockBinanceManager(BinanceAPIManager):
         if origin_symbol not in self.paid_fees.keys():
             self.paid_fees[origin_symbol] = 0
         self.paid_fees[origin_symbol] += fee
+        if origin_symbol not in self.coins_trades.keys():
+            self.coins_trades[origin_symbol] = []
+        self.coins_trades[origin_symbol].append(self.balances[origin_symbol])
+
+        diff = self.get_diff(origin_symbol)
+        diff_str = ""
+        if diff is None:
+            diff_str = "None"
+        else:
+            diff_str = f"{diff} %"
+
         self.logger.info(
-            f"Bought {origin_symbol}, balance now: {self.balances[origin_symbol]} - bridge: "
-            f"{self.balances[target_symbol]}"
+            f"{self.datetime} Bought {origin_symbol} {round(self.balances[origin_symbol], 4)} for {from_coin_price} {target_symbol}. Gain: {diff_str}"
         )
+        
+        if diff is not None:
+            if diff > 0.0:
+                self.positve_coin_jumps +=1
+            else:
+                self.negative_coin_jumps += 1
 
         event = defaultdict(
             lambda: None,
@@ -247,9 +147,9 @@ class MockBinanceManager(BinanceAPIManager):
             self.paid_fees[target_symbol] = 0
         self.paid_fees[target_symbol] += fee
         self.balances[origin_symbol] -= order_quantity
+
         self.logger.info(
-            f"Sold {origin_symbol}, balance now: {self.balances[origin_symbol]} - bridge: "
-            f"{self.balances[target_symbol]}"
+            f"{self.datetime} Sold {origin_symbol} for {from_coin_price} {target_symbol}"
         )
         
         self.trades += 1
@@ -277,7 +177,12 @@ class MockBinanceManager(BinanceAPIManager):
                 if price is None:
                     continue
                 total += price * balance
-        return total 
+        return total
+    
+    def get_diff(self, symbol):
+        if len(self.coins_trades[symbol]) == 1:
+            return None
+        return round(((self.coins_trades[symbol][-1] - self.coins_trades[symbol][-2]) /self.coins_trades[symbol][-1] * 100 ),2)
 
 class MockDatabase(Database):
     def __init__(self, logger: Logger, config: Config):
@@ -285,7 +190,6 @@ class MockDatabase(Database):
 
     def log_scout(self, pair: Pair, target_ratio: float, current_coin_price: float, other_coin_price: float):
         pass
-
 
 def backtest(
         start_date: datetime = None,
@@ -326,7 +230,7 @@ def backtest(
         start_balances
     )
 
-    starting_coin = db.get_coin(starting_coin or config.SUPPORTED_COIN_LIST[0])
+    starting_coin = db.get_coin(starting_coin or config.CURRENT_COIN_SYMBOL or config.SUPPORTED_COIN_LIST[0])
     if manager.get_currency_balance(starting_coin.symbol) == 0:
         manager.buy_alt(starting_coin, config.BRIDGE, 0.0)  # doesn't matter mocking manager don't look at fixed price
     db.set_current_coin(starting_coin)
@@ -353,5 +257,4 @@ def backtest(
             n += 1
     except KeyboardInterrupt:
         pass
-    cache.close()
     return manager
