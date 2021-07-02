@@ -36,8 +36,8 @@ class AbstractOrderBalanceManager(ABC):
         side: str, 
         symbol: str, 
         quantity: float,
-        price: float,
-        quote_quantity: float
+        quote_quantity: float,
+        price: float
     ):
         params = {
             "symbol": symbol,
@@ -96,8 +96,8 @@ class PaperOrderBalanceManager(AbstractOrderBalanceManager):
         side: str, 
         symbol: str, 
         quantity: float,
-        price: float, 
-        quote_quantity: float
+        quote_quantity: float,
+        price: float
     ):
         symbol_base = symbol[: -len(self.bridge)]
         if side == Client.SIDE_SELL:
@@ -107,7 +107,7 @@ class PaperOrderBalanceManager(AbstractOrderBalanceManager):
             self.balances[self.bridge] = self.get_currency_balance(self.bridge) - quote_quantity
             self.balances[symbol_base] = self.get_currency_balance(symbol_base) + quantity * 0.999
         self.cache.balances_changed_event.set()
-        super().make_order(side, symbol, quantity, price, quote_quantity)
+        super().make_order(side, symbol, quantity, quote_quantity, price)
         if side == Client.SIDE_BUY:
             # we do it only after buy for transaction speed
             # probably should be a better idea to make it a postponed call
@@ -615,7 +615,7 @@ class BinanceAPIManager:
                     side=Client.SIDE_SELL,
                     symbol=origin_symbol + target_symbol,
                     quantity=order_quantity,
-                    quote_quantity=target_balance,
+                    quote_quantity=from_coin_price * order_quantity,
                     price=from_coin_price,
                 )
                 self.logger.info(order, False)
