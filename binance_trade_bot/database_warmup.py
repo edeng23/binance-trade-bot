@@ -7,12 +7,18 @@ from sqlalchemy.sql.expression import and_
 from .logger import Logger
 from .config import Config
 from .database import Database
-from .binance_api_manager import BinanceAPIManager
+from .binance_api_manager import BinanceAPIManager, BinanceOrderBalanceManager
 from .auto_trader import AutoTrader
 from .models.coin import Coin
 from .models.pair import Pair
 
 class WarmUpManager(BinanceAPIManager):
+    @staticmethod
+    def create_warmup_manager(config: Config, db: Database, logger: Logger) -> "WarmUpManager":
+        return BinanceAPIManager._common_factory(
+            config, db, logger, lambda client, cache: BinanceOrderBalanceManager(logger, config, client, cache)
+        )
+
     def get_all_symbol_tickers(self):
         return self.binance_client.get_symbol_ticker()
 
@@ -102,7 +108,7 @@ def warmup_database(coin_list: List[str] = None, db_path = "data/crypto_trading.
 
     config = config or Config()
     db = WarmUpDatabase(logger, config, dbPathUri)
-    manager = WarmUpManager(config, db, logger)
+    manager = WarmUpManager.create_warmup_manager(config, db, logger)
     # check if we can access API feature that require valid config
     try:
         _ = manager.get_account()
