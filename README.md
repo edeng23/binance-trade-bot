@@ -39,6 +39,10 @@ The bot jumps between a configured set of coins on the condition that it does no
 
 ## Tool Setup
 
+### Required Python version
+
+Currently Python 3.7 is the minimum required version.
+
 ### Install Python dependencies
 
 Run the following line in the terminal: `pip install -r requirements.txt`.
