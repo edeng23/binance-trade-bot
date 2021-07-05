@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 import io
 from binance.client import Client
+from binance.exceptions import BinanceAPIException
 import requests
 import xmltodict
 import zipfile
@@ -96,12 +97,18 @@ class HistoricKlineCache:
 
             last_day = datetime.now().replace(tzinfo=timezone.utc) - timedelta(days=1)
             if date >= last_day or end_date >= last_day:
-                data = self.client.get_historical_klines(ticker_symbol,  "1m", target_date, end_date_str, limit=1000)
-                for kline in data:
-                    kl_date = datetime.utcfromtimestamp(kline[0] / 1000)
-                    kl_datestr = kl_date.strftime("%d %b %Y %H:%M:%S")
-                    kl_price = float(kline[1])
-                    cache[f"{ticker_symbol} - {kl_datestr}"] = kl_price
+                try:
+                    data = self.client.get_historical_klines(ticker_symbol,  "1m", target_date, end_date_str, limit=1000)
+                    for kline in data:
+                        kl_date = datetime.utcfromtimestamp(kline[0] / 1000)
+                        kl_datestr = kl_date.strftime("%d %b %Y %H:%M:%S")
+                        kl_price = float(kline[1])
+                        cache[f"{ticker_symbol} - {kl_datestr}"] = kl_price
+                except BinanceAPIException as e:
+                    if e.code == -1121: # invalid symbol
+                        self.get_historical_klines_from_api(ticker_symbol, "1m", target_date, end_date_str, limit=1000)
+                    else:
+                        raise e
             else:
                 self.get_historical_klines_from_api(ticker_symbol, "1m", target_date, end_date_str, limit=1000)
             val = cache.get(key, None)
