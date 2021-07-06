@@ -122,6 +122,8 @@ class HistoricKlineCache:
                     if current_val == None:
                         cache.set(current_key, "Missing")
                     current_date = current_date + timedelta(minutes=1)
+            if val == "Missing":
+                val = None
         return val
 
     def get_historical_klines_from_api(self, ticker_symbol='ETCUSDT', interval='1m', target_date=None, end_date=None, limit=None,
