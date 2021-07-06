@@ -200,13 +200,13 @@ class AutoTrader:
         """
         now = datetime.now()
 
-        coins = self.db.get_coins(False)
+        coins = self.db.get_coins(True)
         cv_batch = []
         for coin in coins:
             balance = self.manager.get_currency_balance(coin.symbol)
             if balance == 0:
                 continue
-            usd_value = self.manager.get_ticker_price(coin + "USDT")
+            usd_value = self.manager.get_ticker_price(coin + self.config.BRIDGE_SYMBOL)
             btc_value = self.manager.get_ticker_price(coin + "BTC")
             cv = CoinValue(coin, balance, usd_value, btc_value, datetime=now)
             cv_batch.append(cv)
