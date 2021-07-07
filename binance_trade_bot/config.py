@@ -37,7 +37,9 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
             "price_type": self.PRICE_TYPE_ORDERBOOK,
             "accept_losses": "false",
             "max_idle_hours": "3",
-            "ratio_adjust_weight":"100"
+            "ratio_adjust_weight":"100",
+            "auto_adjust_bnb_balance": "false",
+            "auto_adjust_bnb_balance_rate": "3",
         }
 
         if not os.path.exists(CFG_FL_NAME):
@@ -148,3 +150,10 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
         self.ACCEPT_LOSSES = accept_losses_str == 'true' or accept_losses_str == 'True'
 
         self.MAX_IDLE_HOURS = os.environ.get("MAX_IDLE_HOURS") or config.get(USER_CFG_SECTION, "max_idle_hours")
+
+        auto_adjust_bnb_balance_str = os.environ.get("AUTO_ADJUST_BNB_BALANCE") or config.get(USER_CFG_SECTION, "auto_adjust_bnb_balance")
+        self.AUTO_ADJUST_BNB_BALANCE = str(auto_adjust_bnb_balance_str).lower() == "true"
+
+        self.AUTO_ADJUST_BNB_BALANCE_RATE = float(
+            os.environ.get("AUTO_ADJUST_BNB_BALANCE_RATE") or config.get(USER_CFG_SECTION, "auto_adjust_bnb_balance_rate")
+        )
