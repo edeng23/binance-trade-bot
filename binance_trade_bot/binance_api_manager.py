@@ -50,97 +50,6 @@ class AbstractOrderBalanceManager(ABC):
             params["quoteOrderQty"] = float_as_decimal_str(quote_quantity)
         return self.create_order(**params)
 
-class PaperOrderBalanceManager(AbstractOrderBalanceManager):
-    PERSIST_FILE_PATH = "data/paper_wallet.json"
-
-    def __init__(
-        self,
-        bridge_symbol: str,
-        client: Client,
-        cache: BinanceCache,
-        initial_balances: Dict[str, float],
-        read_persist=True,
-    ):
-        self.balances = initial_balances
-        self.bridge = bridge_symbol
-        self.client = client
-        self.cache = cache
-        self.fake_order_id = 0
-        if read_persist:
-            data = self._read_persist()
-            if data is not None:
-                if "balances" in data:
-                    self.balances = data["balances"]
-                    self.fake_order_id = data["fake_order_id"]
-                else:
-                    self.balances = data  # to support older format
-
-    def _read_persist(self):
-        if os.path.exists(self.PERSIST_FILE_PATH):
-            with open(self.PERSIST_FILE_PATH) as json_file:
-                return json.load(json_file)
-        return None
-
-    def _write_persist(self):
-        with open(self.PERSIST_FILE_PATH, "w") as json_file:
-            json.dump({"balances": self.balances, "fake_order_id": self.fake_order_id}, json_file)
-
-    def get_currency_balance(self, currency_symbol: str, force=False):
-        return self.balances.get(currency_symbol, 0.0)
-
-    def create_order(self, **params):
-        return {}
-
-    def make_order(
-        self, 
-        side: str, 
-        symbol: str, 
-        quantity: float,
-        quote_quantity: float,
-        price: float
-    ):
-        symbol_base = symbol[: -len(self.bridge)]
-        if side == Client.SIDE_SELL:
-            self.balances[self.bridge] = self.get_currency_balance(self.bridge) + quote_quantity * 0.999
-            self.balances[symbol_base] = self.get_currency_balance(symbol_base) - quantity
-        else:
-            self.balances[self.bridge] = self.get_currency_balance(self.bridge) - quote_quantity
-            self.balances[symbol_base] = self.get_currency_balance(symbol_base) + quantity * 0.999
-        self.cache.balances_changed_event.set()
-        super().make_order(side, symbol, quantity, quote_quantity, price)
-        if side == Client.SIDE_BUY:
-            # we do it only after buy for transaction speed
-            # probably should be a better idea to make it a postponed call
-            self._write_persist()
-
-        self.fake_order_id += 1       
-
-        forder = BinanceOrder(
-            defaultdict(
-                lambda: "",
-                order_id=str(self.fake_order_id),
-                current_order_status="FILLED",
-                executedQty=str(quantity),
-                cumulative_filled_quantity=str(quote_quantity),
-                cumulative_quote_asset_transacted_quantity=str(quote_quantity),
-                order_price=str(price),
-                side=side,
-                type=Client.ORDER_TYPE_MARKET,
-            )
-        )
-        self.cache.orders[str(self.fake_order_id)] = forder
-
-        return defaultdict(
-            lambda: "",
-            orderId=str(self.fake_order_id),
-            status="FILLED",
-            executedQty=str(quantity),
-            cumulative_filled_quantity=str(quote_quantity),
-            price=str(price),
-            side=side,
-            type=Client.ORDER_TYPE_MARKET,
-        )
-
 class BinanceOrderBalanceManager(AbstractOrderBalanceManager):
     def __init__(self, logger: Logger, config: Config, binance_client: Client, cache: BinanceCache):
         self.logger = logger
@@ -240,7 +149,7 @@ class BinanceAPIManager:
     def create_manager_paper_trading(
         config: Config, db: Database, logger: Logger, initial_balances: Optional[Dict[str, float]] = None
     ) -> "BinanceAPIManager":
-        return BinanceAPIManager._common_factory(
+        manager = BinanceAPIManager._common_factory(
             config,
             db,
             logger,
@@ -248,6 +157,9 @@ class BinanceAPIManager:
                 config.BRIDGE.symbol, client, cache, initial_balances or {config.BRIDGE.symbol: 100.0}
             ),
         )
+        manager.order_balance_manager.manager = manager
+
+        return manager
 
     def now(self):
         return datetime.now(tz=timezone.utc)
@@ -645,3 +557,97 @@ class BinanceAPIManager:
         trade_log.set_complete(order.cumulative_quote_qty)
 
         return order
+
+class PaperOrderBalanceManager(AbstractOrderBalanceManager):
+    PERSIST_FILE_PATH = "data/paper_wallet.json"
+
+    def __init__(
+        self,
+        bridge_symbol: str,
+        client: Client,
+        cache: BinanceCache,
+        initial_balances: Dict[str, float],
+        read_persist=True,
+    ):
+        self.manager: BinanceAPIManager = None
+        self.balances = initial_balances
+        self.bridge = bridge_symbol
+        self.client = client
+        self.cache = cache
+        self.fake_order_id = 0
+        if read_persist:
+            data = self._read_persist()
+            if data is not None:
+                if "balances" in data:
+                    self.balances = data["balances"]
+                    self.fake_order_id = data["fake_order_id"]
+                else:
+                    self.balances = data  # to support older format
+
+    def _read_persist(self):
+        if os.path.exists(self.PERSIST_FILE_PATH):
+            with open(self.PERSIST_FILE_PATH) as json_file:
+                return json.load(json_file)
+        return None
+
+    def _write_persist(self):
+        with open(self.PERSIST_FILE_PATH, "w") as json_file:
+            json.dump({"balances": self.balances, "fake_order_id": self.fake_order_id}, json_file)
+
+    def get_currency_balance(self, currency_symbol: str, force=False):
+        return self.balances.get(currency_symbol, 0.0)
+
+    def create_order(self, **params):
+        return {}
+
+    def make_order(
+        self, 
+        side: str, 
+        symbol: str, 
+        quantity: float,
+        quote_quantity: float,
+        price: float
+    ):
+        symbol_base = symbol[: -len(self.bridge)]
+        if side == Client.SIDE_SELL:
+            fees = self.manager.get_fee(Coin(symbol_base), Coin(self.bridge), True)
+            self.balances[self.bridge] = self.get_currency_balance(self.bridge) + quote_quantity * (1 - fees)
+            self.balances[symbol_base] = self.get_currency_balance(symbol_base) - quantity
+        else:
+            fees = self.manager.get_fee(Coin(symbol_base), Coin(self.bridge), False)
+            self.balances[self.bridge] = self.get_currency_balance(self.bridge) - quote_quantity
+            self.balances[symbol_base] = self.get_currency_balance(symbol_base) + quantity * (1 - fees)
+        self.cache.balances_changed_event.set()
+        super().make_order(side, symbol, quantity, quote_quantity, price)
+        if side == Client.SIDE_BUY:
+            # we do it only after buy for transaction speed
+            # probably should be a better idea to make it a postponed call
+            self._write_persist()
+
+        self.fake_order_id += 1       
+
+        forder = BinanceOrder(
+            defaultdict(
+                lambda: "",
+                order_id=str(self.fake_order_id),
+                current_order_status="FILLED",
+                executedQty=str(quantity),
+                cumulative_filled_quantity=str(quote_quantity),
+                cumulative_quote_asset_transacted_quantity=str(quote_quantity),
+                order_price=str(price),
+                side=side,
+                type=Client.ORDER_TYPE_MARKET,
+            )
+        )
+        self.cache.orders[str(self.fake_order_id)] = forder
+
+        return defaultdict(
+            lambda: "",
+            orderId=str(self.fake_order_id),
+            status="FILLED",
+            executedQty=str(quantity),
+            cumulative_filled_quantity=str(quote_quantity),
+            price=str(price),
+            side=side,
+            type=Client.ORDER_TYPE_MARKET,
+        )
