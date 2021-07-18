@@ -72,6 +72,8 @@ Create a .cfg file named `user.cfg` based off `.user.cfg.example`, then add your
 -   **accept_losses** - Needs to be set to true for highly risky and gamling strategies. Otherwise the bot wont start.
 -   **max_idle_hours** - Controls the amount of hours for reseting the ratios when the bot has not traded (only used in db_reset strategy)
 -   **ratio_adjust_weight** - Controls the weight of the cumulative moving ratio avarage in the ratio_adjust strategy (only used in ratio_adjust strategy)
+-   **auto_adjust_bnb_balance** - Controls the bot to auto buy BNB while there is no enough BNB balance in your account, to get the benifits of using BNB to pay the commisions. Default is false. Effective if you have enabled to [use BNB to pay for any fees on the Binance platform](https://www.binance.com/en/support/faq/115000583311-Using-BNB-to-Pay-for-Fees), reade more information [here](#paying-fees-with-bnb).
+-   **auto_adjust_bnb_balance_rate** - The multiplying power of buying quantity of BNB compares to evaluated comission of the coming order, effective only if auto_adjust_bnb_balance is true. Default value is 3.
 
 #### Environment Variables
 
@@ -91,6 +93,8 @@ BUY_TIMEOUT: 0
 SELL_TIMEOUT: 0
 BUY_ORDER_TYPE: limit
 SELL_ORDER_TYPE: market
+AUTO_ADJUST_BNB_BALANCE: false
+AUTO_ADJUST_BNB_BALANCE_RATE: 3
 ```
 
 ### Paying Fees with BNB
