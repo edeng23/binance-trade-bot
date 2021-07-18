@@ -141,13 +141,19 @@ class AutoTrader:
             # Obtain (current coin)/(optional coin)
             coin_opt_coin_ratio = coin_price / optional_coin_price
 
-            transaction_fee = self.manager.get_fee(pair.from_coin, self.config.BRIDGE, True) + self.manager.get_fee(
-                pair.to_coin, self.config.BRIDGE, False
-            )
+            from_fee = self.manager.get_fee(pair.from_coin, self.config.BRIDGE, True)
+            to_fee =  self.manager.get_fee(pair.to_coin, self.config.BRIDGE, False)
 
-            ratio_dict[pair] = (
-                coin_opt_coin_ratio - transaction_fee * self.config.SCOUT_MULTIPLIER * coin_opt_coin_ratio
-            ) - pair.ratio
+            if self.config.RATIO_CALC == self.config.RATIO_CALC_DEFAULT:
+                transaction_fee = from_fee + to_fee
+
+                ratio_dict[pair] = (
+                    coin_opt_coin_ratio - transaction_fee * self.config.SCOUT_MULTIPLIER * coin_opt_coin_ratio
+                ) - pair.ratio
+            if self.config.RATIO_CALC == self.config.RATIO_CALC_BAMOOXA:
+                transaction_fee = from_fee + to_fee - from_fee * to_fee
+
+                ratio_dict[pair] = (1 - transaction_fee) * coin_opt_coin_ratio / pair.ratio - (1 + self.config.SCOUT_MULTIPLIER / 100)
         self.db.batch_log_scout(scout_logs)
         return (ratio_dict, prices)
 

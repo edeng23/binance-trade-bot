@@ -15,6 +15,9 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
 
     PRICE_TYPE_ORDERBOOK = "orderbook"
     PRICE_TYPE_TICKER = "ticker"
+    
+    RATIO_CALC_DEFAULT = "default"
+    RATIO_CALC_BAMOOXA = "bamooxa"
 
     def __init__(self):
         # Init config
@@ -35,6 +38,7 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
             "sell_max_price_change": "0.005",
             "buy_max_price_change": "0.005",
             "price_type": self.PRICE_TYPE_ORDERBOOK,
+            "ratio_calc": "default",
             "accept_losses": "false",
             "max_idle_hours": "3",
             "ratio_adjust_weight":"100",
@@ -146,6 +150,21 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
             raise Exception(f"{self.PRICE_TYPE_ORDERBOOK} or {self.PRICE_TYPE_TICKER} expected, got {price_type} for price_type")
         self.PRICE_TYPE = price_type
 
+        ratio_calcs = {
+            self.RATIO_CALC_DEFAULT,
+            self.RATIO_CALC_BAMOOXA
+        }
+
+        ratio_calc = os.environ.get("RATIO_CALC") or config.get(
+            USER_CFG_SECTION, "ratio_calc", fallback=self.RATIO_CALC_DEFAULT
+        )
+        if ratio_calc not in ratio_calcs:
+            raise Exception(
+                f"{self.RATIO_CALC_DEFAULT} or {self.RATIO_CALC_BAMOOXA} expected, got {ratio_calc}"
+                "for ratio_calc"
+            )
+        self.RATIO_CALC = ratio_calc
+        
         accept_losses_str = os.environ.get("ACCEPT_LOSSES") or config.get(USER_CFG_SECTION, "accept_losses")
         self.ACCEPT_LOSSES = accept_losses_str == 'true' or accept_losses_str == 'True'
 
