@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM python:3.8 as builder
+FROM arm32v7/python:3.8 as builder
 
 WORKDIR /install
 
