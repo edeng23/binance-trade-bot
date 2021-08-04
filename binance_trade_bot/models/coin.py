@@ -20,7 +20,7 @@ class Coin(Base):
         raise TypeError(f"unsupported operand type(s) for +: 'Coin' and '{type(other)}'")
 
     def __repr__(self):
-        return f"<{self.symbol}>"
+        return f"[{self.symbol}]"
 
     def info(self):
         return {"symbol": self.symbol, "enabled": self.enabled}
