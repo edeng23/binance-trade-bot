@@ -6,6 +6,7 @@ from .models import Coin
 
 CFG_FL_NAME = "user.cfg"
 USER_CFG_SECTION = "binance_user_config"
+MISC = 'misc'
 
 
 class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attributes
@@ -21,6 +22,9 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
             "strategy": "default",
             "sell_timeout": "0",
             "buy_timeout": "0",
+        }
+        config['MISC'] = {
+            'proxy': ''
         }
 
         if not os.path.exists(CFG_FL_NAME):
@@ -70,3 +74,11 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
 
         self.SELL_TIMEOUT = os.environ.get("SELL_TIMEOUT") or config.get(USER_CFG_SECTION, "sell_timeout")
         self.BUY_TIMEOUT = os.environ.get("BUY_TIMEOUT") or config.get(USER_CFG_SECTION, "buy_timeout")
+
+        self.PROXY = os.environ.get("http_proxy") or config.get(MISC, "http_proxy")
+        self.REQUESTS_PARAM = {
+            'proxies': {
+                "http": self.PROXY,
+                "https": self.PROXY,
+            }
+        } if self.PROXY else None

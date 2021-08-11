@@ -10,3 +10,6 @@ scout_sleep_time=1
 strategy=default
 buy_timeout=0
 sell_timeout=0
+
+[misc]
+http_proxy=
