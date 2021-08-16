@@ -20,7 +20,7 @@ class Strategy(AutoTrader):
         print(
             f"{datetime.now()} - CONSOLE - INFO - I am scouting the best trades. "
             f"Current coin: {current_coin + self.config.BRIDGE} ",
-            end="\r",
+            end="\n",
         )
 
         current_coin_price = self.manager.get_ticker_price(current_coin + self.config.BRIDGE)

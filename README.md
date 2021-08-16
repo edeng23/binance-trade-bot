@@ -158,6 +158,19 @@ A list of answers to what seem to be the most frequently asked questions can be 
   <img src = "https://usercontent2.hubstatic.com/6061829.jpg">
 </p>
 
+### Bot sold and can't buy
+
+Signs:
+```
+A buy order of 0.0545349 USDT is currently placed on coin ATOM.
+
+Waiting for buy order to complete.
+```
+
+todo:
+1. buy the last token
+2. stop - start bot
+
 ## Disclaimer
 
 This project is for informational purposes only. You should not construe any
