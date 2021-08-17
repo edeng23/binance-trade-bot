@@ -42,7 +42,7 @@ class Strategy(AutoTrader):
     def get_active_coins(self):
         active_coins = []
 
-        for coin in self.db.get_coins():
+        for coin in self.db.get_coins(True):
             current_coin_balance = self.manager.get_currency_balance(coin.symbol)
             coin_price = self.manager.get_sell_price(coin + self.config.BRIDGE)
 
