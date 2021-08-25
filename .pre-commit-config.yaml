@@ -55,8 +55,8 @@ repos:
     files: ^(dev-)?requirements\.txt$
     args: [requirements.txt, dev-requirements.txt]
 
-- repo: https://github.com/pycqa/pylint
-  rev: v2.8.3
+- repo: https://github.com/pre-commit/mirrors-pylint
+  rev: v2.4.4
   hooks:
   - id: pylint
     name: PyLint
