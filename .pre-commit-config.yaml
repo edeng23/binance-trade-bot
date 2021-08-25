@@ -55,8 +55,8 @@ repos:
     files: ^(dev-)?requirements\.txt$
     args: [requirements.txt, dev-requirements.txt]
 
-- repo: https://github.com/pre-commit/mirrors-pylint
-  rev: v2.4.4
+- repo: https://github.com/pycqa/pylint
+  rev: v2.8.3
   hooks:
   - id: pylint
     name: PyLint
@@ -70,7 +70,7 @@ repos:
     - flask-socketio==5.0.1
     - gunicorn==20.1.0
     - pylint-sqlalchemy
-    - python-binance==0.7.11
+    - python-binance==1.0.12
     - python-socketio[client]==5.2.1
     - schedule==1.1.0
     - sqlalchemy==1.4.15

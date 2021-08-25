@@ -1,4 +1,4 @@
-python-binance==0.7.11
+python-binance==1.0.12
 sqlalchemy==1.4.15
 schedule==1.1.0
 apprise==0.9.2
