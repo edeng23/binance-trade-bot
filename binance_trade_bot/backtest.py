@@ -59,7 +59,7 @@ class MockBinanceManager(BinanceAPIManager):
         return self.get_ticker_price(ticker_symbol)
 
     def get_sell_price(self, ticker_symbol: str):
-        return self.get_ticker_price(ticker_symbol)
+        return self.get_ticker_price(ticker_symbol) * 0.998
 
     def get_ticker_price(self, ticker_symbol: str):
         """
