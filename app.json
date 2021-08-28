@@ -9,56 +9,52 @@
       "size": "free"
     }
 	},
-    "keywords": ["node", "biscoint","trading","trader","bot","market","maker","algo","crypto"],
+    "keywords": ["python", "binance","trading","trader","bot","market","maker","algo","crypto"],
     "env": {
-      "api_key": {
+      "API_KEY": {
         "description": "Binance API key generated in the Binance account setup stage",
         "required": true
       },
-      "api_secret_key": {
+      "API_SECRET_KEY": {
         "description": "Binance secret key generated in the Binance account setup stage",
         "required": true
       },
-      "current_coin": {
+      "CURRENT_COIN_SYMBOL": {
         "description": "This is your starting coin of choice. This should be one of the coins from your supported coin list. If you want to start from your bridge currency, leave this field empty - the bot will select a random coin from your supported coin list and buy it",
-		"required": false
+		"required": false,
+	      "value": "USDT"
       },
-      "bridge": {
+      "BRIDGE_SYMBOL": {
         "description": "Your bridge currency of choice. Notice that different bridges will allow different sets of supported coins. For example, there may be a Binance particular-coin/USDT pair but no particular-coin/BUSD pair",
         "required": true,
 		"value": "USDT"
       },
-      "tld": {
+      "TLD": {
         "description": "'com' or 'us', depending on your region. Default is 'com'",
         "required": true,
 		"value": "com"
       },
-      "hourToKeepScoutHistory": {
-        "description": "Controls how many hours of scouting values are kept in the database. After the amount of time specified has passed, the information will be deleted",
-        "required": true,
-		"value": "1"
-      },
-      "scout_multiplier": {
+      "SCOUT_MULTIPLIER": {
         "description": "Controls the value by which the difference between the current state of coin ratios and previous state of ratios is multiplied. For bigger values, the bot will wait for bigger margins to arrive before making a trade",
         "required": true,
 		"value": "5"
       },
-      "scout_sleep_time": {
+      "SCOUT_SLEEP_TIME": {
         "description": "Controls how many seconds are waited between each scout",
         "required": true,
 		"value": "1"
       },
-      "strategy": {
+      "STRATEGY": {
         "description": "The trading strategy to use. See binance_trade_bot/strategies for more information. Options: default or multiple_coins",
         "required": true,
 		"value": "default"
       },
-      "buy_timeout": {
+      "BUY_TIMEOUT": {
         "description": "Controls how many minutes to wait before cancelling a limit order (buy/sell) and returning to 'scout' mode. 0 means that the order will never be cancelled prematurely",
         "required": true,
 		"value": "0"
       },
-      "sell_timeout": {
+      "SELL_TIMEOUT": {
         "description": "Controls how many minutes to wait before cancelling a limit order (buy/sell) and returning to 'scout' mode. 0 means that the order will never be cancelled prematurely",
         "required": true,
 		"value": "0"
