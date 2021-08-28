@@ -22,7 +22,7 @@
       "CURRENT_COIN_SYMBOL": {
         "description": "This is your starting coin of choice. This should be one of the coins from your supported coin list. If you want to start from your bridge currency, leave this field empty - the bot will select a random coin from your supported coin list and buy it",
 		"required": false,
-	      "value": "USDT"
+	      "value": "XMR"
       },
       "BRIDGE_SYMBOL": {
         "description": "Your bridge currency of choice. Notice that different bridges will allow different sets of supported coins. For example, there may be a Binance particular-coin/USDT pair but no particular-coin/BUSD pair",
@@ -44,6 +44,11 @@
         "required": true,
 		"value": "1"
       },
+      "HOURS_TO_KEEP_SCOUTING_HISTORY": {
+        "description": "Controls how many hours of scouting values are kept in the database. After the amount of time specified has passed, the information will be deleted.",
+        "required": true,
+		"value": "1"
+      },
       "STRATEGY": {
         "description": "The trading strategy to use. See binance_trade_bot/strategies for more information. Options: default or multiple_coins",
         "required": true,
@@ -58,6 +63,11 @@
         "description": "Controls how many minutes to wait before cancelling a limit order (buy/sell) and returning to 'scout' mode. 0 means that the order will never be cancelled prematurely",
         "required": true,
 		"value": "0"
+      },
+      "SUPPORTED_COIN_LIST": {
+        "description": "Supported coin list",
+        "required": true,
+		"value": "ADA ATOM BAT BTT DASH DOGE EOS ETC ICX IOTA NEO OMG ONT QTUM TRX VET XLM XMR"
       }
     }
   }
