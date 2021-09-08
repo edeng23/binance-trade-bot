@@ -123,13 +123,19 @@ class AutoTrader:
             # Obtain (current coin)/(optional coin)
             coin_opt_coin_ratio = coin_price / optional_coin_price
 
-            transaction_fee = self.manager.get_fee(pair.from_coin, self.config.BRIDGE, True) + self.manager.get_fee(
-                pair.to_coin, self.config.BRIDGE, False
-            )
+            # Fees
+            from_fee = self.manager.get_fee(pair.from_coin, self.config.BRIDGE, True)
+            to_fee = self.manager.get_fee(pair.to_coin, self.config.BRIDGE, False)
+            transaction_fee = from_fee + to_fee - from_fee * to_fee
 
-            ratio_dict[pair] = (
-                coin_opt_coin_ratio - transaction_fee * self.config.SCOUT_MULTIPLIER * coin_opt_coin_ratio
-            ) - pair.ratio
+            if self.config.USE_MARGIN == "yes":
+                ratio_dict[pair] = (
+                    (1- transaction_fee) * coin_opt_coin_ratio / pair.ratio - 1 - self.CONFIG.SCOUT_MARGIN
+                    )
+            else:
+                ratio_dict[pair] = (
+                    coin_opt_coin_ratio - transaction_fee * self.config.SCOUT_MULTIPLIER * coin_opt_coin_ratio
+                ) - pair.ratio
         return ratio_dict
 
     def _jump_to_best_coin(self, coin: Coin, coin_price: float):
