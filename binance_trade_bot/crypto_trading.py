@@ -38,9 +38,6 @@ def main():
     else:
         logger.warning("RUNNING IN REAL TRADING MODE")
 
-    if config.ENABLE_STOP_LOSS:
-        logger.info(f"Stop loss enabled. Stop loss triggers when {config.STOP_LOSS_PRICE} price of current coin changes by -{config.STOP_LOSS_PERCENTAGE}%")
-
     if config.RATIO_CALC != config.RATIO_CALC_DEFAULT:
         logger.info(f"Using {config.RATIO_CALC} method for caluclation of the ratios.")
 
