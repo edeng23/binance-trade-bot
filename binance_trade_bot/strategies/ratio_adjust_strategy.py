@@ -37,13 +37,14 @@ class Strategy(AutoTrader):
         Scout for potential jumps from the current coin to another coin
         """
         current_coin = self.db.get_current_coin()
-        # Display on the console, the current coin+Bridge, so users can see *some* activity and not think the bot has
-        # stopped. Not logging though to reduce log size.
-        # print(
-        #     f"{self.manager.now()} - CONSOLE - INFO - I am scouting the best trades. "
-        #     f"Current coin: {current_coin + self.config.BRIDGE} ",
-        #     end="\r",
-        # )
+
+        #Display on the console, the current coin+Bridge, so users can see *some* activity and not think the bot has
+        #stopped. Not logging though to reduce log size.
+        print(
+            f"{self.manager.now()} - CONSOLE - INFO - I am scouting the best trades. "
+            f"Current coin: {current_coin + self.config.BRIDGE} ",
+            end="\r",
+        )
 
         current_coin_price = self.manager.get_sell_price(current_coin + self.config.BRIDGE)
 
@@ -103,30 +104,18 @@ class Strategy(AutoTrader):
         Re-initialize all the thresholds ( hard reset - as deleting db )
         """
         #updates all ratios
-        #print('************INITIALIZING RATIOS**********')
         session: Session
         with self.db.db_session() as session:
-            c1 = aliased(Coin)
-            c2 = aliased(Coin)
             for pair in session.query(Pair).all():
                 if not pair.from_coin.enabled or not pair.to_coin.enabled:
                     continue
-                #self.logger.debug(f"Initializing {pair.from_coin} vs {pair.to_coin}", False)
 
                 from_coin_price = self.manager.get_sell_price(pair.from_coin + self.config.BRIDGE)
                 if from_coin_price is None:
-                    # self.logger.debug(
-                    #     "Skipping initializing {}, symbol not found".format(pair.from_coin + self.config.BRIDGE),
-                    #     False
-                    # )
                     continue
 
                 to_coin_price = self.manager.get_buy_price(pair.to_coin + self.config.BRIDGE)
                 if to_coin_price is None:
-                    # self.logger.debug(
-                    #     "Skipping initializing {}, symbol not found".format(pair.to_coin + self.config.BRIDGE),
-                    #     False
-                    # )
                     continue
 
                 pair.ratio = (pair.ratio *self.config.RATIO_ADJUST_WEIGHT + from_coin_price / to_coin_price)  / (self.config.RATIO_ADJUST_WEIGHT + 1)
