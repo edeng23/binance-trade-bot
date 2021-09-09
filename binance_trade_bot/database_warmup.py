@@ -82,7 +82,7 @@ class WarmUpTrader(AutoTrader):
                     continue
 
                 to_coin_price = self.manager.get_ticker_price(pair.to_coin + self.config.BRIDGE)
-                if to_coin_price is None or to_coin_price == 0:
+                if to_coin_price is None or to_coin_price == 0.0:
                     self.logger.info(
                         "Skipping initializing {}, symbol not found".format(pair.to_coin + self.config.BRIDGE)
                     )

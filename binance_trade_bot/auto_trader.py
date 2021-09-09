@@ -60,7 +60,7 @@ class AutoTrader:
         Update all the coins with the threshold of buying the current held coin
         """
 
-        if coin_price is None:
+        if coin_price is None or coin_price == 0.0:
             self.logger.info("Skipping update... current coin {} not found".format(coin + self.config.BRIDGE))
             return
 
@@ -99,7 +99,7 @@ class AutoTrader:
                         continue
 
                     to_coin_price = self.manager.get_buy_price(pair.to_coin + self.config.BRIDGE)
-                    if to_coin_price is None:
+                    if to_coin_price is None or to_coin_price == 0.0:
                         self.logger.info(
                             "Skipping initializing {}, symbol not found".format(pair.to_coin + self.config.BRIDGE)
                         )
@@ -130,7 +130,7 @@ class AutoTrader:
             optional_coin_price = self.manager.get_buy_price(pair.to_coin + self.config.BRIDGE)
             prices[pair.to_coin_id] = optional_coin_price
 
-            if optional_coin_price is None:
+            if optional_coin_price is None or optional_coin_price == 0.0:
                 self.logger.info(
                     "Skipping scouting... optional coin {} not found".format(pair.to_coin + self.config.BRIDGE)
                 )

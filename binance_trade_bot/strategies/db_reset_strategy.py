@@ -136,7 +136,7 @@ class Strategy(AutoTrader):
                     continue
 
                 to_coin_price = self.manager.get_buy_price(pair.to_coin + self.config.BRIDGE)
-                if to_coin_price is None:
+                if to_coin_price is None or to_coin_price == 0.0:
                     self.logger.info(
                         "Skipping initializing {}, symbol not found".format(pair.to_coin + self.config.BRIDGE),
                         False

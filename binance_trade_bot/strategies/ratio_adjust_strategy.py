@@ -115,7 +115,7 @@ class Strategy(AutoTrader):
                     continue
 
                 to_coin_price = self.manager.get_buy_price(pair.to_coin + self.config.BRIDGE)
-                if to_coin_price is None:
+                if to_coin_price is None or to_coin_price == 0.0:
                     continue
 
                 pair.ratio = (pair.ratio *self.config.RATIO_ADJUST_WEIGHT + from_coin_price / to_coin_price)  / (self.config.RATIO_ADJUST_WEIGHT + 1)
