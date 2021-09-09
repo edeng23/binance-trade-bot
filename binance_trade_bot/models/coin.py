@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Boolean
+from sqlalchemy import Boolean, Column, String
 
 from .base import Base
 
@@ -13,15 +13,14 @@ class Coin(Base):
         self.enabled = enabled
 
     def __add__(self, other):
-        if type(other) == str:
+        if isinstance(other, str):
             return self.symbol + other
-        if type(other) == Coin:
+        if isinstance(other, Coin):
             return self.symbol + other.symbol
         raise TypeError(f"unsupported operand type(s) for +: 'Coin' and '{type(other)}'")
 
     def __repr__(self):
-        return f"<{self.symbol}>"
+        return f"[{self.symbol}]"
 
     def info(self):
-        return {"symbol": self.symbol,
-                "enabled": self.enabled}
+        return {"symbol": self.symbol, "enabled": self.enabled}
