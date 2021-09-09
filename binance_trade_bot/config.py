@@ -17,7 +17,6 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
             "use_margin": "no",
             "scout_multiplier": "5",
             "scout_margin": "0.8",
-            "spread": "auto",
             "scout_sleep_time": "5",
             "hourToKeepScoutHistory": "1",
             "tld": "com",
@@ -76,4 +75,3 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
 
         self.USE_MARGIN = os.environ.get("USE_MARGIN") or config.get(USER_CFG_SECTION, "use_margin")
         self.SCOUT_MARGIN = os.environ.get("SCOUT_MARGIN") or config.get(USER_CFG_SECTION, "scout_margin")
-        self.SPREAD = os.environ.get("SPREAD") or config.get(USER_CFG_SECTION, "spread")
