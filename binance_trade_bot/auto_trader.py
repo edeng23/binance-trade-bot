@@ -128,9 +128,19 @@ class AutoTrader:
             to_fee = self.manager.get_fee(pair.to_coin, self.config.BRIDGE, False)
             transaction_fee = from_fee + to_fee - from_fee * to_fee
 
+
+            # Spread
+            if self.config.SPREAD == "auto":
+                coinBuyPrice = self.manager.get_buy_price(pair.to_coin + self.config.BRIDGE)
+                coinSellPrice = self.manager.get_sell_price(pair.to_coin + self.config.BRIDGE)
+                spread = coinBuyPrice / coinSellPrice - 1
+            else:
+                spread = float(self.config.SPREAD) / 100
+
+
             if self.config.USE_MARGIN == "yes":
                 ratio_dict[pair] = (
-                    (1- transaction_fee) * coin_opt_coin_ratio / pair.ratio - 1 - self.CONFIG.SCOUT_MARGIN / 100
+                    (1- transaction_fee - spread) * coin_opt_coin_ratio / pair.ratio - 1 - self.CONFIG.SCOUT_MARGIN / 100
                     )
             else:
                 ratio_dict[pair] = (
