@@ -150,7 +150,7 @@ class AutoTrader:
                 ratio_dict[pair] = (
                     coin_opt_coin_ratio - transaction_fee * self.config.SCOUT_MULTIPLIER * coin_opt_coin_ratio
                 ) - pair.ratio
-            if self.config.RATIO_CALC == self.config.RATIO_CALC_BAMOOXA:
+            if self.config.RATIO_CALC == self.config.RATIO_CALC_SCOUT_MARGIN:
                 transaction_fee = from_fee + to_fee - from_fee * to_fee
 
                 ratio_dict[pair] = (1 - transaction_fee) * coin_opt_coin_ratio / pair.ratio - (1 + self.config.SCOUT_MULTIPLIER / 100)

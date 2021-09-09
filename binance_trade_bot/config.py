@@ -17,7 +17,7 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
     PRICE_TYPE_TICKER = "ticker"
     
     RATIO_CALC_DEFAULT = "default"
-    RATIO_CALC_BAMOOXA = "bamooxa"
+    RATIO_CALC_SCOUT_MARGIN = "scout_margin"
 
     def __init__(self):
         # Init config
@@ -152,7 +152,7 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
 
         ratio_calcs = {
             self.RATIO_CALC_DEFAULT,
-            self.RATIO_CALC_BAMOOXA
+            self.RATIO_CALC_SCOUT_MARGIN
         }
 
         ratio_calc = os.environ.get("RATIO_CALC") or config.get(
@@ -160,11 +160,11 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
         )
         if ratio_calc not in ratio_calcs:
             raise Exception(
-                f"{self.RATIO_CALC_DEFAULT} or {self.RATIO_CALC_BAMOOXA} expected, got {ratio_calc}"
+                f"{self.RATIO_CALC_DEFAULT} or {self.RATIO_CALC_SCOUT_MARGIN} expected, got {ratio_calc}"
                 "for ratio_calc"
             )
         self.RATIO_CALC = ratio_calc
-        
+
         accept_losses_str = os.environ.get("ACCEPT_LOSSES") or config.get(USER_CFG_SECTION, "accept_losses")
         self.ACCEPT_LOSSES = accept_losses_str == 'true' or accept_losses_str == 'True'
 
