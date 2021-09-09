@@ -32,9 +32,9 @@ The bot jumps between a configured set of coins on the condition that it does no
 
 ## Binance Setup
 
--   Create a [Binance account](https://www.binance.com/en/register?ref=13222128) (Includes my referral link, I'll be super grateful if you use it).
+-   Create a [Binance account](https://accounts.binance.com/en/register?ref=DDA1SQA) (Includes my referral link, I'll be super grateful if you use it).
 -   Enable Two-factor Authentication.
--   Create a new API key.
+-   Create a new API key and whitelist your IP for it.
 -   Get a cryptocurrency. If its symbol is not in the default list, add it.
 
 ## Tool Setup
@@ -189,7 +189,13 @@ Thanks to a group of talented developers, there is now a [Telegram bot for remot
 
 ## Support the Project
 
+Fist of all, support the originator of this bot and buy him a coffee. ☕
+
 <a href="https://www.buymeacoffee.com/edeng" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="41" width="174"></a>
+
+If you like my adjustments or strategies and you want to support me I would appreciate to get a coffee too. 😜
+
+<a href="https://www.buymeacoffee.com/tntwist" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="41" width="174"></a>
 
 ## Join the Chat
 
