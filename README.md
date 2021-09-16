@@ -73,6 +73,7 @@ Create a .cfg file named `user.cfg` based off `.user.cfg.example`, then add your
 -   **accept_losses** - Needs to be set to true for highly risky and gamling strategies. Otherwise the bot wont start.
 -   **auto_adjust_bnb_balance** - Controls the bot to auto buy BNB while there is no enough BNB balance in your account, to get the benifits of using BNB to pay the commisions. Default is false. Effective if you have enabled to [use BNB to pay for any fees on the Binance platform](https://www.binance.com/en/support/faq/115000583311-Using-BNB-to-Pay-for-Fees), reade more information [here](#paying-fees-with-bnb).
 -   **auto_adjust_bnb_balance_rate** - The multiplying power of buying quantity of BNB compares to evaluated comission of the coming order, effective only if auto_adjust_bnb_balance is true. Default value is 3.
+-   **allow_coin_merge** - Allow multiple_coins strategy to merge coins into one. It turned out that its more profitable if the strategy can merge the held coins into one. If you dont want this you may be safer for one falling coin but you also pay with potential gains. Default is true to ensure the behavior is like in the origin repo.
 
 #### Environment Variables
 
@@ -94,6 +95,7 @@ BUY_ORDER_TYPE: limit
 SELL_ORDER_TYPE: market
 AUTO_ADJUST_BNB_BALANCE: false
 AUTO_ADJUST_BNB_BALANCE_RATE: 3
+ALLOW_COIN_MERGE: true
 ```
 
 ### Paying Fees with BNB
