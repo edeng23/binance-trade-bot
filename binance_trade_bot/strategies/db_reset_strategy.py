@@ -7,7 +7,7 @@ from binance_trade_bot.auto_trader import AutoTrader
 
 class Strategy(AutoTrader):
     def initialize(self):
-        self.logger.info(f"Caution: I thought about this for a while now and i decided to remove the gambling strategies from my fork. Its because of many people loosing money and  compaining by me...I added loss hints etc. and still many users decided to blind jump into them. So this strategy uses now the default strategy. The file wil be deleted in the next few days. This fork will concentrade in optimizing the defaults bot with addtional features and settings!")        
+        self.logger.info(f"Caution: I thought about this for a while now and i decided to remove the gambling strategies from my fork. Its because of many people loosing money and  complaining by me...I added loss hints etc. and still many users decided to blind jump into them. So this strategy uses now the default strategy. The file wil be deleted in the next few days. This fork will concentrade in optimizing the defaults bot with addtional features and settings!")        
 
         super().initialize()
         self.initialize_current_coin()
