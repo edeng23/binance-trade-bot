@@ -130,8 +130,8 @@ class AutoTrader:
 
             if self.config.USE_MARGIN == "yes":
                 ratio_dict[pair] = (
-                    (1- transaction_fee) * coin_opt_coin_ratio / pair.ratio - 1 - self.CONFIG.SCOUT_MARGIN / 100
-                    )
+                    (1- transaction_fee) * coin_opt_coin_ratio / pair.ratio - 1 - self.config.SCOUT_MARGIN / 100
+                )
             else:
                 ratio_dict[pair] = (
                     coin_opt_coin_ratio - transaction_fee * self.config.SCOUT_MULTIPLIER * coin_opt_coin_ratio
