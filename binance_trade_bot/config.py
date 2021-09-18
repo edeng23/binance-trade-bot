@@ -74,4 +74,4 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
         self.BUY_TIMEOUT = os.environ.get("BUY_TIMEOUT") or config.get(USER_CFG_SECTION, "buy_timeout")
 
         self.USE_MARGIN = os.environ.get("USE_MARGIN") or config.get(USER_CFG_SECTION, "use_margin")
-        self.SCOUT_MARGIN = os.environ.get("SCOUT_MARGIN") or config.get(USER_CFG_SECTION, "scout_margin")
+        self.SCOUT_MARGIN = float(os.environ.get("SCOUT_MARGIN") or config.get(USER_CFG_SECTION, "scout_margin"))
