@@ -179,4 +179,4 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
         )
 
         allow_coin_merge = os.environ.get("ALLOW_COIN_MERGE") or config.get(USER_CFG_SECTION, "allow_coin_merge")
-        self.ALLOW_COIN_MERGE = str(allow_coin_merge).lower == 'true'
+        self.ALLOW_COIN_MERGE = str(allow_coin_merge).lower() == 'true'
