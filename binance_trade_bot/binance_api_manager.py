@@ -259,8 +259,11 @@ class BinanceAPIManager:
         origin_balance = self.get_currency_balance(origin_symbol)
         target_balance = self.get_currency_balance(target_symbol)
         from_coin_price = self.get_ticker_price(origin_symbol + target_symbol)
+        from_coin_price_s = '{:0.0{}f}'.format(from_coin_price, 8)
 
         order_quantity = self._buy_quantity(origin_symbol, target_symbol, target_balance, from_coin_price)
+        order_quantity_s = '{:0.0{}f}'.format(order_quantity, 8)
+
         self.logger.info(f"BUY QTY {order_quantity} of <{origin_symbol}>")
 
         # Try to buy until successful
@@ -270,8 +273,8 @@ class BinanceAPIManager:
             try:
                 order = self.binance_client.order_limit_buy(
                     symbol=origin_symbol + target_symbol,
-                    quantity=order_quantity,
-                    price=from_coin_price,
+                    quantity=order_quantity_s,
+                    price=from_coin_price_s,
                 )
                 self.logger.info(order)
             except BinanceAPIException as e:
@@ -317,8 +320,10 @@ class BinanceAPIManager:
         origin_balance = self.get_currency_balance(origin_symbol)
         target_balance = self.get_currency_balance(target_symbol)
         from_coin_price = self.get_ticker_price(origin_symbol + target_symbol)
+        from_coin_price_s = '{:0.0{}f}'.format(from_coin_price, 8)
 
         order_quantity = self._sell_quantity(origin_symbol, target_symbol, origin_balance)
+        order_quantity_s = '{:0.0{}f}'.format(order_quantity, 8)
         self.logger.info(f"Selling {order_quantity} of {origin_symbol}")
 
         self.logger.info(f"Balance is {origin_balance}")
@@ -327,7 +332,7 @@ class BinanceAPIManager:
         while order is None:
             # Should sell at calculated price to avoid lost coin
             order = self.binance_client.order_limit_sell(
-                symbol=origin_symbol + target_symbol, quantity=order_quantity, price=from_coin_price
+                symbol=origin_symbol + target_symbol, quantity=order_quantity_s, price=from_coin_price_s
             )
 
         self.logger.info("order")
