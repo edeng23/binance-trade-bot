@@ -1,48 +1,129 @@
 version: "3"
 
 services:
-  crypto-trading:
-    image: edeng23/binance-trade-bot
-    container_name: binance_trader
+  crypto-trading-b1:
+    image: hustlers4u/binance-trade-bot
+    container_name: binance_trader_b1
     working_dir: /app
     volumes:
       - ./user.cfg:/app/user.cfg
       - ./supported_coin_list:/app/supported_coin_list
-      - ./data:/app/data
-      - ./logs:/app/logs
-      - ./config:/app/config
+      - ./data-b1:/app/data
+      - ./logs-b1:/app/logs
+      - ./config-b1:/app/config
     command: python -m binance_trade_bot
     environment:
+      - TZ=Europe/Amsterdam
       - PYTHONUNBUFFERED=1
       - API_KEY=${API_KEY}
       - API_SECRET_KEY=${API_SECRET_KEY}
-
-  api:
-    image: edeng23/binance-trade-bot
-    container_name: binance_trader_api
+      - CURRENT_COIN_SYMBOL=${CURRENT_COIN_SYMBOL_B1}
+      - SUPPORTED_COIN_LIST=${SUPPORTED_COIN_LIST_B1}
+      - SCOUT_MULTIPLIER=${SCOUT_MULTIPLIER_B1}
+      - BRIDGE_SYMBOL=${BRIDGE_SYMBOL_B1}
+      - TLD=${TLD_B1}
+  crypto-trading-b2:
+    image: hustlers4u/binance-trade-bot
+    container_name: binance_trader_b2
     working_dir: /app
     volumes:
-      - ./user.cfg:/app/user.cfg
-      - ./data:/app/data
-      - ./logs:/app/logs
-    ports:
-      - 5123:5123
-    command: gunicorn binance_trade_bot.api_server:app -k eventlet -w 1 --threads 1 -b 0.0.0.0:5123
-    depends_on:
-      - crypto-trading
+      - ./user.b2.cfg:/app/user.cfg
+      - ./supported_coin_list:/app/supported_coin_list
+      - ./data-b2:/app/data
+      - ./logs-b2:/app/logs
+      - ./config-b2:/app/config
+    command: python -m binance_trade_bot
     environment:
+      - TZ=Europe/Amsterdam
+      - PYTHONUNBUFFERED=1
       - API_KEY=${API_KEY}
       - API_SECRET_KEY=${API_SECRET_KEY}
-
+      - CURRENT_COIN_SYMBOL=${CURRENT_COIN_SYMBOL_B2}
+      - SUPPORTED_COIN_LIST=${SUPPORTED_COIN_LIST_B2}
+      - SCOUT_MULTIPLIER=${SCOUT_MULTIPLIER_B2}
+      - BRIDGE_SYMBOL=${BRIDGE_SYMBOL_B2}
+      - TLD=${TLD_B2}
+  crypto-trading-b3:
+    image: hustlers4u/binance-trade-bot
+    container_name: binance_trader_b3
+    working_dir: /app
+    volumes:
+      - ./user.b3.cfg:/app/user.cfg
+      - ./supported_coin_list:/app/supported_coin_list
+      - ./data-b3:/app/data
+      - ./logs-b3:/app/logs
+      - ./config-b3:/app/config
+    command: python -m binance_trade_bot
+    environment:
+      - TZ=Europe/Amsterdam
+      - PYTHONUNBUFFERED=1
+      - API_KEY=${API_KEY}
+      - API_SECRET_KEY=${API_SECRET_KEY}
+      - CURRENT_COIN_SYMBOL=${CURRENT_COIN_SYMBOL_B3}
+      - SUPPORTED_COIN_LIST=${SUPPORTED_COIN_LIST_B3}
+      - SCOUT_MULTIPLIER=${SCOUT_MULTIPLIER_B3}
+      - BRIDGE_SYMBOL=${BRIDGE_SYMBOL_B3}
+      - TLD=${TLD_B3}
+  telegram-bot-b1:
+    image: hustlers4u/btb-manager-telegram
+    container_name: btb_manager_telegram_b1
+    working_dir: /
+    volumes:
+      - ./data-b1:/data
+      - ./logs-b1:/logs
+    command: python -m btb_manager_telegram --path .
+    environment:
+      - TZ=Europe/Amsterdam
+      - PYTHONUNBUFFERED=1
+      - API_KEY=${API_KEY}
+      - API_SECRET_KEY=${API_SECRET_KEY}
+      - SCOUT_MULTIPLIER=${SCOUT_MULTIPLIER_B1}
+      - BRIDGE_SYMBOL=${BRIDGE_SYMBOL_B1}
+      - TLD=${TLD_B1}
+      - TELEGRAM_URL=${TELEGRAM_URL_B1}
+  telegram-bot-b2:
+    image: hustlers4u/btb-manager-telegram
+    container_name: btb_manager_telegram_b2
+    working_dir: /
+    volumes:
+      - ./data-b2:/data
+      - ./logs-b2:/logs
+    command: python -m btb_manager_telegram --path .
+    environment:
+      - TZ=Europe/Amsterdam
+      - PYTHONUNBUFFERED=1
+      - API_KEY=${API_KEY}
+      - API_SECRET_KEY=${API_SECRET_KEY}
+      - SCOUT_MULTIPLIER=${SCOUT_MULTIPLIER_B2}
+      - BRIDGE_SYMBOL=${BRIDGE_SYMBOL_B2}
+      - TLD=${TLD_B2}
+      - TELEGRAM_URL=${TELEGRAM_URL_B2}
+  telegram-bot-b3:
+    image: hustlers4u/btb-manager-telegram
+    container_name: btb_manager_telegram_b3
+    working_dir: /
+    volumes:
+      - ./data-b3:/data
+      - ./logs-b3:/logs
+    command: python -m btb_manager_telegram --path .
+    environment:
+      - TZ=Europe/Amsterdam
+      - PYTHONUNBUFFERED=1
+      - API_KEY=${API_KEY}
+      - API_SECRET_KEY=${API_SECRET_KEY}
+      - SCOUT_MULTIPLIER=${SCOUT_MULTIPLIER_B3}
+      - BRIDGE_SYMBOL=${BRIDGE_SYMBOL_B3}
+      - TLD=${TLD_B3}
+      - TELEGRAM_URL=${TELEGRAM_URL_B3}
   sqlitebrowser:
     image: ghcr.io/linuxserver/sqlitebrowser
     container_name: sqlitebrowser
     environment:
       - PUID=1000
       - PGID=1000
-      - TZ=Europe/Berlin
+      - TZ=Europe/Amsterdam
     volumes:
-      - ./data/config:/config
-      - ./data:/data
+      - ./data-b3/config:/config
+      - ./data-b3:/data
     ports:
       - 3000:3000
