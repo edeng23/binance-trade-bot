@@ -37,7 +37,7 @@ class Strategy(AutoTrader):
         allowed_idle_time = self.reinit_threshold
         if base_time >= allowed_idle_time:
             self.re_initialize_trade_thresholds()
-            self.RSI()
+            self.rsi_calc()
             self.reinit_threshold = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
 
         """
