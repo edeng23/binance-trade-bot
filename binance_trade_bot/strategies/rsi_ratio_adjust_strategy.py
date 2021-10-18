@@ -24,7 +24,7 @@ class Strategy(AutoTrader):
         self.initialize_current_coin()
         self.reinit_threshold = self.manager.now().replace(second=0, microsecond=0)
         self.rsi = self.rsi_calc()
-        #self.logger.info(f"Ratio adjust weight: {self.config.RATIO_ADJUST_WEIGHT}")
+        self.logger.info(f"Ratio adjust weight: {self.config.RATIO_ADJUST_WEIGHT}")
         self.logger.info(f"RSI length: {self.config.RSI_LENGTH}")
         self.logger.info(f"RSI candle type: {self.config.RSI_CANDLE_TYPE}")
     
@@ -36,7 +36,7 @@ class Strategy(AutoTrader):
         base_time: datetime = self.manager.now()
         allowed_idle_time = self.reinit_threshold
         if base_time >= allowed_idle_time:
-            self.initialize_trade_thresholds()
+            self.re_initialize_trade_thresholds()
             self.RSI()
             self.reinit_threshold = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
 
