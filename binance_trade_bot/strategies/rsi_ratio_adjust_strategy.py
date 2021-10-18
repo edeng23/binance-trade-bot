@@ -57,10 +57,8 @@ class Strategy(AutoTrader):
         if current_coin_price is None:
             self.logger.info("Skipping scouting... current coin {} not found".format(current_coin + self.config.BRIDGE))
             return
-	
-        best_pair = max(ratio_dict, key=ratio_dict.get)
             
-        if self.rsi(best_pair.to_coin_id) >= 50 or self.rsi(best_pair.to_coin_id) <= 30:
+        if self.rsi >= 50 or self.rsi <= 30:
            self._jump_to_best_coin(current_coin, current_coin_price)
 
     def bridge_scout(self):
@@ -268,6 +266,12 @@ class Strategy(AutoTrader):
 		    if len(rsi_price_history[to_coin_symbol]) >= init_rsi:
   		        np_closes = numpy.array(rsi_price_history[to_coin_symbol])
 			self.rsi = talib.RSI(np_closes, init_rsi)
+			ratio_dict, prices = self._get_ratios(coin, coin_price, excluded_coins)
+
+                        # keep only ratios bigger than zero
+                        ratio_dict = {k: v for k, v in ratio_dict.items() if v > 0}
+                        best_pair = max(ratio_dict, key=ratio_dict.get)
+			self.rsi = self.rsi(best_pair.to_coin_id)
                     
                     
 
