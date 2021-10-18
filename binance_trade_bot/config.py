@@ -44,7 +44,9 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
             "ratio_adjust_weight":"100",
             "auto_adjust_bnb_balance": "false",
             "auto_adjust_bnb_balance_rate": "3",
-            "allow_coin_merge": "true"
+            "allow_coin_merge": "true",
+            "rsi_length": "14",
+            "rsi_candle_type": "15"
         }
 
         if not os.path.exists(CFG_FL_NAME):
@@ -180,3 +182,7 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
 
         allow_coin_merge = os.environ.get("ALLOW_COIN_MERGE") or config.get(USER_CFG_SECTION, "allow_coin_merge")
         self.ALLOW_COIN_MERGE = str(allow_coin_merge).lower() == 'true'
+        
+        self.RSI_LENGTH = os.environ.get("RSI_LENGTH") or config.get(USER_CFG_SECTION, "rsi_length")
+        
+        self.RSI_CANDLE_TYPE = os.environ.get("RSI_CANDLE_TYPE") or config.get(USER_CFG_SECTION, "rsi_candle_type")
