@@ -4,8 +4,8 @@ from binance_trade_bot import backtest
 
 if __name__ == "__main__":
     history = []
-    start_time = datetime(2021, 6, 1, 0, 0)
-    end_time = datetime(2021, 7, 1, 23, 59)
+    start_time = datetime(2021, 9, 1, 0, 0)
+    end_time = datetime(2021, 10, 1, 23, 59)
     print(f"BACKTEST from {start_time} to {end_time}")
     current_date = start_time.strftime("%d/%m/%Y")
     for manager in backtest(start_time, end_time):
@@ -33,7 +33,7 @@ if __name__ == "__main__":
     print("TIME:", manager.datetime)
     print("TRADES:", trades)
     print("POSITIVE COIN JUMPS:", manager.positve_coin_jumps)
-    print("NEVATIVE COIN JUMPS:", manager.negative_coin_jumps)
+    print("NEGATIVE COIN JUMPS:", manager.negative_coin_jumps)
     #print("PAID FEES:", manager.paid_fees)
     #print("BTC FEES VALUE:", btc_fees_value)
     print(f"{manager.config.BRIDGE.symbol} FEES VALUE:", bridge_fees_value)
