@@ -263,15 +263,14 @@ class Strategy(AutoTrader):
                         self.logger.info(f"Skip RSI calculation. Could not fetch last {init_rsi} prices for {to_coin_symbol}")
                         continue
 						
-		    if len(rsi_price_history[to_coin_symbol]) >= init_rsi:
-  		        np_closes = numpy.array(rsi_price_history[to_coin_symbol])
-			self.rsi = talib.RSI(np_closes, init_rsi)
-			ratio_dict, prices = self._get_ratios(coin, coin_price, excluded_coins)
-
-                        # keep only ratios bigger than zero
-                        ratio_dict = {k: v for k, v in ratio_dict.items() if v > 0}
-                        best_pair = max(ratio_dict, key=ratio_dict.get)
-			self.rsi = self.rsi(best_pair.to_coin_id)
+            ratio_dict, prices = self._get_ratios(coin, coin_price, excluded_coins)
+                # keep only ratios bigger than zero
+            ratio_dict = {k: v for k, v in ratio_dict.items() if v > 0}
+            best_pair = max(ratio_dict, key=ratio_dict.get)
+            to_coin_symbol = best_pair.to_coin_id
+	    if len(rsi_price_history[to_coin_symbol]) >= init_rsi:
+                np_closes = numpy.array(rsi_price_history[to_coin_symbol])
+                self.rsi = talib.RSI(np_closes, init_rsi)
                     
                     
 
