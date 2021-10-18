@@ -183,6 +183,10 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
         allow_coin_merge = os.environ.get("ALLOW_COIN_MERGE") or config.get(USER_CFG_SECTION, "allow_coin_merge")
         self.ALLOW_COIN_MERGE = str(allow_coin_merge).lower() == 'true'
         
-        self.RSI_LENGTH = os.environ.get("RSI_LENGTH") or config.get(USER_CFG_SECTION, "rsi_length")
+        self.RSI_LENGTH = int(
+            os.environ.get("RSI_LENGTH") or config.get(USER_CFG_SECTION, "rsi_length")
+        )
         
-        self.RSI_CANDLE_TYPE = os.environ.get("RSI_CANDLE_TYPE") or config.get(USER_CFG_SECTION, "rsi_candle_type")
+        self.RSI_CANDLE_TYPE = int(
+            os.environ.get("RSI_CANDLE_TYPE") or config.get(USER_CFG_SECTION, "rsi_candle_type")
+        )
