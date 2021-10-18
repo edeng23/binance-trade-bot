@@ -1,6 +1,8 @@
 from collections import defaultdict
 import random
 import sys
+import talib
+import numpy
 from datetime import datetime, timedelta
 
 from sqlalchemy.orm import Session, aliased
@@ -21,7 +23,10 @@ class Strategy(AutoTrader):
         super().initialize()
         self.initialize_current_coin()
         self.reinit_threshold = self.manager.now().replace(second=0, microsecond=0)
-        self.logger.info(f"Ratio adjust weight: {self.config.RATIO_ADJUST_WEIGHT}")
+        self.rsi = self.rsi_calc()
+        #self.logger.info(f"Ratio adjust weight: {self.config.RATIO_ADJUST_WEIGHT}")
+        self.logger.info(f"RSI length: {self.config.RSI_LENGTH}")
+        self.logger.info(f"RSI candle type: {self.config.RSI_CANDLE_TYPE}")
     
     def scout(self):
         #check if previous buy order failed. If so, bridge scout for a new coin.
@@ -31,7 +36,8 @@ class Strategy(AutoTrader):
         base_time: datetime = self.manager.now()
         allowed_idle_time = self.reinit_threshold
         if base_time >= allowed_idle_time:
-            self.re_initialize_trade_thresholds()
+            self.initialize_trade_thresholds()
+            self.RSI()
             self.reinit_threshold = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
 
         """
@@ -51,8 +57,9 @@ class Strategy(AutoTrader):
         if current_coin_price is None:
             self.logger.info("Skipping scouting... current coin {} not found".format(current_coin + self.config.BRIDGE))
             return
-
-        self._jump_to_best_coin(current_coin, current_coin_price)
+        
+        if self.rsi >= 50 or self.rsi <= 30:
+           self._jump_to_best_coin(current_coin, current_coin_price)
 
     def bridge_scout(self):
         current_coin = self.db.get_current_coin()
@@ -198,3 +205,68 @@ class Strategy(AutoTrader):
                     pair.ratio = cumulative_ratio
 
             self.logger.info(f"Finished ratio init...")
+
+    def rsi_calc(self):
+        """
+        Calculate the RSI for the next coin.
+        """
+        session: Session
+        with self.db.db_session() as session:
+            pairs = session.query(Pair).filter(Pair.ratio.is_(None)).all()
+            grouped_pairs = defaultdict(list)
+            for pair in pairs:
+                if pair.from_coin.enabled and pair.to_coin.enabled:
+                    grouped_pairs[pair.from_coin.symbol].append(pair)
+
+            rsi_price_history = {}
+
+            init_rsi_length = self.config.RSI_LENGTH
+			rsi_type = self.config.RSI_CANDLE_TYPE
+            init_rsi_delta = init_rsi_length * rsi_type
+			
+            
+            #Binance api allows retrieving max 1000 candles
+            if init_rsi_delta > 1000:
+                init_rsi_delta = 1000
+
+            self.logger.info(f"Using last {init_rsi} candles to initialize RSI")
+
+            rsi_base_date = self.manager.now().replace(second=0, microsecond=0)
+            rsi_start_date = rsi_base_date - timedelta(minutes=init_rsi_delta)
+            rsi_end_date = rsi_base_date - timedelta(minutes=rsi_type)
+
+            rsi_start_date_str = rsi_start_date.strftime('%Y-%m-%d %H:%M')
+            rsi_end_date_str = rsi_end_date.strftime('%Y-%m-%d %H:%M')
+
+            self.logger.info(f"Starting RSI init: Start Date: {rsi_start_date}, End Date {rsi_end_date}")
+            for from_coin_symbol, group in grouped_pairs.items():
+
+                if from_coin_symbol not in rsi_price_history.keys():
+                    rsi_price_history[from_coin_symbol] = []
+                    for result in self.manager.binance_client.get_historical_klines(f"{from_coin_symbol}{self.config.BRIDGE_SYMBOL}", "{rsi_type}m", rsi_start_date_str, rsi_end_date_str, limit=init_rsi):
+                        rsi_price = float(result[1])
+                        rsi_price_history[from_coin_symbol].append(rsi_price)
+
+                for pair in group:                  
+                    to_coin_symbol = pair.to_coin.symbol
+                    if to_coin_symbol not in rsi_price_history.keys():
+                        rsi_price_history[to_coin_symbol] = []
+                        for result in self.manager.binance_client.get_historical_klines(f"{to_coin_symbol}{self.config.BRIDGE_SYMBOL}", "{rsi_type}m", rsi_start_date_str, rsi_end_date_str, limit=init_rsi):                           
+                           rsi_price = float(result[1])
+                           rsi_price_history[to_coin_symbol].append(rsi_price)
+
+                    if len(rsi_price_history[from_coin_symbol]) != init_rsi:
+                        self.logger.info(len(rsi_price_history[from_coin_symbol]))
+                        self.logger.info(f"Skip RSI calculation. Could not fetch last {init_rsi} prices for {from_coin_symbol}")
+                        continue
+                    if len(rsi_price_history[to_coin_symbol]) != init_rsi:
+                        self.logger.info(f"Skip RSI calculation. Could not fetch last {init_rsi} prices for {to_coin_symbol}")
+                        continue
+						
+					if len(rsi_price_history[to_coin_symbol]) >= init_rsi:
+					np_closes = numpy.array(rsi_price_history[to_coin_symbol])
+					self.rsi = talib.RSI(np_closes, init_rsi)
+                    
+                    
+
+            self.logger.info(f"Finished RSI calculation...")
