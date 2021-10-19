@@ -46,11 +46,12 @@ class Strategy(AutoTrader):
         current_coin = self.db.get_current_coin()
         # Display on the console, the current coin+Bridge, so users can see *some* activity and not think the bot has
         # stopped. Not logging though to reduce log size.
-        # print(
-        #     f"{self.manager.now()} - CONSOLE - INFO - I am scouting the best trades. "
-        #     f"Current coin: {current_coin + self.config.BRIDGE} ",
-        #     end="\r",
-        # )
+        print(
+            f"{self.manager.now()} - CONSOLE - INFO - I am scouting the best trades. "
+            f"Current coin: {current_coin + self.config.BRIDGE} ",
+            f"Best coin RSI: {self.RSI} ",
+            end="\r",
+        )
 
         current_coin_price = self.manager.get_sell_price(current_coin + self.config.BRIDGE)
 
@@ -60,6 +61,7 @@ class Strategy(AutoTrader):
             
         if self.rsi >= 50 or self.rsi <= 30:
            self._jump_to_best_coin(current_coin, current_coin_price)
+	
 
     def bridge_scout(self):
         current_coin = self.db.get_current_coin()
