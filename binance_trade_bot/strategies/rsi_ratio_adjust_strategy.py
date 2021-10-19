@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session, aliased
 from sqlalchemy.sql.expression import and_
 
 from binance_trade_bot.auto_trader import AutoTrader
-from binance_trade_bot.database import Pair, Coin
+from binance_trade_bot.database import Pair, Coin, CoinValue
 
 
 class Strategy(AutoTrader):
@@ -263,7 +263,7 @@ class Strategy(AutoTrader):
                         self.logger.info(f"Skip RSI calculation. Could not fetch last {init_rsi} prices for {to_coin_symbol}")
                         continue
 						
-            ratio_dict, prices = self._get_ratios(coin, coin_price, excluded_coins)
+            ratio_dict, prices = self._get_ratios()
                 # keep only ratios bigger than zero
             ratio_dict = {k: v for k, v in ratio_dict.items() if v > 0}
             best_pair = max(ratio_dict, key=ratio_dict.get)
