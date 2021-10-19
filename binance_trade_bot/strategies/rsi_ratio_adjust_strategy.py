@@ -245,7 +245,7 @@ class Strategy(AutoTrader):
 
                 if from_coin_symbol not in rsi_price_history.keys():
                     rsi_price_history[from_coin_symbol] = []
-                    for result in self.manager.binance_client.get_historical_klines(f"{from_coin_symbol}{self.config.BRIDGE_SYMBOL}", "{rsi_type}m", rsi_start_date_str, rsi_end_date_str, limit=init_rsi):
+                    for result in self.manager.binance_client.get_historical_klines(f"{from_coin_symbol}{self.config.BRIDGE_SYMBOL}", "{rsi_type}m", rsi_start_date_str, rsi_end_date_str, limit=init_rsi_length):
                         rsi_price = float(result[1])
                         rsi_price_history[from_coin_symbol].append(rsi_price)
 
@@ -253,7 +253,7 @@ class Strategy(AutoTrader):
                     to_coin_symbol = pair.to_coin.symbol
                     if to_coin_symbol not in rsi_price_history.keys():
                         rsi_price_history[to_coin_symbol] = []
-                        for result in self.manager.binance_client.get_historical_klines(f"{to_coin_symbol}{self.config.BRIDGE_SYMBOL}", "{rsi_type}m", rsi_start_date_str, rsi_end_date_str, limit=init_rsi):                           
+                        for result in self.manager.binance_client.get_historical_klines(f"{to_coin_symbol}{self.config.BRIDGE_SYMBOL}", "{rsi_type}m", rsi_start_date_str, rsi_end_date_str, limit=init_rsi_length):                           
                            rsi_price = float(result[1])
                            rsi_price_history[to_coin_symbol].append(rsi_price)
 
