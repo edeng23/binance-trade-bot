@@ -263,7 +263,9 @@ class Strategy(AutoTrader):
                         self.logger.info(f"Skip RSI calculation. Could not fetch last {init_rsi} prices for {to_coin_symbol}")
                         continue
 						
-            ratio_dict, prices = self._get_ratios()
+            current_coin = self.db.get_current_coin()
+	    current_coin_price = self.manager.get_sell_price(current_coin + self.config.BRIDGE)
+	    ratio_dict, prices = self._get_ratios(current_coin, current_coin_price)
                 # keep only ratios bigger than zero
             ratio_dict = {k: v for k, v in ratio_dict.items() if v > 0}
             best_pair = max(ratio_dict, key=ratio_dict.get)
