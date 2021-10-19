@@ -224,13 +224,13 @@ class Strategy(AutoTrader):
 
             init_rsi_length = self.config.RSI_LENGTH
             rsi_type = self.config.RSI_CANDLE_TYPE
+                        
+            #Binance api allows retrieving max 1000 candles
+            if init_rsi_length > 1000:
+                init_rsi_length = 1000
+
             init_rsi_delta = init_rsi_length * rsi_type
 			
-            
-            #Binance api allows retrieving max 1000 candles
-            if init_rsi_delta > 1000:
-                init_rsi_delta = 1000
-
             self.logger.info(f"Using last {init_rsi_length} candles to initialize RSI")
 
             rsi_base_date = self.manager.now().replace(second=0, microsecond=0)
