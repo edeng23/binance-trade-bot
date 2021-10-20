@@ -153,7 +153,7 @@ class Strategy(AutoTrader):
         if init_rsi_length > 1000:
            init_rsi_length = 1000
 
-        init_rsi_delta = init_rsi_length * rsi_type
+        init_rsi_delta = (init_rsi_length + 1 ) * rsi_type
 			
         self.logger.info(f"Using last {init_rsi_length} candles to initialize RSI")
 
@@ -173,16 +173,16 @@ class Strategy(AutoTrader):
         best_pair = max(ratio_dict, key=ratio_dict.get)
         to_coin_symbol = best_pair.to_coin_id
 		
-        rsi_price_history[to_coin_symbol] = []
+        rsi_price_history = []
 		
         self.logger.info(f"Starting RSI init: Start Date: {rsi_start_date}, End Date {rsi_end_date}")
 		
         for result in self.manager.binance_client.get_historical_klines(f"{to_coin_symbol}{self.config.BRIDGE_SYMBOL}", "{rsi_type}m", rsi_start_date_str, rsi_end_date_str, limit=init_rsi_length):                           
            rsi_price = float(result[1])
-           rsi_price_history[to_coin_symbol].append(rsi_price)
+           rsi_price_history.append(rsi_price)
 		
-        if len(rsi_price_history[to_coin_symbol]) >= init_rsi_length:
-           np_closes = numpy.array(rsi_price_history[to_coin_symbol])
+        if len(rsi_price_history) >= init_rsi_length:
+           np_closes = numpy.array(rsi_price_history)
            self.rsi = talib.RSI(np_closes, init_rsi_length)
            self.logger.info(f"Finished ratio init...")
 
