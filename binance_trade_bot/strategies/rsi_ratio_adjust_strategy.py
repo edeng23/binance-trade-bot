@@ -266,6 +266,6 @@ class Strategy(AutoTrader):
               self.rsi = rsi[-1]
               #self.logger.info(f"Finished ratio init...")
 
-           else:
-              self.rsi = 40
-              self.logger.info(f"Not enough data for RSI calculation. Continue scouting...")
+        else:
+           self.rsi = ""
+           #self.logger.info(f"Not enough data for RSI calculation. Continue scouting...")
