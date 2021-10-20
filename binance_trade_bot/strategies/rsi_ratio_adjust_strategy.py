@@ -177,13 +177,14 @@ class Strategy(AutoTrader):
 		
         self.logger.info(f"Starting RSI init: Start Date: {rsi_start_date}, End Date {rsi_end_date}")
 		
-        for result in self.manager.binance_client.get_historical_klines(f"{to_coin_symbol}{self.config.BRIDGE_SYMBOL}", "{rsi_type}m", rsi_start_date_str, rsi_end_date_str, limit=init_rsi_length):                           
+        for result in self.manager.binance_client.get_historical_klines(f"{to_coin_symbol}{self.config.BRIDGE_SYMBOL}", str({rsi_type})+"m", rsi_start_date_str, rsi_end_date_str, limit=init_rsi_length):                           
            rsi_price = float(result[1])
            rsi_price_history.append(rsi_price)
 		
         if len(rsi_price_history) >= init_rsi_length:
            np_closes = numpy.array(rsi_price_history)
-           self.rsi = talib.RSI(np_closes, init_rsi_length)
+           rsi = talib.RSI(np_closes, init_rsi_length)
+           self.rsi = rsi[-1]
            self.logger.info(f"Finished ratio init...")
 
         else:
