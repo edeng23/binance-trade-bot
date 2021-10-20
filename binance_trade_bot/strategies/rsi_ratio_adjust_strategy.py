@@ -52,13 +52,11 @@ class Strategy(AutoTrader):
         current_coin = self.db.get_current_coin()
         # Display on the console, the current coin+Bridge, so users can see *some* activity and not think the bot has
         # stopped. Not logging though to reduce log size.
-        print(
+        print('\r',
             f"{self.manager.now()} - CONSOLE - INFO - I am scouting the best trades. "
             f"Current coin: {current_coin + self.config.BRIDGE} ",
             f"Next best coin is: {self.rsi_coin} with RSI: {self.rsi} ",
-            f"Best coin RSI: {self.rsi} ",
-            end="\r",
-        )
+            end='')
 
         current_coin_price = self.manager.get_sell_price(current_coin + self.config.BRIDGE)
 
