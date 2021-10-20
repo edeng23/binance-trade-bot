@@ -243,7 +243,7 @@ class Strategy(AutoTrader):
         current_coin_price = self.manager.get_sell_price(current_coin + self.config.BRIDGE)
 		
         ratio_dict, prices = self._get_ratios(current_coin, current_coin_price)
-        ratio_dict = {k: v for k, v in ratio_dict.items()}
+        ratio_dict = {k: v for k, v in ratio_dict.items() if v > 0}
 		
         best_pair = max(ratio_dict, key=ratio_dict.get)
         to_coin_symbol = best_pair.to_coin_id
