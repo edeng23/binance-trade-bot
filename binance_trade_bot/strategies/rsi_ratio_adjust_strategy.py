@@ -230,7 +230,7 @@ class Strategy(AutoTrader):
 
         init_rsi_delta = (init_rsi_length * 2 ) * rsi_type
 			
-        self.logger.info(f"Using last {init_rsi_length} candles to initialize RSI")
+        #self.logger.info(f"Using last {init_rsi_length} candles to initialize RSI")
 
         rsi_base_date = self.manager.now().replace(second=0, microsecond=0)
         rsi_start_date = rsi_base_date - timedelta(minutes=init_rsi_delta)
@@ -252,7 +252,7 @@ class Strategy(AutoTrader):
         rsi_price_history = []
         next_coin_price = self.manager.get_sell_price(self.rsi_coin + self.config.BRIDGE)
 		
-        self.logger.info(f"Starting RSI init: Start Date: {rsi_start_date}, End Date {rsi_end_date}")
+        #self.logger.info(f"Starting RSI init: Start Date: {rsi_start_date}, End Date {rsi_end_date}")
 		
         for result in self.manager.binance_client.get_historical_klines(f"{to_coin_symbol}{self.config.BRIDGE_SYMBOL}", "15m", rsi_start_date_str, rsi_end_date_str, limit=init_rsi_length):                           
            rsi_price = float(result[1])
