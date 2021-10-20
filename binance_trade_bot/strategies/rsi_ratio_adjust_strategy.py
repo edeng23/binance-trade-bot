@@ -66,8 +66,9 @@ class Strategy(AutoTrader):
             self.logger.info("Skipping scouting... current coin {} not found".format(current_coin + self.config.BRIDGE))
             return
             
-        if self.rsi >= 50 or self.rsi <= 30:
-           self._jump_to_best_coin(current_coin, current_coin_price)
+        if self.rsi:
+           if self.rsi >= 50 or self.rsi <= 30:
+              self._jump_to_best_coin(current_coin, current_coin_price)
 	
 
     def bridge_scout(self):
