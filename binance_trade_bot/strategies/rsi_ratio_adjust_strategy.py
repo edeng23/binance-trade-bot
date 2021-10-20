@@ -23,7 +23,9 @@ class Strategy(AutoTrader):
         super().initialize()
         self.initialize_current_coin()
         self.reinit_threshold = self.manager.now().replace(second=0, microsecond=0)
+        self.reinit_rsi = self.manager.now().replace(second=0, microsecond=0)
         self.rsi = self.rsi_calc()
+        self.rsi_coin = ""
         self.logger.info(f"Ratio adjust weight: {self.config.RATIO_ADJUST_WEIGHT}")
         self.logger.info(f"RSI length: {self.config.RSI_LENGTH}")
         self.logger.info(f"RSI candle type: {self.config.RSI_CANDLE_TYPE}")
@@ -35,11 +37,15 @@ class Strategy(AutoTrader):
         
         base_time: datetime = self.manager.now()
         allowed_idle_time = self.reinit_threshold
+	allowed_rsi_time = self.reinit_rsi
         if base_time >= allowed_idle_time:
             self.re_initialize_trade_thresholds()
-            self.rsi_calc()
             self.reinit_threshold = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
-
+		
+        if base_time >= allowed_rsi_time:
+            self.rsi_calc()
+            self.reinit_rsi = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=5)
+		
         """
         Scout for potential jumps from the current coin to another coin
         """
@@ -49,6 +55,7 @@ class Strategy(AutoTrader):
         print(
             f"{self.manager.now()} - CONSOLE - INFO - I am scouting the best trades. "
             f"Current coin: {current_coin + self.config.BRIDGE} ",
+            f"Next best coin is: {self.rsi_coin} with RSI: {self.rsi} ",
             f"Best coin RSI: {self.rsi} ",
             end="\r",
         )
@@ -140,7 +147,75 @@ class Strategy(AutoTrader):
                     continue
 
                 pair.ratio = (pair.ratio *self.config.RATIO_ADJUST_WEIGHT + from_coin_price / to_coin_price)  / (self.config.RATIO_ADJUST_WEIGHT + 1)
+		
+    def initialize_trade_thresholds(self):
+        """
+        Initialize the buying threshold of all the coins for trading between them
+        """
+        session: Session
+        with self.db.db_session() as session:
+            pairs = session.query(Pair).filter(Pair.ratio.is_(None)).all()
+            grouped_pairs = defaultdict(list)
+            for pair in pairs:
+                if pair.from_coin.enabled and pair.to_coin.enabled:
+                    grouped_pairs[pair.from_coin.symbol].append(pair)
 
+            price_history = {}
+
+            init_weight = self.config.RATIO_ADJUST_WEIGHT
+            
+            #Binance api allows retrieving max 1000 candles
+            if init_weight > 500:
+                init_weight = 500
+
+            self.logger.info(f"Using last {init_weight} candles to initialize ratios")
+
+            base_date = self.manager.now().replace(second=0, microsecond=0)
+            start_date = base_date - timedelta(minutes=init_weight*2)
+            end_date = base_date - timedelta(minutes=1)
+
+            start_date_str = start_date.strftime('%Y-%m-%d %H:%M')
+            end_date_str = end_date.strftime('%Y-%m-%d %H:%M')
+
+            self.logger.info(f"Starting ratio init: Start Date: {start_date}, End Date {end_date}")
+            for from_coin_symbol, group in grouped_pairs.items():
+
+                if from_coin_symbol not in price_history.keys():
+                    price_history[from_coin_symbol] = []
+                    for result in  self.manager.binance_client.get_historical_klines(f"{from_coin_symbol}{self.config.BRIDGE_SYMBOL}", "1m", start_date_str, end_date_str, limit=init_weight*2):
+                        price = float(result[1])
+                        price_history[from_coin_symbol].append(price)
+
+                for pair in group:                  
+                    to_coin_symbol = pair.to_coin.symbol
+                    if to_coin_symbol not in price_history.keys():
+                        price_history[to_coin_symbol] = []
+                        for result in self.manager.binance_client.get_historical_klines(f"{to_coin_symbol}{self.config.BRIDGE_SYMBOL}", "1m", start_date_str, end_date_str, limit=init_weight*2):                           
+                           price = float(result[1])
+                           price_history[to_coin_symbol].append(price)
+
+                    if len(price_history[from_coin_symbol]) != init_weight*2:
+                        self.logger.info(len(price_history[from_coin_symbol]))
+                        self.logger.info(f"Skip initialization. Could not fetch last {init_weight * 2} prices for {from_coin_symbol}")
+                        continue
+                    if len(price_history[to_coin_symbol]) != init_weight*2:
+                        self.logger.info(f"Skip initialization. Could not fetch last {init_weight * 2} prices for {to_coin_symbol}")
+                        continue
+                    
+                    sma_ratio = 0.0
+                    for i in range(init_weight):
+                        sma_ratio += price_history[from_coin_symbol][i] / price_history[to_coin_symbol][i]
+                    sma_ratio = sma_ratio / init_weight
+
+                    cumulative_ratio = sma_ratio
+                    for i in range(init_weight, init_weight * 2):
+                        cumulative_ratio = (cumulative_ratio * init_weight + price_history[from_coin_symbol][i] / price_history[to_coin_symbol][i]) / (init_weight + 1)
+
+                    pair.ratio = cumulative_ratio
+
+            self.logger.info(f"Finished ratio init...")
+
+	
     def rsi_calc(self):
         """
         Calculate the RSI for the next best coin.
@@ -150,10 +225,10 @@ class Strategy(AutoTrader):
         rsi_type = self.config.RSI_CANDLE_TYPE
                         
         #Binance api allows retrieving max 1000 candles
-        if init_rsi_length > 1000:
-           init_rsi_length = 1000
+        if init_rsi_length > 500:
+           init_rsi_length = 500
 
-        init_rsi_delta = (init_rsi_length + 1 ) * rsi_type
+        init_rsi_delta = (init_rsi_length * 2 ) * rsi_type
 			
         self.logger.info(f"Using last {init_rsi_length} candles to initialize RSI")
 
@@ -172,20 +247,24 @@ class Strategy(AutoTrader):
 		
         best_pair = max(ratio_dict, key=ratio_dict.get)
         to_coin_symbol = best_pair.to_coin_id
+        self.rsi_coin = self.db.get_coin(to_coin_symbol)
 		
         rsi_price_history = []
+	next_coin_price = self.manager.get_sell_price(self.rsi_coin + self.config.BRIDGE)
 		
         self.logger.info(f"Starting RSI init: Start Date: {rsi_start_date}, End Date {rsi_end_date}")
 		
-        for result in self.manager.binance_client.get_historical_klines(f"{to_coin_symbol}{self.config.BRIDGE_SYMBOL}", str({rsi_type})+"m", rsi_start_date_str, rsi_end_date_str, limit=init_rsi_length):                           
+        for result in self.manager.binance_client.get_historical_klines(f"{to_coin_symbol}{self.config.BRIDGE_SYMBOL}", "15m", rsi_start_date_str, rsi_end_date_str, limit=init_rsi_length):                           
            rsi_price = float(result[1])
            rsi_price_history.append(rsi_price)
 		
+        rsi_price_history.append(next_coin_price)
+	
         if len(rsi_price_history) >= init_rsi_length:
            np_closes = numpy.array(rsi_price_history)
            rsi = talib.RSI(np_closes, init_rsi_length)
            self.rsi = rsi[-1]
-           self.logger.info(f"Finished ratio init...")
+           #self.logger.info(f"Finished ratio init...")
 
         else:
            self.rsi = 40
