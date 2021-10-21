@@ -44,7 +44,7 @@ class Strategy(AutoTrader):
 		
         if base_time >= allowed_rsi_time:
             self.rsi_calc()
-            self.reinit_rsi = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=5)
+            self.reinit_rsi = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
 		
         """
         Scout for potential jumps from the current coin to another coin
@@ -52,12 +52,14 @@ class Strategy(AutoTrader):
         current_coin = self.db.get_current_coin()
         # Display on the console, the current coin+Bridge, so users can see *some* activity and not think the bot has
         # stopped. Not logging though to reduce log size.
-        print('\r',
+        print(
             f"{self.manager.now()} - CONSOLE - INFO - I am scouting the best trades. ", '\n',
             f"Current coin: {current_coin + self.config.BRIDGE} ", '\n',
             f"Next best coin is: {self.rsi_coin} with RSI: {self.rsi} ",
-            end='')
-
+            end='\r',
+        )
+        self.rsi_coin = ""
+	
         current_coin_price = self.manager.get_sell_price(current_coin + self.config.BRIDGE)
 
         if current_coin_price is None:
@@ -65,7 +67,7 @@ class Strategy(AutoTrader):
             return
             
         if self.rsi:
-           if self.rsi >= 50 or self.rsi <= 30:
+           if self.rsi > 50 or self.rsi <= 30:
               self._jump_to_best_coin(current_coin, current_coin_price)
 	
 
