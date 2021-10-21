@@ -22,10 +22,10 @@ class Strategy(AutoTrader):
 
         super().initialize()
         self.initialize_current_coin()
+        self.rsi_coin = ""
+        self.rsi = self.rsi_calc()
         self.reinit_threshold = self.manager.now().replace(second=0, microsecond=0)
         self.reinit_rsi = self.manager.now().replace(second=0, microsecond=0)
-        self.rsi = self.rsi_calc()
-        self.rsi_coin = ""
         self.logger.info(f"Ratio adjust weight: {self.config.RATIO_ADJUST_WEIGHT}")
         self.logger.info(f"RSI length: {self.config.RSI_LENGTH}")
         self.logger.info(f"RSI candle type: {self.config.RSI_CANDLE_TYPE}")
