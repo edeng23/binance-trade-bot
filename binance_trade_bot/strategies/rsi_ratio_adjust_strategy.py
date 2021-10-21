@@ -224,6 +224,7 @@ class Strategy(AutoTrader):
 		
         init_rsi_length = self.config.RSI_LENGTH
         rsi_type = self.config.RSI_CANDLE_TYPE
+	rsi_string = str(self.config.RSI_CANDLE_TYPE) + 'm'
                         
         #Binance api allows retrieving max 1000 candles
         if init_rsi_length > 500:
@@ -256,7 +257,7 @@ class Strategy(AutoTrader):
 		
         #self.logger.info(f"Starting RSI init: Start Date: {rsi_start_date}, End Date {rsi_end_date}")
 		
-           for result in self.manager.binance_client.get_historical_klines(f"{to_coin_symbol}{self.config.BRIDGE_SYMBOL}", "15m", rsi_start_date_str, rsi_end_date_str, limit=init_rsi_length):                           
+           for result in self.manager.binance_client.get_historical_klines(f"{to_coin_symbol}{self.config.BRIDGE_SYMBOL}", rsi_string, rsi_start_date_str, rsi_end_date_str, limit=init_rsi_length):                           
               rsi_price = float(result[1])
               rsi_price_history.append(rsi_price)
 		
