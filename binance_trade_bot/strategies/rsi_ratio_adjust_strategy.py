@@ -242,7 +242,7 @@ class Strategy(AutoTrader):
         rsi_end_date_str = rsi_end_date.strftime('%Y-%m-%d %H:%M')
 					 
         current_coin = self.db.get_current_coin()
-        current_coin_price = self.manager.get_sell_price(current_coin + self.config.BRIDGE)
+        current_coin_price = self.manager.get_buy_price(current_coin + self.config.BRIDGE)
 		
         ratio_dict, prices = self._get_ratios(current_coin, current_coin_price)
         ratio_dict = {k: v for k, v in ratio_dict.items() if v > 0}
