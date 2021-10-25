@@ -253,7 +253,7 @@ class Strategy(AutoTrader):
            self.rsi_coin = self.db.get_coin(to_coin_symbol)
 		
            rsi_price_history = []
-           next_coin_price = self.manager.get_sell_price(self.rsi_coin + self.config.BRIDGE)
+           next_coin_price = self.manager.get_buy_price(self.rsi_coin + self.config.BRIDGE)
 		
         #self.logger.info(f"Starting RSI init: Start Date: {rsi_start_date}, End Date {rsi_end_date}")
 		
