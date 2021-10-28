@@ -323,7 +323,6 @@ class BinanceAPIManager:
         from_coin_price = self.get_ticker_price(origin_symbol + target_symbol)
         from_coin_price_s = "{:0.0{}f}".format(from_coin_price, 8)
 
-
         order_quantity = self._sell_quantity(origin_symbol, target_symbol, origin_balance)
         order_quantity_s = "{:0.0{}f}".format(order_quantity, 8)
         self.logger.info(f"Selling {order_quantity} of {origin_symbol}")
