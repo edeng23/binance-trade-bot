@@ -16,6 +16,13 @@ def main():
     config = Config()
     db = Database(logger, config)
     manager = BinanceAPIManager(config, db, logger)
+    # check if we can access API feature that require valid config
+    try:
+        _ = manager.get_account()
+    except Exception as e:  # pylint: disable=broad-except
+        logger.error("Couldn't access Binance API - API keys may be wrong or lack sufficient permissions")
+        logger.error(e)
+        return
     strategy = get_strategy(config.STRATEGY)
     if strategy is None:
         logger.error("Invalid strategy name")
@@ -36,7 +43,9 @@ def main():
     schedule.every(1).minutes.do(trader.update_values).tag("updating value history")
     schedule.every(1).minutes.do(db.prune_scout_history).tag("pruning scout history")
     schedule.every(1).hours.do(db.prune_value_history).tag("pruning value history")
-
-    while True:
-        schedule.run_pending()
-        time.sleep(1)
+    try:
+        while True:
+            schedule.run_pending()
+            time.sleep(1)
+    finally:
+        manager.stream_manager.close()
