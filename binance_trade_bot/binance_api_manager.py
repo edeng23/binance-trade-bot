@@ -44,8 +44,7 @@ class BinanceAPIManager:
         fees = self.get_trade_fees()
         if not fees:
             return 0.001
-        else:
-            base_fee = fees[origin_coin + target_coin]
+        base_fee = fees[origin_coin + target_coin]
         if not self.get_using_bnb_for_fees():
             return base_fee
         # The discount is only applied if we have enough BNB to cover the fee
