@@ -259,11 +259,13 @@ class BinanceAPIManager:
         origin_balance = self.get_currency_balance(origin_symbol)
         target_balance = self.get_currency_balance(target_symbol)
 
+        pair_info = self.binance_client.get_symbol_info(origin_symbol + target_symbol)
+        
         from_coin_price = self.get_ticker_price(origin_symbol + target_symbol)
-        from_coin_price_s = "{:0.0{}f}".format(from_coin_price, 8)
+        from_coin_price_s = "{:0.0{}f}".format(from_coin_price, pair_info["quotePrecision"])
 
         order_quantity = self._buy_quantity(origin_symbol, target_symbol, target_balance, from_coin_price)
-        order_quantity_s = "{:0.0{}f}".format(order_quantity, 8)
+        order_quantity_s = "{:0.0{}f}".format(order_quantity, pair_info["baseAssetPrecision"])
 
         self.logger.info(f"BUY QTY {order_quantity}")
 
@@ -320,11 +322,13 @@ class BinanceAPIManager:
 
         origin_balance = self.get_currency_balance(origin_symbol)
         target_balance = self.get_currency_balance(target_symbol)
+        
+        pair_info = self.binance_client.get_symbol_info(origin_symbol + target_symbol)
         from_coin_price = self.get_ticker_price(origin_symbol + target_symbol)
-        from_coin_price_s = "{:0.0{}f}".format(from_coin_price, 8)
+        from_coin_price_s = "{:0.0{}f}".format(from_coin_price, pair_info["quotePrecision"])
 
         order_quantity = self._sell_quantity(origin_symbol, target_symbol, origin_balance)
-        order_quantity_s = "{:0.0{}f}".format(order_quantity, 8)
+        order_quantity_s = "{:0.0{}f}".format(order_quantity, pair_info["baseAssetPrecision"])
         self.logger.info(f"Selling {order_quantity} of {origin_symbol}")
 
         self.logger.info(f"Balance is {origin_balance}")
