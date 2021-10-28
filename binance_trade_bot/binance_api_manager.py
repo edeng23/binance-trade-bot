@@ -245,7 +245,7 @@ class BinanceAPIManager:
         origin_tick = self.get_alt_tick(origin_symbol, target_symbol)
         return math.floor(target_balance * 10 ** origin_tick / from_coin_price) / float(10 ** origin_tick)
 
-    def _buy_alt(self, origin_coin: Coin, target_coin: Coin): # pylint: disable=too-many-locals
+    def _buy_alt(self, origin_coin: Coin, target_coin: Coin):  # pylint: disable=too-many-locals
         """
         Buy altcoin
         """
@@ -258,9 +258,7 @@ class BinanceAPIManager:
 
         origin_balance = self.get_currency_balance(origin_symbol)
         target_balance = self.get_currency_balance(target_symbol)
-
         pair_info = self.binance_client.get_symbol_info(origin_symbol + target_symbol)
-        
         from_coin_price = self.get_ticker_price(origin_symbol + target_symbol)
         from_coin_price_s = "{:0.0{}f}".format(from_coin_price, pair_info["quotePrecision"])
 
@@ -309,7 +307,7 @@ class BinanceAPIManager:
         origin_tick = self.get_alt_tick(origin_symbol, target_symbol)
         return math.floor(origin_balance * 10 ** origin_tick) / float(10 ** origin_tick)
 
-    def _sell_alt(self, origin_coin: Coin, target_coin: Coin): # pylint: disable=too-many-locals
+    def _sell_alt(self, origin_coin: Coin, target_coin: Coin):  # pylint: disable=too-many-locals
         """
         Sell altcoin
         """
@@ -322,7 +320,7 @@ class BinanceAPIManager:
 
         origin_balance = self.get_currency_balance(origin_symbol)
         target_balance = self.get_currency_balance(target_symbol)
-        
+
         pair_info = self.binance_client.get_symbol_info(origin_symbol + target_symbol)
         from_coin_price = self.get_ticker_price(origin_symbol + target_symbol)
         from_coin_price_s = "{:0.0{}f}".format(from_coin_price, pair_info["quotePrecision"])
