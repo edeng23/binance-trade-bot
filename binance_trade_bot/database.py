@@ -189,69 +189,10 @@ class Database:
             session.query(ScoutHistory).filter(ScoutHistory.datetime < time_diff).delete()
 
     def prune_value_history(self):
-        def _datetime_id_query(dt_format):
-            dt_column = func.strftime(dt_format, CoinValue.datetime)
-
-            grouped = select(CoinValue, func.max(CoinValue.datetime), dt_column).group_by(
-                CoinValue.coin_id, CoinValue, dt_column
-            )
-
-            return select(grouped.c.id.label("id")).select_from(grouped)
-
-        def _update_query(datetime_query, interval):
-            return (
-                update(CoinValue)
-                .where(CoinValue.id.in_(datetime_query))
-                .values(interval=interval)
-                .execution_options(synchronize_session="fetch")
-            )
-
-        # Sets the first entry for each coin for each hour as 'hourly'
-        hourly_update_query = _update_query(_datetime_id_query("%H"), Interval.HOURLY)
-
-        # Sets the first entry for each coin for each month as 'weekly'
-        # (Sunday is the start of the week)
-        weekly_update_query = _update_query(
-            _datetime_id_query("%Y-%W"),
-            Interval.WEEKLY,
-        )
-
-        # Sets the first entry for each coin for each day as 'daily'
-        daily_update_query = _update_query(
-            _datetime_id_query("%Y-%j"),
-            Interval.DAILY,
-        )
-
         session: Session
         with self.db_session() as session:
-            session.execute(hourly_update_query)
-            session.execute(daily_update_query)
-            session.execute(weekly_update_query)
-
-            # Early commit to make sure the delete statements work properly.
-            session.commit()
-
-            # The last 24 hours worth of minutely entries will be kept, so
-            # count(coins) * 1440 entries
-            time_diff = datetime.now() - timedelta(hours=24)
-            session.query(CoinValue).filter(
-                CoinValue.interval == Interval.MINUTELY, CoinValue.datetime < time_diff
-            ).delete()
-
-            # The last 28 days worth of hourly entries will be kept, so count(coins) * 672 entries
-            time_diff = datetime.now() - timedelta(days=28)
-            session.query(CoinValue).filter(
-                CoinValue.interval == Interval.HOURLY, CoinValue.datetime < time_diff
-            ).delete()
-
-            # The last years worth of daily entries will be kept, so count(coins) * 365 entries
-            time_diff = datetime.now() - timedelta(days=365)
-            session.query(CoinValue).filter(
-                CoinValue.interval == Interval.DAILY, CoinValue.datetime < time_diff
-            ).delete()
-
-            # All weekly entries will be kept forever
-
+            session.query(CoinValue).delete()
+            
     def create_database(self):
         Base.metadata.create_all(self.engine)
 
