@@ -40,7 +40,6 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
             "price_type": self.PRICE_TYPE_ORDERBOOK,
             "ratio_calc": "default",
             "accept_losses": "false",
-
             "auto_adjust_bnb_balance": "false",
             "auto_adjust_bnb_balance_rate": "3",
             "allow_coin_merge": "true"
@@ -68,7 +67,6 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
             os.environ.get("SCOUT_SLEEP_TIME") or config.get(USER_CFG_SECTION, "scout_sleep_time")
         )
 
-        
         # Get config for binance
         self.BINANCE_API_KEY = os.environ.get("API_KEY") or config.get(USER_CFG_SECTION, "api_key")
         self.BINANCE_API_SECRET_KEY = os.environ.get("API_SECRET_KEY") or config.get(USER_CFG_SECTION, "api_secret_key")
