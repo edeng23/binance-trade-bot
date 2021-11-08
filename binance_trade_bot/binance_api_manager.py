@@ -243,7 +243,7 @@ class BinanceAPIManager:
         from_coin_price = from_coin_price or self.get_ticker_price(origin_symbol + target_symbol)
 
         origin_tick = self.get_alt_tick(origin_symbol, target_symbol)
-        return math.floor(target_balance * 10 ** origin_tick / from_coin_price) / float(10 ** origin_tick)
+        return math.floor(target_balance * self.config.BUY_PERCENTAGE / 100 * 10 ** origin_tick / from_coin_price) / float(10 ** origin_tick)
 
     def _buy_alt(self, origin_coin: Coin, target_coin: Coin):
         """
@@ -301,7 +301,7 @@ class BinanceAPIManager:
         origin_balance = origin_balance or self.get_currency_balance(origin_symbol)
 
         origin_tick = self.get_alt_tick(origin_symbol, target_symbol)
-        return math.floor(origin_balance * 10 ** origin_tick) / float(10 ** origin_tick)
+        return math.floor(origin_balance * self.config.SELL_PERCENTAGE / 100 * 10 ** origin_tick) / float(10 ** origin_tick)
 
     def _sell_alt(self, origin_coin: Coin, target_coin: Coin):
         """
