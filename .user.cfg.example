@@ -9,6 +9,7 @@ use_margin=no
 scout_multiplier=5
 scout_margin=0.8
 scout_sleep_time=1
+strategy=default
 enable_paper_trading=False
 buy_timeout=10
 sell_timeout=5
