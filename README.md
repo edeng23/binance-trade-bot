@@ -114,7 +114,7 @@ There is an example version of this file to get you started.
 
 If you are interested in running a Telegram bot, more information can be found at [Telegram's official documentation](https://core.telegram.org/bots).
 
-### Run
+## Run
 
 ```shell
 python -m binance_trade_bot
@@ -122,13 +122,21 @@ python -m binance_trade_bot
 
 ### Docker
 
-The official image is available [here](https://hub.docker.com/r/idkravitz/binance-trade-bot) and will update on every new change.
+Please remember that this is a fork. To maintain the security of your api key it relies on local builds.
 
-```shell
-docker-compose up
-```
+#### Build and run locally
+1. Clone this git to a location of your choice: 
+`git clone https://github.com/tntwist/binance-trade-bot tntwist-binance-trade-bot`
+2. Change to the directory:
+`cd tntwist-binance-trade-bot`
+3. Build the container locally (this may take a few minutes depending on your hardware):
+`docker build . -t tntwist-binance-trade-bot`
+4. Run docker-compose up
+`docker-compose up`
 
-If you only want to start the SQLite browser
+To update, repeat steps 1 through 4. The commands above can also be added to a shell script to automate this process.
+
+#### If you only want to start the SQLite browser
 
 ```shell
 docker-compose up -d sqlitebrowser
