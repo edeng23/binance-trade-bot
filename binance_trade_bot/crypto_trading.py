@@ -38,8 +38,10 @@ def main():
     else:
         logger.warning("RUNNING IN REAL TRADING MODE")
 
-    if config.RATIO_CALC != config.RATIO_CALC_DEFAULT:
-        logger.info(f"Using {config.RATIO_CALC} method for caluclation of the ratios.")
+    if config.USE_MARGIN:
+        logger.info(f"Using scout margin method for calculation of the ratios.")
+    else:
+        logger.info(f"Using default method for calculation of the ratios.")
 
     if config.AUTO_ADJUST_BNB_BALANCE and not config.ENABLE_PAPER_TRADING:
         logger.info(f"Auto adjust for BNB enabled.")
