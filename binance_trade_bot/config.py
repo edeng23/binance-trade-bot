@@ -15,9 +15,6 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
 
     PRICE_TYPE_ORDERBOOK = "orderbook"
     PRICE_TYPE_TICKER = "ticker"
-    
-    RATIO_CALC_DEFAULT = "default"
-    RATIO_CALC_SCOUT_MARGIN = "scout_margin"
 
     def __init__(self):
         # Init config
