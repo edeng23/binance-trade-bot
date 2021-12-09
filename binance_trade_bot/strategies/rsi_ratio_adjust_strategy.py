@@ -222,15 +222,15 @@ class Strategy(AutoTrader):
         Calculate the RSI for the next best coin.
         """
 		
-        init_rsi_length = self.config.RSI_LENGTH + 1
+        init_rsi_length = self.config.RSI_LENGTH
         rsi_type = self.config.RSI_CANDLE_TYPE
         rsi_string = str(self.config.RSI_CANDLE_TYPE) + 'm'
                         
         #Binance api allows retrieving max 1000 candles
-        if init_rsi_length > 500:
-           init_rsi_length = 500
+        if init_rsi_length > 250:
+           init_rsi_length = 250
 
-        init_rsi_delta = (init_rsi_length * 2 ) * rsi_type
+        init_rsi_delta = (init_rsi_length * 4 ) * rsi_type
 			
         #self.logger.info(f"Using last {init_rsi_length} candles to initialize RSI")
 
