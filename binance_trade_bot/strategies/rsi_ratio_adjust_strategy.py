@@ -222,7 +222,7 @@ class Strategy(AutoTrader):
         Calculate the RSI for the next best coin.
         """
 		
-        init_rsi_length = self.config.RSI_LENGTH
+        init_rsi_length = self.config.RSI_LENGTH + 1
         rsi_type = self.config.RSI_CANDLE_TYPE
         rsi_string = str(self.config.RSI_CANDLE_TYPE) + 'm'
                         
