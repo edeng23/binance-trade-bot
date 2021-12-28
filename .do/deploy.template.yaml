@@ -4,6 +4,6 @@ spec:
   - dockerfile_path: Dockerfile
     git:
       branch: master
-      repo_clone_url: https://github.com/edeng23/binance-trade-bot
+      repo_clone_url: https://github.com/ghostnetrn/binance-trade-bot
     name: binance-trade-bot
     http_port: 5001
