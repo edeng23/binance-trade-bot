@@ -1,6 +1,6 @@
 spec:
   name: binance-trade-bot
-  services:
+  workers:
   - environment_slug: python
     git:
       branch: master
