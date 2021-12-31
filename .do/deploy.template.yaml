@@ -1,6 +1,6 @@
 spec:
   name: binance-trade-bot
-  services:
+  worker:
   - dockerfile_path: Dockerfile
     git:
       branch: master
