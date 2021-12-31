@@ -1,7 +1,7 @@
 spec:
   name: binance-trade-bot
-  static_sites:
-  - environment_slug: html
+  services:
+  - environment_slug: python
     git:
       branch: master
       repo_clone_url: https://github.com/coinbookbrasil/binance-trade-bot.git
