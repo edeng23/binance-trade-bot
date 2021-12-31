@@ -1,11 +1,11 @@
-spec:
-  name: binance-trade-bot
-  static_sites:
-  - dockerfile_path: Dockerfile
-    git:
-      branch: master
-      repo_clone_url: https://github.com/edeng23/binance-trade-bot
-    envs:
+name: binance-trade-bot
+static_sites:
+- environment_slug: html
+  github:
+    branch: main
+    deploy_on_push: true
+    repo: coinbookbrasil/binance-trade-bot
+  envs:
     - key: API_KEY
       scope: BUILD_TIME
       value: "API KEY BINANCE"
