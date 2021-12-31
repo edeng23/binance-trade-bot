@@ -5,7 +5,7 @@ spec:
     git:
       branch: main
       repo_clone_url: https://github.com/coinbookbrasil/binance-trade-bot.git
-   envs:
+    envs:
     - key: API_KEY
       scope: BUILD_TIME
       value: "API KEY BINANCE"
