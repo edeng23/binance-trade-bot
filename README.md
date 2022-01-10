@@ -49,6 +49,8 @@ Run the following line in the terminal: `pip install -r requirements.txt`.
 
 Create a .cfg file named `user.cfg` based off `.user.cfg.example`, then add your API keys and current coin.
 
+Create a file named `supported_coin_list` optionally based off `.supported_coin_list.example`, in which you add the coins you want to trade.
+
 **The configuration file consists of the following fields:**
 
 -   **api_key** - Binance API key generated in the Binance account setup stage.
