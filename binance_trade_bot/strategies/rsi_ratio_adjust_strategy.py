@@ -260,7 +260,7 @@ class Strategy(AutoTrader):
               rsi_price = float(result[1])
               rsi_price_history.append(rsi_price)
 
-           next_coin_price = self.manager.get_buy_price(self.rsi_coin + self.config.BRIDGE)
+           next_coin_price = self.manager.get_sell_price(self.rsi_coin + self.config.BRIDGE)
            rsi_price_history.append(next_coin_price)
 
            if len(rsi_price_history) >= init_rsi_length:
