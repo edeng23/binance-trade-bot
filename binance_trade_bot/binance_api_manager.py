@@ -327,7 +327,7 @@ class BinanceAPIManager:
         while order is None:
             # Should sell at calculated price to avoid lost coin
             order = self.binance_client.order_limit_sell(
-                symbol=origin_symbol + target_symbol, quantity=order_quantity, price=from_coin_price
+                symbol=origin_symbol + target_symbol, quantity=order_quantity, price=f"{from_coin_price:8f}"
             )
 
         self.logger.info("order")
