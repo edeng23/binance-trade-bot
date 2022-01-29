@@ -1,3 +1,4 @@
+from collections import defaultdict
 from datetime import datetime
 from typing import Dict, List
 
@@ -76,11 +77,14 @@ class AutoTrader:
         """
         session: Session
         with self.db.db_session() as session:
-            for pair in session.query(Pair).filter(Pair.ratio.is_(None)).all():
-                if not pair.from_coin.enabled or not pair.to_coin.enabled:
-                    continue
-                self.logger.info(f"Initializing {pair.from_coin} vs {pair.to_coin}")
-
+            pairs = session.query(Pair).filter(Pair.ratio.is_(None)).all()
+            grouped_pairs = defaultdict(list)
+            for pair in pairs:
+                if pair.from_coin.enabled and pair.to_coin.enabled:
+                    grouped_pairs[pair.from_coin.symbol].append(pair)
+        for from_coin_symbol, group in grouped_pairs.items():
+            self.logger.info(f"Initializing {from_coin_symbol} vs [{', '.join([p.to_coin.symbol for p in group])}]")
+            for pair in group:
                 from_coin_price = self.manager.get_ticker_price(pair.from_coin + self.config.BRIDGE)
                 if from_coin_price is None:
                     self.logger.info(
