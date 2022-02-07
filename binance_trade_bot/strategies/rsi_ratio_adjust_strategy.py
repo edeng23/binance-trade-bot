@@ -23,6 +23,7 @@ class Strategy(AutoTrader):
         super().initialize()
         self.initialize_current_coin()
         self.rsi_coin = ""
+	self.pre_rsi = []
         self.rsi = self.rsi_calc()
         self.reinit_threshold = self.manager.now().replace(second=0, microsecond=0)
         self.reinit_rsi = self.manager.now().replace(second=0, microsecond=0)
@@ -67,7 +68,7 @@ class Strategy(AutoTrader):
             return
             
         if self.rsi:
-           if self.rsi > 50 or self.rsi <= 30:
+           if (self.rsi > 50 > self.pre_rsi) or self.rsi <= 30:
               self._jump_to_best_coin(current_coin, current_coin_price)
 	
 
@@ -267,8 +268,10 @@ class Strategy(AutoTrader):
               np_closes = numpy.array(rsi_price_history)
               rsi = talib.RSI(np_closes, init_rsi_length)
               self.rsi = rsi[-1]
+              self.pre_rsi = rsi[-2]
               #self.logger.info(f"Finished ratio init...")
 
         else:
            self.rsi = ""
+           self.pre_rsi = "" 
            #self.logger.info(f"Not enough data for RSI calculation. Continue scouting...")
