@@ -68,7 +68,7 @@ class Strategy(AutoTrader):
             return
             
         if self.rsi:
-           if (self.pre_rsi < self.rsi > 50) or (self.rsi > self.pre_rsi <= 30):
+           if (self.pre_rsi < self.rsi > 50) or (self.pre_rsi < self.rsi <= 30):
               self._jump_to_best_coin(current_coin, current_coin_price)
 	
 
