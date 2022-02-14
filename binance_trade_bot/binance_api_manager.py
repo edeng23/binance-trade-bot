@@ -49,7 +49,6 @@ class BinanceAPIManager:
     def get_fee(self, origin_coin: Coin, target_coin: Coin, selling: bool):
         if self.config.BINANCE_TLD != "com":
             return float(0.001)
-        
         base_fee = self.get_trade_fees()[origin_coin + target_coin]
         if not self.get_using_bnb_for_fees():
             return base_fee
