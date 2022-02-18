@@ -23,7 +23,7 @@ class Strategy(AutoTrader):
         super().initialize()
         self.initialize_current_coin()
         self.rsi_coin = ""
-	self.pre_rsi = []
+        self.pre_rsi = []
         self.rsi = self.rsi_calc()
         self.reinit_threshold = self.manager.now().replace(second=0, microsecond=0)
         self.reinit_rsi = self.manager.now().replace(second=0, microsecond=0)
