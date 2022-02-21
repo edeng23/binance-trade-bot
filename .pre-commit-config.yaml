@@ -69,6 +69,7 @@ repos:
     - flask-cors==3.0.10
     - flask-socketio==5.0.1
     - gunicorn==20.1.0
+    - itsdangerous==2.0.1
     - pylint-sqlalchemy
     - python-binance==1.0.12
     - python-socketio[client]==5.2.1
