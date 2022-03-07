@@ -24,9 +24,10 @@ class Strategy(AutoTrader):
         self.initialize_current_coin()
         self.rsi_coin = ""
         self.pre_rsi = []
-        self.rsi = self.rsi_calc()
+        self.rsi = []
         self.reinit_threshold = self.manager.now().replace(second=0, microsecond=0)
         self.reinit_rsi = self.manager.now().replace(second=0, microsecond=0)
+        self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=self.config.MAX_IDLE_HOURS)
         self.logger.info(f"Ratio adjust weight: {self.config.RATIO_ADJUST_WEIGHT}")
         self.logger.info(f"RSI length: {self.config.RSI_LENGTH}")
         self.logger.info(f"RSI candle type: {self.config.RSI_CANDLE_TYPE}")
@@ -39,6 +40,7 @@ class Strategy(AutoTrader):
         base_time: datetime = self.manager.now()
         allowed_idle_time = self.reinit_threshold
         allowed_rsi_time = self.reinit_rsi
+        allowed_rsi_idle_time = self.reinit_idle
         if base_time >= allowed_idle_time:
             self.re_initialize_trade_thresholds()
             self.reinit_threshold = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
@@ -68,8 +70,14 @@ class Strategy(AutoTrader):
             return
             
         if self.rsi:
-           if (self.pre_rsi < self.rsi > 50 and self.pre_rsi < self.rsi < 70) or (self.pre_rsi < self.rsi <= 30):
-              self._jump_to_best_coin(current_coin, current_coin_price)
+           if base_time >= allowed_rsi_idle_time:
+                if self.rsi < 30 or self.rsi > 50:
+                        self._jump_to_best_coin(current_coin, current_coin_price)
+                        self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=self.config.MAX_IDLE_HOURS)
+           else:
+                if (self.pre_rsi < self.rsi > 50 and self.pre_rsi < self.rsi < 70) or (self.pre_rsi < self.rsi <= 30):
+                        self._jump_to_best_coin(current_coin, current_coin_price)
+                        self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=self.config.MAX_IDLE_HOURS)
 	
 
     def bridge_scout(self):
