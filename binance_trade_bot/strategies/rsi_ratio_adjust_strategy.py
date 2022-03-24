@@ -75,7 +75,7 @@ class Strategy(AutoTrader):
                         self._jump_to_best_coin(current_coin, current_coin_price)
                         self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
            else:
-                if (self.pre_rsi < self.rsi > 50 and self.pre_rsi < self.rsi < 70) or (self.pre_rsi < self.rsi <= 30):
+                if (self.pre_rsi < self.rsi > 50 and self.rsi < 70) or (self.pre_rsi < self.rsi <= 30) or (self.pre_rsi >= 50 and self.rsi <= 30):
                         self._jump_to_best_coin(current_coin, current_coin_price)
                         self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
 	
