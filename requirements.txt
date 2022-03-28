@@ -10,7 +10,7 @@ eventlet
 python-socketio[client]
 cachetools
 sqlitedict
-unicorn-binance-websocket-api
+unicorn-binance-websocket-api==1.34.1
 unicorn-fy
 xmltodict
 diskcache
