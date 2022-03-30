@@ -46,7 +46,7 @@ class Strategy(AutoTrader):
         if base_time >= allowed_idle_time:
             if self.jumpable_coins < 1 and self.auto_weight > 1:
                 self.auto_weight = self.auto_weight - 1
-            if self.jumpable_coins > 1:
+            if self.jumpable_coins >= 1:
                 self.auto_weight = self.auto_weight + self.jumpable_coins
               
             self.re_initialize_trade_thresholds()
