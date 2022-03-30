@@ -47,7 +47,7 @@ class Strategy(AutoTrader):
             if self.jumpable_coins < 1 and self.auto_weight > 1:
                 self.auto_weight = self.auto_weight - 1
             if self.jumpable_coins > 1:
-                self.auto_weight = self.auto_weight + 1
+                self.auto_weight = self.auto_weight + self.jumpable_coins
               
             self.re_initialize_trade_thresholds()
             self.reinit_threshold = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
@@ -81,12 +81,12 @@ class Strategy(AutoTrader):
            if base_time >= allowed_rsi_idle_time:
                 if (self.rsi <= 30) or (self.pre_rsi < self.rsi > 50 and self.pre_rsi < self.rsi < 70):
                         self._jump_to_best_coin(current_coin, current_coin_price)
-                        #self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
+                        self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
                         self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
            else:
                 if (self.pre_rsi < self.rsi > 50 and self.rsi < 70) or (self.pre_rsi < self.rsi <= 30) or (self.pre_rsi >= 50 and self.rsi <= 30):
                         self._jump_to_best_coin(current_coin, current_coin_price)
-                        #self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
+                        self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
                         self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
 	
 
