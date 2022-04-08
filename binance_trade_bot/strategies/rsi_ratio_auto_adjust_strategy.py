@@ -78,15 +78,13 @@ class Strategy(AutoTrader):
             return
             
         if self.rsi:
-           if self.rsi < 1:
-                self.logger.info("Warning: {} has a RSI of zero. Remove the coin or else the bot might not work properly".format(self.rsi_coin))
-           elif base_time >= allowed_rsi_idle_time:
-                if (self.rsi <= 30) or (self.pre_rsi < self.rsi > 50 and self.pre_rsi < self.rsi < 70):
+           if base_time >= allowed_rsi_idle_time:
+                if (self.rsi <= 30) or (self.pre_rsi < self.rsi >= 50 and self.pre_rsi < self.rsi < 70):
                         self._jump_to_best_coin(current_coin, current_coin_price)
                         self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
                         self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
            else:
-                if (self.pre_rsi < self.rsi > 50 and self.rsi < 70) or (self.pre_rsi < self.rsi <= 30) or (self.pre_rsi >= 50 and self.rsi <= 30):
+                if (self.pre_rsi < self.rsi > 50 and self.rsi < 80) or (self.pre_rsi < self.rsi <= 30) or (self.rsi <= 20):
                         self._jump_to_best_coin(current_coin, current_coin_price)
                         self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
                         self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
