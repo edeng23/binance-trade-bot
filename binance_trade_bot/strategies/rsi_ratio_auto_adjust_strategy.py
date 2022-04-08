@@ -78,6 +78,8 @@ class Strategy(AutoTrader):
             return
             
         if self.rsi:
+           if self.rsi == 0.0:
+                self.logger.info("Warning: {} hast a RSI of zero".format(self.rsi_coin))
            if base_time >= allowed_rsi_idle_time:
                 if (self.rsi <= 30) or (self.pre_rsi < self.rsi > 50 and self.pre_rsi < self.rsi < 70):
                         self._jump_to_best_coin(current_coin, current_coin_price)
