@@ -78,7 +78,7 @@ class Strategy(AutoTrader):
             return
             
         if self.rsi:
-           if int(self.rsi) < 1:
+           if int(self.rsi[-1]) < 1:
                 self.logger.info("Warning: {} has a RSI of zero. Remove the coin or else the bot might not work properly".format(self.rsi_coin))
            elif base_time >= allowed_rsi_idle_time:
                 if (self.rsi <= 30) or (self.pre_rsi < self.rsi > 50 and self.pre_rsi < self.rsi < 70):
