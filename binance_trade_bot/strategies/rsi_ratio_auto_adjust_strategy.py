@@ -1,4 +1,4 @@
-from collections import defaultdict
+from collections import defaultdict, deque
 import random
 import sys
 import talib
@@ -25,6 +25,8 @@ class Strategy(AutoTrader):
         self.rsi_coin = ""
         self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
         self.pre_rsi = []
+        self.mean_price = self.manager.get_buy_price(current_coin + self.config.BRIDGE)
+        self.from_coin_prices = deque(maxlen=int(self.config.RSI_CANDLE_TYPE) * 60)
         self.jumpable_coins = 0
         self.rsi = self.rsi_calc()
         self.reinit_threshold = self.manager.now().replace(second=0, microsecond=0)
@@ -53,6 +55,8 @@ class Strategy(AutoTrader):
             self.reinit_threshold = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
 		
         if base_time >= allowed_rsi_time:
+            self.from_coin_prices.append(self.manager.get_buy_price(current_coin + self.config.BRIDGE))
+            self.mean_price = numpy.mean(self.from_coin_prices)
             self.rsi_calc()
             self.reinit_rsi = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
 		
@@ -67,6 +71,7 @@ class Strategy(AutoTrader):
             f"Current coin: {current_coin + self.config.BRIDGE} ",
             f"Next best coin is: {self.rsi_coin} with RSI: {self.rsi} ",
             f"Current ratio weight is: {self.auto_weight} ",
+            f"Mean price: {self.mean_price} ",
             end='\r',
         )
         self.rsi_coin = ""
@@ -77,15 +82,19 @@ class Strategy(AutoTrader):
             self.logger.info("Skipping scouting... current coin {} not found".format(current_coin + self.config.BRIDGE))
             return
             
-        if self.rsi:
+        if self.rsi and current_coin_price <= self.mean_price:
            if base_time >= allowed_rsi_idle_time:
                 if (self.rsi <= 30) or (self.pre_rsi < self.rsi >= 50 and self.pre_rsi < self.rsi < 70):
                         self._jump_to_best_coin(current_coin, current_coin_price)
+                        self.from_coin_prices = []
+                        self.from_coin_prices = deque(maxlen=int(self.config.RSI_CANDLE_TYPE) * 60)
                         self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
                         self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
            else:
                 if (self.pre_rsi < self.rsi > 50 and self.rsi < 80) or (self.pre_rsi < self.rsi <= 30) or (self.rsi <= 20):
                         self._jump_to_best_coin(current_coin, current_coin_price)
+                        self.from_coin_prices = []
+                        self.from_coin_prices = deque(maxlen=int(self.config.RSI_CANDLE_TYPE) * 60)
                         self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
                         self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
 	
