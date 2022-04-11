@@ -41,6 +41,8 @@ class Strategy(AutoTrader):
         if self.failed_buy_order:
             self.bridge_scout()
         
+        current_coin = self.db.get_current_coin()
+        
         base_time: datetime = self.manager.now()
         allowed_idle_time = self.reinit_threshold
         allowed_rsi_time = self.reinit_rsi
@@ -63,7 +65,6 @@ class Strategy(AutoTrader):
         """
         Scout for potential jumps from the current coin to another coin
         """
-        current_coin = self.db.get_current_coin()
         # Display on the console, the current coin+Bridge, so users can see *some* activity and not think the bot has
         # stopped. Not logging though to reduce log size.
         print(
