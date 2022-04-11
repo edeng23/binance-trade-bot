@@ -25,7 +25,7 @@ class Strategy(AutoTrader):
         self.rsi_coin = ""
         self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
         self.pre_rsi = []
-        self.mean_price = self.manager.get_buy_price(current_coin + self.config.BRIDGE)
+        self.mean_price = 0
         self.from_coin_prices = deque(maxlen=int(self.config.RSI_CANDLE_TYPE) * 60)
         self.jumpable_coins = 0
         self.rsi = self.rsi_calc()
