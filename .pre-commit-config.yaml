@@ -62,7 +62,7 @@ repos:
     name: PyLint
     args: [--output-format=parseable, --rcfile=.pylintrc]
     additional_dependencies:
-    - Flask==1.1.2
+    - Flask==2.1.1
     - apprise==0.9.5.1
     - cachetools==4.2.2
     - eventlet==0.30.2
