@@ -72,12 +72,12 @@ class Strategy(AutoTrader):
         print(
             f"{self.manager.now()} - CONSOLE - INFO - I am scouting the best trades. ",
             f"Current coin: {current_coin + self.config.BRIDGE} ",
-            f"Next best coin is: {self.rsi_coin} with RSI: {self.rsi} ",
-            f"Current ratio weight is: {self.auto_weight} ",
-            f"Mean price: {self.mean_price} ",
+            f"Next best coin is: {self.rsi_coin} with RSI: {self.rsi} " if self.rsi else "",
+            f"Ratio weight: {self.auto_weight} ",
+            f"Current price direction: {self.from_coin_prices[-1]} - {self.mean_price} ",
+            f"TEMA jump when zero: {self.tema} - {self.to_coin_price} " if self.rsi else "",
             end='\r',
         )
-        self.rsi_coin = ""
 	
         current_coin_price = self.manager.get_sell_price(current_coin + self.config.BRIDGE)
 
@@ -311,4 +311,5 @@ class Strategy(AutoTrader):
            self.pre_rsi = "" 
            self.tema = ""
            self.to_coin_price = 0
+           self.rsi_coin = ""
            #self.logger.info(f"Not enough data for RSI calculation. Continue scouting...")
