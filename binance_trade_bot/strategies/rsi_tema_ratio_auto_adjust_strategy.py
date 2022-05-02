@@ -74,8 +74,8 @@ class Strategy(AutoTrader):
             f"Current coin: {current_coin + self.config.BRIDGE} ",
             f"Next best coin is: {self.rsi_coin} with RSI: {self.rsi} " if self.rsi else "",
             f"Ratio weight: {self.auto_weight} ",
-            f"Current price direction: {self.from_coin_prices[-1]} - {self.mean_price} ",
-            f"TEMA jump when zero: {self.tema} - {self.to_coin_price} " if self.rsi else "",
+            f"Current price direction: {self.from_coin_prices[-1] - self.mean_price} ",
+            f"TEMA jump when zero: {self.tema - self.to_coin_price} " if self.rsi else "",
             end='\r',
         )
 	
