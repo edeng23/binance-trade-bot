@@ -50,6 +50,7 @@ class Strategy(AutoTrader):
         allowed_rsi_time = self.reinit_rsi
         allowed_rsi_idle_time = self.reinit_idle
         if base_time >= allowed_idle_time:
+            print("")
             if self.jumpable_coins < 1 and self.auto_weight > 1:
                 self.auto_weight = self.auto_weight - 1
             if self.jumpable_coins >= 1:
@@ -74,8 +75,8 @@ class Strategy(AutoTrader):
             f"Current coin: {current_coin + self.config.BRIDGE} ",
             f"Next best coin is: {self.rsi_coin} with RSI: {round(self.rsi, 3)} " if self.rsi else "",
             f"Ratio weight: {self.auto_weight} ",
-            f"Current price direction: {round(self.from_coin_prices[-1] - self.mean_price, 3)} ",
-            f"TEMA jump when positive: {round(self.to_coin_price - self.tema, 3)} " if self.rsi else "",
+            f"Current price direction: {(self.from_coin_prices[-1] - self.mean_price):.3E} ",
+            f"TEMA jump when positive: {(self.to_coin_price - self.tema):.3E} " if self.rsi else "",
             end='\r',
         )
 	
