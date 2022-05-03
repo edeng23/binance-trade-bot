@@ -75,7 +75,7 @@ class Strategy(AutoTrader):
             f"Next best coin is: {self.rsi_coin} with RSI: {round(self.rsi, 3)} " if self.rsi else "",
             f"Ratio weight: {self.auto_weight} ",
             f"Current price direction: {round(self.from_coin_prices[-1] - self.mean_price, 3)} ",
-            f"TEMA jump when below zero: {round(self.to_coin_price - self.tema, 3)} " if self.rsi else "",
+            f"TEMA jump when positive: {round(self.to_coin_price - self.tema, 3)} " if self.rsi else "",
             end='\r',
         )
 	
