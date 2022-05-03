@@ -51,11 +51,7 @@ class Strategy(AutoTrader):
         allowed_rsi_idle_time = self.reinit_idle
         if base_time >= allowed_idle_time:
             print("")
-            if self.jumpable_coins < 1 and self.auto_weight > 1:
-                self.auto_weight = self.auto_weight - 1
-            if self.jumpable_coins >= 1:
-                self.auto_weight = self.auto_weight + self.jumpable_coins
-              
+            self.auto_weight = max(1, self.auto_weight + self.jumpable_coins - 1)
             self.re_initialize_trade_thresholds()
             self.reinit_threshold = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
 		
