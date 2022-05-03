@@ -72,10 +72,10 @@ class Strategy(AutoTrader):
         print(
             f"{self.manager.now()} - CONSOLE - INFO - I am scouting the best trades. ",
             f"Current coin: {current_coin + self.config.BRIDGE} ",
-            f"Next best coin is: {self.rsi_coin} with RSI: {self.rsi} " if self.rsi else "",
+            f"Next best coin is: {self.rsi_coin} with RSI: {round(self.rsi, 3)} " if self.rsi else "",
             f"Ratio weight: {self.auto_weight} ",
-            f"Current price direction: {self.from_coin_prices[-1] - self.mean_price} ",
-            f"TEMA jump when zero: {self.tema - self.to_coin_price} " if self.rsi else "",
+            f"Current price direction: {round(self.from_coin_prices[-1] - self.mean_price, 3)} ",
+            f"TEMA jump when zero: {round(self.tema - self.to_coin_price, 3)} " if self.rsi else "",
             end='\r',
         )
 	
