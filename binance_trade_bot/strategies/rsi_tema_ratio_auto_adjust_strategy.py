@@ -27,7 +27,7 @@ class Strategy(AutoTrader):
         self.tema = []
         self.pre_rsi = []
         self.mean_price = 0
-        self.to_coin_p = 0
+        self.to_coin_price = 0
         self.from_coin_prices = deque(maxlen=int(self.config.RSI_CANDLE_TYPE) * 60)
         self.jumpable_coins = 0
         self.rsi = self.rsi_calc()
@@ -51,8 +51,7 @@ class Strategy(AutoTrader):
         allowed_rsi_idle_time = self.reinit_idle
         if base_time >= allowed_idle_time:
             print("")
-            if self.auto_weight > 1:
-                self.auto_weight = self.auto_weight + (self.jumpable_coins - 1)
+            self.auto_weight = max(1, self.auto_weight + self.jumpable_coins - 1)
             self.re_initialize_trade_thresholds()
             self.reinit_threshold = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
 		
@@ -73,7 +72,7 @@ class Strategy(AutoTrader):
             f"Next best coin is: {self.rsi_coin} with RSI: {round(self.rsi, 3)} " if self.rsi else "",
             f"Ratio weight: {self.auto_weight} ",
             f"Current price direction: {(self.from_coin_prices[-1] - self.mean_price):.3E} ",
-            f"TEMA jump when positive: {(self.to_coin_p - self.tema):.3E} " if self.rsi else "",
+            f"TEMA jump when positive: {(self.to_coin_price - self.tema):.3E} " if self.rsi else "",
             end='\r',
         )
 	
@@ -292,7 +291,7 @@ class Strategy(AutoTrader):
               rsi_price_history.append(rsi_price)
 
            next_coin_price = self.manager.get_ticker_price(self.rsi_coin + self.config.BRIDGE)
-           self.to_coin_p = next_coin_price
+           self.to_coin_price = next_coin_price
            rsi_price_history.append(next_coin_price)
 
            if len(rsi_price_history) >= init_rsi_length:
@@ -308,6 +307,6 @@ class Strategy(AutoTrader):
            self.rsi = ""
            self.pre_rsi = "" 
            self.tema = ""
-           self.to_coin_p = 0
+           self.to_coin_price = 0
            self.rsi_coin = ""
            #self.logger.info(f"Not enough data for RSI calculation. Continue scouting...")
