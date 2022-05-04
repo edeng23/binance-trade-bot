@@ -67,12 +67,12 @@ class Strategy(AutoTrader):
         # Display on the console, the current coin+Bridge, so users can see *some* activity and not think the bot has
         # stopped. Not logging though to reduce log size.
         print(
-            f"{self.manager.now()} - CONSOLE - INFO - I am scouting the best trades. ",
-            f"Current coin: {current_coin + self.config.BRIDGE} ",
-            f"Next best coin is: {self.rsi_coin} with RSI: {round(self.rsi, 3)} " if self.rsi else "",
-            f"Ratio weight: {self.auto_weight} ",
-            f"Current price direction: {(self.from_coin_prices[-1] - self.mean_price):.3E} ",
-            f"TEMA jump when positive: {(self.to_coin_price - self.tema):.3E} " if self.rsi else "",
+            f"{self.manager.now().replace(microsecond=0)} I am scouting the best trades. ",
+            f"Current coin is: {current_coin + self.config.BRIDGE} with price direction: {(self.from_coin_prices[-1] - self.mean_price):.3E} ",
+            f"(jump when negative) " if self.from_coin_prices[-1] - self.mean_price > 0 else "",
+            f"Next best coin is: {self.rsi_coin} with RSI: {round(self.rsi, 3)} and price direction: {(self.to_coin_price - self.tema):.3E} " if self.rsi else "",
+            f"(jump when positive) "
+            f"Current ratio weight is: {self.auto_weight} ",
             end='\r',
         )
 	
