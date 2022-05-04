@@ -85,6 +85,7 @@ class Strategy(AutoTrader):
         if self.rsi and current_coin_price <= self.mean_price:
            if base_time >= allowed_rsi_idle_time:
                 if (self.rsi <= 30) or (self.pre_rsi < self.rsi >= 50 and self.pre_rsi < self.rsi < 70):
+                        print("")
                         self._jump_to_best_coin(current_coin, current_coin_price)
                         self.from_coin_prices = []
                         self.from_coin_prices = deque(maxlen=int(self.config.RSI_CANDLE_TYPE) * 60)
@@ -92,6 +93,7 @@ class Strategy(AutoTrader):
                         self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
            else:
                 if (self.pre_rsi < self.rsi and self.to_coin_price > self.tema) or (self.rsi <= 20):
+                        print("")
                         self._jump_to_best_coin(current_coin, current_coin_price)
                         self.from_coin_prices = []
                         self.from_coin_prices = deque(maxlen=int(self.config.RSI_CANDLE_TYPE) * 60)
