@@ -30,7 +30,7 @@ class Strategy(AutoTrader):
         self.mean_price = 0
         self.to_coin_price = 0
         self.from_coin_prices = deque(maxlen=int(self.config.RSI_CANDLE_TYPE) * 60)
-	self.panicked = false
+        self.panicked = false
         self.panic_prices = []
         self.jumpable_coins = 0
         self.rsi = self.rsi_calc()
