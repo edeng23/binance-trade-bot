@@ -87,7 +87,8 @@ class Strategy(AutoTrader):
         current_coin_price = self.manager.get_sell_price(current_coin + self.config.BRIDGE)
     
         if base_time >= panic_time and not self.panicked:
-            slope = talib.LINEARREG_SLOPE(self.panic_prices, len(self.panic_prices))
+            sp_prices = numpy.array(self.panic_prices)
+            slope = talib.LINEARREG_SLOPE(sp_prices, len(sp_prices))
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
             if slope[-1] < 0:
                 print("")
