@@ -30,6 +30,7 @@ class Strategy(AutoTrader):
         self.mean_price = 0
         self.to_coin_price = 0
         self.from_coin_prices = deque(maxlen=int(self.config.RSI_CANDLE_TYPE) * 60)
+	self.panicked = false
         self.panic_prices = []
         self.jumpable_coins = 0
         self.rsi = self.rsi_calc()
@@ -62,7 +63,8 @@ class Strategy(AutoTrader):
 		
         if base_time >= allowed_rsi_time:
             self.from_coin_prices.append(self.manager.get_buy_price(current_coin + self.config.BRIDGE))
-            self.panic_prices.append(self.manager.get_buy_price(current_coin + self.config.BRIDGE))
+            if not self.panicked:
+                self.panic_prices.append(self.manager.get_buy_price(current_coin + self.config.BRIDGE))
             self.mean_price = numpy.mean(self.from_coin_prices)
             self.rsi_calc()
             self.reinit_rsi = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
@@ -84,12 +86,13 @@ class Strategy(AutoTrader):
 	
         current_coin_price = self.manager.get_sell_price(current_coin + self.config.BRIDGE)
     
-        if base_time >= panic_time:
+        if base_time >= panic_time and not self.panicked:
             slope = talib.LINEARREG_SLOPE(self.panic_prices, len(self.panic_prices))
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
             if slope[-1] < 0:
 		print("")
                 self._panic(current_coin, current_coin_price)
+		self.panicked = true
                 self.logger.info("!!! We just panicked !!!")
 		self.from_coin_prices = []
                 self.from_coin_prices = deque(maxlen=int(self.config.RSI_CANDLE_TYPE) * 60)
@@ -113,6 +116,7 @@ class Strategy(AutoTrader):
                         self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
                         self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
                         self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.MAX_IDLE_HOURS)*3)
+			self.panicked = false
            else:
                 if (self.rsi <= 30 or self.rsi > 50) and self.to_coin_price > self.tema:
                         print("")
@@ -123,6 +127,7 @@ class Strategy(AutoTrader):
                         self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
                         self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
                         self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.MAX_IDLE_HOURS)*3)
+			self.panicked = false
 	
 
     def bridge_scout(self):
