@@ -331,6 +331,7 @@ class Strategy(AutoTrader):
               tema = talib.TEMA(np_closes, init_rsi_length)
               fast_slope = talib.LINEARREG_SLOPE(np_closes, init_rsi_length)
               slow_slope = talib.LINEARREG_SLOPE(np_closes, len(rsi_price_history)
+
               self.rsi = rsi[-1]
               self.f_slope = fast_slope[-1]
               self.s_slope = slow_slope[-1]
