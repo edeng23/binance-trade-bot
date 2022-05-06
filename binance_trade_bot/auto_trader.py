@@ -183,7 +183,7 @@ class AutoTrader:
         Given a coin, search for a coin to jump to
         """
         ratio_dict, prices = self._get_ratios(coin, coin_price, excluded_coins)
-        best_pair = min(ratio_dict, key=ratio_dict.get)
+        best_pair = max(ratio_dict, key=ratio_dict.get)
         self.logger.info(f"Will be jumping from {coin} to {best_pair.to_coin_id}")
         self.transaction_through_bridge(best_pair, coin_price, prices[best_pair.to_coin_id])
 
