@@ -31,13 +31,13 @@ class Strategy(AutoTrader):
         self.to_coin_price = 0
         self.from_coin_prices = deque(maxlen=int(self.config.RSI_CANDLE_TYPE) * 60)
         self.panicked = False
-        self.panic_prices = []
+        self.panic_prices = deque(maxlen=60000)
         self.jumpable_coins = 0
         self.rsi = self.rsi_calc()
         self.reinit_threshold = self.manager.now().replace(second=0, microsecond=0)
         self.reinit_rsi = self.manager.now().replace(second=0, microsecond=0)
         self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
-        self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.MAX_IDLE_HOURS)*3)
+        self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE)*3)
         self.logger.info(f"Ratio adjust weight: {self.config.RATIO_ADJUST_WEIGHT}")
         self.logger.info(f"RSI length: {self.config.RSI_LENGTH}")
         self.logger.info(f"RSI candle type: {self.config.RSI_CANDLE_TYPE}")
@@ -85,6 +85,10 @@ class Strategy(AutoTrader):
         )
 	
         current_coin_price = self.manager.get_sell_price(current_coin + self.config.BRIDGE)
+
+        if current_coin_price is None:
+            self.logger.info("Skipping scouting... current coin {} not found".format(current_coin + self.config.BRIDGE))
+            return
     
         if base_time >= panic_time and not self.panicked:
             sp_prices = numpy.array(self.panic_prices)
@@ -98,13 +102,10 @@ class Strategy(AutoTrader):
                 self.from_coin_prices = []
                 self.from_coin_prices = deque(maxlen=int(self.config.RSI_CANDLE_TYPE) * 60)
                 self.panic_prices = []
+                self.panic_prices = deque(maxlen=60000)
                 self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
                 self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
-                self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.MAX_IDLE_HOURS)*3)
-
-        if current_coin_price is None:
-            self.logger.info("Skipping scouting... current coin {} not found".format(current_coin + self.config.BRIDGE))
-            return
+                self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE)*3)
             
         if self.rsi and current_coin_price <= self.mean_price and self.f_slope >= self.s_slope:
            if base_time >= allowed_rsi_idle_time:
@@ -114,9 +115,10 @@ class Strategy(AutoTrader):
                         self.from_coin_prices = []
                         self.from_coin_prices = deque(maxlen=int(self.config.RSI_CANDLE_TYPE) * 60)
                         self.panic_prices = []
+                        self.panic_prices = deque(maxlen=60000)
                         self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
                         self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
-                        self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.MAX_IDLE_HOURS)*3)
+                        self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE)*3)
                         self.panicked = False
            else:
                 if (self.rsi <= 30 or self.rsi > 50) and self.to_coin_price > self.tema:
@@ -125,9 +127,10 @@ class Strategy(AutoTrader):
                         self.from_coin_prices = []
                         self.from_coin_prices = deque(maxlen=int(self.config.RSI_CANDLE_TYPE) * 60)
                         self.panic_prices = []
+                        self.panic_prices = deque(maxlen=60000)
                         self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
                         self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
-                        self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.MAX_IDLE_HOURS)*3)
+                        self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE)*3)
                         self.panicked = False
 	
 
