@@ -75,7 +75,7 @@ class Strategy(AutoTrader):
         # Display on the console, the current coin+Bridge, so users can see *some* activity and not think the bot has
         # stopped. Not logging though to reduce log size.
         print(
-            f"{self.manager.now()} - Scouting. ",
+            f"{self.manager.now()} - ",
             f"Current ratio weight is: {self.auto_weight} ",
             f"Current coin is: {current_coin + self.config.BRIDGE} with price direction: {(self.from_coin_prices[-1] - self.mean_price):.3E} ",
             f"(jump when negative) " if self.from_coin_prices[-1] - self.mean_price > 0 else "",
