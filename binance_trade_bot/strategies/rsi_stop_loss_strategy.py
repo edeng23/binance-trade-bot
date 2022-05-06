@@ -78,10 +78,10 @@ class Strategy(AutoTrader):
         # stopped. Not logging though to reduce log size.
         print(
             f"{self.manager.now()} - ",
-            f"Current ratio weight is: {self.auto_weight} ",
-            f"Current coin is: {current_coin + self.config.BRIDGE} with price direction: {(self.from_coin_prices[-1] - self.mean_price):.3E} ",
+            f"Current ratio weight: {self.auto_weight} ",
+            f"Current coin: {current_coin + self.config.BRIDGE} price direction: {(self.from_coin_prices[-1] - self.mean_price):.3E} ",
             f"(jump when negative) " if self.from_coin_prices[-1] - self.mean_price > 0 else "",
-            f"Next best coin is: {self.rsi_coin} with RSI: {round(self.rsi, 3)} and price direction: {(self.to_coin_price - self.tema):.3E} " if self.rsi else "",
+            f"Next best coin: {self.rsi_coin} with RSI: {round(self.rsi, 3)} price direction: {(self.to_coin_price - self.tema):.3E} " if self.rsi else "",
             f"(jump when positive) " if self.rsi and (self.to_coin_price - self.tema) < 0 else "",
             end='\r',
         )
