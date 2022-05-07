@@ -31,6 +31,7 @@ class Strategy(AutoTrader):
         self.s_slope =[]
         self.mean_price = 0
         self.to_coin_price = 0
+        self.slope = 0
         self.from_coin_prices = deque(maxlen=int(self.config.RSI_CANDLE_TYPE) * 60)
         self.panicked = False
         self.panic_prices = deque(maxlen=60000)
@@ -77,7 +78,7 @@ class Strategy(AutoTrader):
         # Display on the console, the current coin+Bridge, so users can see *some* activity and not think the bot has
         # stopped. Not logging though to reduce log size.
         print(
-            f"{self.manager.now()} - ",
+            f"{self.manager.now()} - " if self.slope == 0 else f"{self.manager.now()} - Panic if negative: {round(self.slope, 3)} ",
             f"Current ratio weight: {self.auto_weight} ",
             f"Current coin: {current_coin + self.config.BRIDGE} price direction: {(self.from_coin_prices[-1] - self.mean_price):.3E} ",
             f"(jump when negative) " if self.from_coin_prices[-1] - self.mean_price > 0 else "",
@@ -94,9 +95,9 @@ class Strategy(AutoTrader):
     
         if base_time >= panic_time and not self.panicked:
             sp_prices = numpy.array(self.panic_prices)
-            slope = talib.LINEARREG_SLOPE(sp_prices, len(sp_prices))
+            self.slope = talib.LINEARREG_SLOPE(sp_prices, len(sp_prices))
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
-            if slope[-1] < 0:
+            if self.slope[-1] < 0:
                 print("")
                 self._panic(current_coin, current_coin_price)
                 self.panicked = True
@@ -108,6 +109,7 @@ class Strategy(AutoTrader):
                 self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
                 self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
                 self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE)*3)
+                self.slope = 0
             
         if self.rsi and current_coin_price <= self.mean_price and self.f_slope >= self.s_slope:
            if base_time >= allowed_rsi_idle_time:
@@ -122,6 +124,7 @@ class Strategy(AutoTrader):
                         self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
                         self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE)*3)
                         self.panicked = False
+                        self.slope = 0
            else:
                 if (self.rsi <= 30 or self.rsi > 50) and self.to_coin_price > self.tema:
                         print("")
@@ -134,6 +137,7 @@ class Strategy(AutoTrader):
                         self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
                         self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE)*3)
                         self.panicked = False
+                        self.slope = 0
 	
 
     def bridge_scout(self):
