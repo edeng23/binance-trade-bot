@@ -27,6 +27,8 @@ class Strategy(AutoTrader):
         self.rsi_coin = ""
         self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
         self.tema = []
+        self.f_slope = []
+        self.s_slope =[]
         self.mean_price = 0
         self.to_coin_price = 0
         self.slope = []
@@ -113,8 +115,8 @@ class Strategy(AutoTrader):
             else:
                 self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
             
-        if self.rsi and current_coin_price <= self.mean_price:
-            if base_time >= allowed_rsi_idle_time:
+        if self.rsi and current_coin_price <= self.mean_price and self.f_slope >= self.s_slope:
+           if base_time >= allowed_rsi_idle_time:
                 if (self.rsi <= 30) or (self.pre_rsi < self.rsi >= 50 and self.pre_rsi < self.rsi < 70):
                         print("")
                         self._jump_to_best_coin(current_coin, current_coin_price)
@@ -127,7 +129,7 @@ class Strategy(AutoTrader):
                         self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE)*3)
                         self.panicked = False
                         self.slope = []
-            else:
+           else:
                 if (self.rsi <= 30 or self.rsi > 50) and self.to_coin_price > self.tema:
                         print("")
                         self._jump_to_best_coin(current_coin, current_coin_price)
@@ -341,12 +343,17 @@ class Strategy(AutoTrader):
               np_closes = numpy.array(rsi_price_history)
               rsi = talib.RSI(np_closes, init_rsi_length)
               tema = talib.TEMA(np_closes, init_rsi_length)
+              fast_slope = talib.LINEARREG_SLOPE(np_closes, init_rsi_length)
+              slow_slope = talib.LINEARREG_SLOPE(np_closes, len(rsi_price_history))
               self.rsi = rsi[-1]
+              self.f_slope = fast_slope[-1]
+              self.s_slope = slow_slope[-1]
               self.tema = tema[-1]
               #self.logger.info(f"Finished ratio init...")
 
         else:
            self.rsi = ""
+           self.pre_rsi = "" 
            self.tema = ""
            self.to_coin_price = 0
            self.rsi_coin = ""
