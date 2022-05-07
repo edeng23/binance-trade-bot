@@ -36,6 +36,7 @@ class Strategy(AutoTrader):
         self.panicked = False
         self.panic_prices = deque(maxlen=60000)
         self.jumpable_coins = 0
+        self.pre_rsi = []
         self.rsi = self.rsi_calc()
         self.reinit_threshold = self.manager.now().replace(second=0, microsecond=0)
         self.reinit_rsi = self.manager.now().replace(second=0, microsecond=0)
@@ -131,7 +132,7 @@ class Strategy(AutoTrader):
                         self.panicked = False
                         self.slope = []
            else:
-                if (self.rsi <= 30 or self.rsi > 50) and self.to_coin_price > self.tema:
+                if self.to_coin_price > self.tema or self.rsi <= 20:
                         print("")
                         self._jump_to_best_coin(current_coin, current_coin_price)
                         self.from_coin_prices = []
@@ -347,6 +348,7 @@ class Strategy(AutoTrader):
               fast_slope = talib.LINEARREG_SLOPE(np_closes, init_rsi_length)
               slow_slope = talib.LINEARREG_SLOPE(np_closes, len(rsi_price_history))
               self.rsi = rsi[-1]
+              self.pre_rsi = rsi[-2]
               self.f_slope = fast_slope[-1]
               self.s_slope = slow_slope[-1]
               self.tema = tema[-1]
