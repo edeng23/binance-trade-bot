@@ -95,27 +95,6 @@ class Strategy(AutoTrader):
         if current_coin_price is None:
             self.logger.info("Skipping scouting... current coin {} not found".format(current_coin + self.config.BRIDGE))
             return
-    
-        if base_time >= panic_time and not self.panicked:
-            sp_prices = numpy.array(self.panic_prices)
-            slope = talib.LINEARREG_SLOPE(sp_prices, (min(int(self.config.RSI_CANDLE_TYPE) * int(self.config.RSI_LENGTH), len(sp_prices))))
-            self.slope = slope[-1]
-            
-            if self.slope < 0:
-                print("")
-                self._panic(current_coin, current_coin_price)
-                self.panicked = True
-                self.logger.info("!!! We just panicked !!!")
-                self.from_coin_prices = []
-                self.from_coin_prices = deque(maxlen=int(self.config.RSI_CANDLE_TYPE) * 60)
-                self.panic_prices = []
-                self.panic_prices = deque(maxlen=60000)
-                self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
-                self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
-                self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE) * 3)
-                self.slope = []
-            else:
-                self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
             
         if self.rsi and current_coin_price <= self.mean_price and self.f_slope > self.s_slope:
            if base_time >= allowed_rsi_idle_time:
@@ -144,6 +123,27 @@ class Strategy(AutoTrader):
                         self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE)*3)
                         self.panicked = False
                         self.slope = []
+                        
+        if base_time >= panic_time and not self.panicked:
+            sp_prices = numpy.array(self.panic_prices)
+            slope = talib.LINEARREG_SLOPE(sp_prices, (min(int(self.config.RSI_CANDLE_TYPE) * int(self.config.RSI_LENGTH), len(sp_prices))))
+            self.slope = slope[-1]
+            
+            if self.slope < 0:
+                print("")
+                self._panic(current_coin, current_coin_price)
+                self.panicked = True
+                self.logger.info("!!! We just panicked !!!")
+                self.from_coin_prices = []
+                self.from_coin_prices = deque(maxlen=int(self.config.RSI_CANDLE_TYPE) * 60)
+                self.panic_prices = []
+                self.panic_prices = deque(maxlen=60000)
+                self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
+                self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
+                self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE) * 3)
+                self.slope = []
+            else:
+                self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)                
 	
 
     def bridge_scout(self):
