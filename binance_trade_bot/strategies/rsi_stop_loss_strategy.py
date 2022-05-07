@@ -60,14 +60,14 @@ class Strategy(AutoTrader):
         
         if base_time >= allowed_idle_time:
             print("")
+            if not self.panicked:
+                self.panic_prices.append(self.manager.get_buy_price(current_coin + self.config.BRIDGE))
             self.auto_weight = max(1, self.auto_weight + self.jumpable_coins - 1)
             self.re_initialize_trade_thresholds()
             self.reinit_threshold = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
 		
         if base_time >= allowed_rsi_time:
             self.from_coin_prices.append(self.manager.get_buy_price(current_coin + self.config.BRIDGE))
-            if not self.panicked:
-                self.panic_prices.append(self.manager.get_buy_price(current_coin + self.config.BRIDGE))
             self.mean_price = numpy.mean(self.from_coin_prices)
             self.rsi_calc()
             self.reinit_rsi = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
@@ -96,7 +96,7 @@ class Strategy(AutoTrader):
     
         if base_time >= panic_time and not self.panicked:
             sp_prices = numpy.array(self.panic_prices)
-            slope = talib.LINEARREG_SLOPE(sp_prices, len(sp_prices)-1)
+            slope = talib.LINEARREG_SLOPE(sp_prices, int(self.config.RSI_CANDLE_TYPE))
             self.slope = slope[-1]
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
             if self.slope < 0:
