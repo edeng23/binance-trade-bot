@@ -100,7 +100,6 @@ class Strategy(AutoTrader):
            if base_time >= allowed_rsi_idle_time:
                 if self.rsi <= 30 or self.pre_rsi < self.rsi >= 50:
                         print("")
-                        self._jump_to_best_coin(current_coin, current_coin_price)
                         self.from_coin_prices = []
                         self.from_coin_prices = deque(maxlen=int(self.config.RSI_CANDLE_TYPE) * 60)
                         self.panic_prices = []
@@ -110,10 +109,10 @@ class Strategy(AutoTrader):
                         self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE)*3)
                         self.panicked = False
                         self.slope = []
+                        self._jump_to_best_coin(current_coin, current_coin_price)
            else:
                 if self.to_coin_price > self.tema and (self.pre_rsi < self.rsi <= 30 or self.pre_rsi < self.rsi >= 50) or self.rsi < 20:
                         print("")
-                        self._jump_to_best_coin(current_coin, current_coin_price)
                         self.from_coin_prices = []
                         self.from_coin_prices = deque(maxlen=int(self.config.RSI_CANDLE_TYPE) * 60)
                         self.panic_prices = []
@@ -123,6 +122,7 @@ class Strategy(AutoTrader):
                         self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE)*3)
                         self.panicked = False
                         self.slope = []
+                        self._jump_to_best_coin(current_coin, current_coin_price)
                         
         if base_time >= panic_time and not self.panicked:
             sp_prices = numpy.array(self.panic_prices)
@@ -131,7 +131,6 @@ class Strategy(AutoTrader):
             
             if self.slope < 0:
                 print("")
-                self._panic(current_coin, current_coin_price)
                 self.panicked = True
                 self.logger.info("!!! We just panicked !!!")
                 self.from_coin_prices = []
@@ -142,6 +141,7 @@ class Strategy(AutoTrader):
                 self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
                 self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE) * 3)
                 self.slope = []
+                self._panic(current_coin, current_coin_price)
             else:
                 self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)                
 	
