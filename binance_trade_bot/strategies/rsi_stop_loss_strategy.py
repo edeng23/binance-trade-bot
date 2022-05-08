@@ -98,7 +98,7 @@ class Strategy(AutoTrader):
             
         if self.rsi and current_coin_price <= self.mean_price:
            if base_time >= allowed_rsi_idle_time:
-                if (self.rsi <= 30) or (self.pre_rsi < self.rsi >= 50 and self.pre_rsi < self.rsi < 70):
+                if self.rsi <= 30 or self.pre_rsi < self.rsi >= 50:
                         print("")
                         self._jump_to_best_coin(current_coin, current_coin_price)
                         self.from_coin_prices = []
@@ -111,7 +111,7 @@ class Strategy(AutoTrader):
                         self.panicked = False
                         self.slope = []
            else:
-                if (self.to_coin_price > self.tema and self.pre_rsi < self.rsi) or self.rsi <= 20:
+                if self.to_coin_price > self.tema and (self.pre_rsi < self.rsi <= 30 or self.pre_rsi < self.rsi >= 50) or self.rsi < 20:
                         print("")
                         self._jump_to_best_coin(current_coin, current_coin_price)
                         self.from_coin_prices = []
