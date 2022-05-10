@@ -79,13 +79,14 @@ class Strategy(AutoTrader):
         # Display on the console, the current coin+Bridge, so users can see *some* activity and not think the bot has
         # stopped. Not logging though to reduce log size.
         print(
-            f"{self.manager.now().replace(microsecond=0)} - " if self.rsi or self.slope == [] else f"{self.manager.now().replace(microsecond=0)} - Panic if negative: {round(self.slope, 3)} ",
+            f"{self.manager.now().replace(microsecond=0)} - " ,
+            f"Panic if zero: {round(self.slope, 3)} " if self.slope else "",
             f"Panicked " if self.panicked else "",
             f"Current ratio weight: {self.auto_weight} ",
             f"Current coin: {current_coin + self.config.BRIDGE} price direction: {(self.from_coin_prices[-1] - self.mean_price):.3E} ",
-            f"(jump when negative) " if self.from_coin_prices[-1] > self.mean_price else "",
-            f"Next best coin: {self.rsi_coin} with RSI: {round(self.rsi, 3)} price direction: {(self.to_coin_price - self.tema):.3E} " if self.rsi else "",
-            f"(jump when positive) " if self.rsi and self.to_coin_price < self.tema else "",
+            f"(go negative) " if self.from_coin_prices[-1] > self.mean_price else "",
+            f"Next coin: {self.rsi_coin} with RSI: {round(self.rsi, 3)} price direction: {(self.to_coin_price - self.tema):.3E} " if self.rsi else "",
+            f"(go positive) " if self.rsi and self.to_coin_price < self.tema else "",
             f"bullish " if (self.f_slope + self.s_slope) / 2 > 0 and self.rsi else "",
             f"bearish " if (self.f_slope + self.s_slope) / 2 < 0 and self.rsi else "",
             end='\r',
@@ -129,20 +130,35 @@ class Strategy(AutoTrader):
             sp_prices = numpy.array(self.panic_prices)
             slope = talib.LINEARREG_SLOPE(sp_prices, (min(int(self.config.RSI_CANDLE_TYPE) * int(self.config.RSI_LENGTH), len(sp_prices))))
             self.slope = slope[-1]
+            ratio_dict, prices = self._get_ratios(current_coin, current_coin_price)
+            ratio_dict = {k: v for k, v in ratio_dict.items() if v > 0}
             
             if self.slope < 0:
-                print("")
-                self.panicked = True
-                self.logger.info("!!! We just panicked !!!")
-                self.from_coin_prices = []
-                self.from_coin_prices = deque(maxlen=int(self.config.RSI_CANDLE_TYPE) * 60)
-                self.panic_prices = []
-                self.panic_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 60)
-                self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
-                self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
-                self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE) * 3)
-                self.slope = []
-                self._panic(current_coin, current_coin_price)
+                if not ratio_dict:
+                    print("")
+                    self.panicked = True
+                    self.logger.info("!!! We just panicked !!!")
+                    self.from_coin_prices = []
+                    self.from_coin_prices = deque(maxlen=int(self.config.RSI_CANDLE_TYPE) * 60)
+                    self.panic_prices = []
+                    self.panic_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 60)
+                    self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
+                    self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
+                    self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE) * 3)
+                    self.slope = []
+                    self._panic(current_coin, current_coin_price)
+                else:
+                    print("")
+                    self.from_coin_prices = []
+                    self.from_coin_prices = deque(maxlen=int(self.config.RSI_CANDLE_TYPE) * 60)
+                    self.panic_prices = []
+                    self.panic_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 60)
+                    self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
+                    self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
+                    self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE)*3)
+                    self.panicked = False
+                    self.slope = []
+                    self._jump_to_best_coin(current_coin, current_coin_price)
             else:
                 self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)                
 	
