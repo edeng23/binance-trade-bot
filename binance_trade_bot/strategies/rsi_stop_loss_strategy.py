@@ -149,6 +149,7 @@ class Strategy(AutoTrader):
                     self._panic(current_coin, current_coin_price)
                 else:
                     print("")
+                    self.logger.info("Coin is bearish - Moving on!")
                     self.from_coin_prices = []
                     self.from_coin_prices = deque(maxlen=int(self.config.RSI_CANDLE_TYPE) * 60)
                     self.panic_prices = []
