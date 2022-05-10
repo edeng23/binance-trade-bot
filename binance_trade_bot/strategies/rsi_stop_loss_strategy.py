@@ -161,7 +161,7 @@ class Strategy(AutoTrader):
                     self.slope = []
                     self._jump_to_best_coin(current_coin, current_coin_price)
             else:
-                self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)                
+                self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)                
 	
 
     def bridge_scout(self):
