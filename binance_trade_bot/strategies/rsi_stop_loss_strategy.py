@@ -80,7 +80,7 @@ class Strategy(AutoTrader):
         # stopped. Not logging though to reduce log size.
         print(
             f"{self.manager.now().replace(microsecond=0)} - " ,
-            f"Panic if zero: {round(self.slope, 3)} " if self.slope else "",
+            f"Panic if zero: {(self.slope):.3E} " if self.slope else "",
             f"Panicked " if self.panicked else "",
             f"Current ratio weight: {self.auto_weight} ",
             f"Current coin: {current_coin + self.config.BRIDGE} price direction: {(self.from_coin_prices[-1] - self.mean_price):.3E} ",
