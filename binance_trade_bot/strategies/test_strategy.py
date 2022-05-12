@@ -38,7 +38,7 @@ class Strategy(AutoTrader):
         self.reinit_threshold = self.manager.now().replace(second=0, microsecond=0)
         self.reinit_rsi = self.manager.now().replace(second=0, microsecond=0)
         self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
-        self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=(int(self.config.RSI_CANDLE_TYPE)))
+        self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
         self.logger.info(f"Ratio adjust weight: {self.config.RATIO_ADJUST_WEIGHT}")
         self.logger.info(f"RSI length: {self.config.RSI_LENGTH}")
         self.logger.info(f"RSI candle type: {self.config.RSI_CANDLE_TYPE}")
