@@ -14,10 +14,7 @@ from binance_trade_bot.database import Pair, Coin, CoinValue
 
 class Strategy(AutoTrader):
     def initialize(self):
-        print("")
-        self.logger.info(f"CAUTION: Make sure to have BTC in your coin list to minimize losses in a bear market!")
-        print("")
-
+	
         if self.config.ACCEPT_LOSSES != True:
             self.logger.error("You need to accept losses by setting accept_losses=true in the user.cfg or setting the enviroment variable ACCEPT_LOSSES to true in order to use this strategy!")
             raise Exception()
