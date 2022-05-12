@@ -124,7 +124,7 @@ class Strategy(AutoTrader):
                         self.slope = []
                         self._jump_to_best_coin(current_coin, current_coin_price)
                         
-        pair = max(ratio_dict, key=ratio_dict.get)             
+        painic_pair = max(ratio_dict, key=ratio_dict.get)             
         if base_time >= panic_time and not self.panicked:
             sp_prices = numpy.array(self.panic_prices)
             slope = talib.LINEARREG_SLOPE(sp_prices, (min(int(self.config.RSI_CANDLE_TYPE) * int(self.config.RSI_LENGTH), len(sp_prices))))
@@ -136,16 +136,16 @@ class Strategy(AutoTrader):
                 self.logger.info("!!! Panic sell !!!")
                 self.panicked = True
                 can_sell = False
-                balance = self.manager.get_currency_balance(pair.from_coin.symbol)
+                balance = self.manager.get_currency_balance(panic_pair.from_coin.symbol)
 
-                if balance and balance * panic_price > self.manager.get_min_notional(pair.from_coin.symbol, self.config.BRIDGE.symbol):
+                if balance and balance * panic_price > self.manager.get_min_notional(panic_pair.from_coin.symbol, self.config.BRIDGE.symbol):
                     can_sell = True
                 else:
                     self.logger.info("Not enough balance")
                     self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
                     self.panicked = False
 
-                if can_sell and self.manager.sell_alt(pair.from_coin, self.config.BRIDGE, panic_price) is None:
+                if can_sell and self.manager.sell_alt(panic_pair.from_coin, self.config.BRIDGE, panic_price) is None:
                     self.logger.info("Couldn't sell, going back to scouting mode...")
                     self.panicked = False
                     self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
@@ -153,7 +153,7 @@ class Strategy(AutoTrader):
         elif base_time >= panic_time and self.panicked and self.mean_price < current_coin_price:
             self.logger.info("Price seems to rise, buying in")
             self.panicked = False
-            if self.manager.buy_alt(pair.from_coin, self.config.BRIDGE, current_coin_price) is None:
+            if self.manager.buy_alt(panic_pair.from_coin, self.config.BRIDGE, current_coin_price) is None:
                 self.logger.info("Couldn't buy, going back to panic mode...")
                 self.panicked = True
                 self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
