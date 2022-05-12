@@ -124,13 +124,13 @@ class Strategy(AutoTrader):
                         self.slope = []
                         self._jump_to_best_coin(current_coin, current_coin_price)
                         
+        pair = max(ratio_dict, key=ratio_dict.get)             
         if base_time >= panic_time and not self.panicked:
             sp_prices = numpy.array(self.panic_prices)
             slope = talib.LINEARREG_SLOPE(sp_prices, (min(int(self.config.RSI_CANDLE_TYPE) * int(self.config.RSI_LENGTH), len(sp_prices))))
             self.slope = slope[-1]
             ratio_dict, prices = self._get_ratios(current_coin, panic_price)
             #ratio_dict = {k: v for k, v in ratio_dict.items() if v > 0}
-            pair = max(ratio_dict, key=ratio_dict.get)
             
             if self.slope < 0:
                 self.logger.info("!!! Panic sell !!!")
