@@ -90,6 +90,7 @@ class Strategy(AutoTrader):
         )
 	
         current_coin_price = self.manager.get_sell_price(current_coin + self.config.BRIDGE)
+	panic_price = self.manager.get_buy_price(current_coin + self.config.BRIDGE)
 
         if current_coin_price is None:
             self.logger.info("Skipping scouting... current coin {} not found".format(current_coin + self.config.BRIDGE))
@@ -127,7 +128,7 @@ class Strategy(AutoTrader):
             sp_prices = numpy.array(self.panic_prices)
             slope = talib.LINEARREG_SLOPE(sp_prices, (min(int(self.config.RSI_CANDLE_TYPE) * int(self.config.RSI_LENGTH), len(sp_prices))))
             self.slope = slope[-1]
-            ratio_dict, prices = self._get_ratios(current_coin, current_coin_price)
+            ratio_dict, prices = self._get_ratios(current_coin, panic_price)
             #ratio_dict = {k: v for k, v in ratio_dict.items() if v > 0}
             pair = max(ratio_dict, key=ratio_dict.get)
             
@@ -137,14 +138,14 @@ class Strategy(AutoTrader):
                 can_sell = False
                 balance = self.manager.get_currency_balance(pair.from_coin.symbol)
 
-                if balance and balance * current_coin_price > self.manager.get_min_notional(pair.from_coin.symbol, self.config.BRIDGE.symbol):
+                if balance and balance * panic_price > self.manager.get_min_notional(pair.from_coin.symbol, self.config.BRIDGE.symbol):
                     can_sell = True
                 else:
                     self.logger.info("Not enough balance")
                     self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
                     self.panicked = False
 
-                if can_sell and self.manager.sell_alt(pair.from_coin, self.config.BRIDGE, current_coin_price) is None:
+                if can_sell and self.manager.sell_alt(pair.from_coin, self.config.BRIDGE, panic_price) is None:
                     self.logger.info("Couldn't sell, going back to scouting mode...")
                     self.panicked = False
                     self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
