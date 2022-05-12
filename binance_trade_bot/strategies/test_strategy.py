@@ -90,7 +90,7 @@ class Strategy(AutoTrader):
         )
 	
         current_coin_price = self.manager.get_sell_price(current_coin + self.config.BRIDGE)
-	panic_price = self.manager.get_buy_price(current_coin + self.config.BRIDGE)
+        panic_price = self.manager.get_buy_price(current_coin + self.config.BRIDGE)
 
         if current_coin_price is None:
             self.logger.info("Skipping scouting... current coin {} not found".format(current_coin + self.config.BRIDGE))
