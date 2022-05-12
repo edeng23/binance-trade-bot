@@ -159,6 +159,7 @@ class Strategy(AutoTrader):
                     self.panicked = True
                 else:
                     self.panic_prices = []
+                    self.panic_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 60)
 		
         else:
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)                
