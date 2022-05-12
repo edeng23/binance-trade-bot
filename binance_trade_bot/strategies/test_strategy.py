@@ -134,6 +134,7 @@ class Strategy(AutoTrader):
  #           ratio_dict = {k: v for k, v in ratio_dict.items() if v > 0}
             
             if self.slope < 0:
+                self.logger.info("!!! Panic sell !!!")
                 can_sell = False
                 balance = self.manager.get_currency_balance(current_coin)
 
@@ -146,7 +147,8 @@ class Strategy(AutoTrader):
                 if can_sell and self.manager.sell_alt(current_coin, self.config.BRIDGE, current_coin_price) is None:
                     self.logger.info("Couldn't sell, going back to scouting mode...")
                     self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
-
+                else:
+                    self.panicked = True             
             else:
                 self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)                
 	
