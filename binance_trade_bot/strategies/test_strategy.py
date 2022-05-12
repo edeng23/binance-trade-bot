@@ -147,7 +147,7 @@ class Strategy(AutoTrader):
                     self.logger.info("Couldn't sell, going back to scouting mode...")
                     self.panicked = False
                     self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
-            elif(base_time >= panic_time and self.panicked and self.mean_price < current_coin_price:
+            elif base_time >= panic_time and self.panicked and self.mean_price < current_coin_price:
                 self.logger.info("Price seems to rise, buying in")
                 self.panicked = False
                 if self.manager.buy_alt(current_coin, self.config.BRIDGE, current_coin_price) is None:
