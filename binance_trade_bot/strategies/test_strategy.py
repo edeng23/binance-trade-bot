@@ -55,15 +55,11 @@ class Strategy(AutoTrader):
         allowed_rsi_time = self.reinit_rsi
         allowed_rsi_idle_time = self.reinit_idle
         panic_time = self.panic_time
+        
         panic_price = self.manager.get_buy_price(current_coin + self.config.BRIDGE)
         
         if base_time >= allowed_idle_time:
             print("")
-            ratio_dict, prices = self._get_ratios(current_coin, panic_price)
-            panic_pair = max(ratio_dict, key=ratio_dict.get) 
-            sp_prices = numpy.array(self.panic_prices)
-            slope = talib.LINEARREG_SLOPE(sp_prices, (min(int(self.config.RSI_CANDLE_TYPE) * int(self.config.RSI_LENGTH), len(sp_prices))))
-            self.slope = slope[-1] 
             self.auto_weight = max(1, self.auto_weight + self.jumpable_coins - 1)
             self.re_initialize_trade_thresholds()
             self.reinit_threshold = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
@@ -74,6 +70,12 @@ class Strategy(AutoTrader):
             self.mean_price = numpy.mean(self.from_coin_prices)
             self.rsi_calc()
             self.reinit_rsi = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
+	    
+            ratio_dict, prices = self._get_ratios(current_coin, panic_price)
+            panic_pair = max(ratio_dict, key=ratio_dict.get) 
+            sp_prices = numpy.array(self.panic_prices)
+            slope = talib.LINEARREG_SLOPE(sp_prices, (min(int(self.config.RSI_CANDLE_TYPE) * int(self.config.RSI_LENGTH), len(sp_prices))))
+            self.slope = slope[-1] 
 		
         """
         Scout for potential jumps from the current coin to another coin
@@ -128,7 +130,7 @@ class Strategy(AutoTrader):
                         self.slope = []
                         self._jump_to_best_coin(current_coin, current_coin_price)
            
-                
+                 
         if base_time >= panic_time and not self.panicked:
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
             #ratio_dict = {k: v for k, v in ratio_dict.items() if v > 0}
