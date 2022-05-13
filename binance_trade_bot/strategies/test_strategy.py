@@ -94,8 +94,8 @@ class Strategy(AutoTrader):
             f"(go negative) " if self.from_coin_prices[-1] > self.mean_price else "",
             f"Next coin: {self.rsi_coin} with RSI: {round(self.rsi, 3)} price direction: {(self.to_coin_price - self.tema):.3E} " if self.rsi else "",
             f"(go positive) " if self.rsi and self.to_coin_price < self.tema else "",
-            #f"bullish " if (self.f_slope + self.s_slope) / 2 > 0 and self.rsi else "",
-            #f"bearish " if (self.f_slope + self.s_slope) / 2 < 0 and self.rsi else "",
+            f"bullish " if (self.f_slope + self.s_slope) / 2 > 0 and self.rsi else "",
+            f"bearish " if (self.f_slope + self.s_slope) / 2 < 0 and self.rsi else "",
             end='\r',
         )
 	
@@ -156,7 +156,7 @@ class Strategy(AutoTrader):
 		
         elif base_time >= panic_time and self.panicked:
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
-            if self.tema <= int(current_coin_price):
+            if self.tema <= self.from_coin_prices[-1]:
                 self.logger.info("Price seems to rise, buying in")
                 self.panicked = False
                 if self.manager.buy_alt(panic_pair.from_coin, self.config.BRIDGE, current_coin_price) is None:
