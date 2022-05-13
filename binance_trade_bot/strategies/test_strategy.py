@@ -124,11 +124,11 @@ class Strategy(AutoTrader):
                         self._jump_to_best_coin(current_coin, current_coin_price)
            
         ratio_dict, prices = self._get_ratios(current_coin, panic_price)
-        panic_pair = max(ratio_dict, key=ratio_dict.get)             
+        panic_pair = max(ratio_dict, key=ratio_dict.get) 
+        sp_prices = numpy.array(self.panic_prices)
+        slope = talib.LINEARREG_SLOPE(sp_prices, (min(int(self.config.RSI_CANDLE_TYPE) * int(self.config.RSI_LENGTH), len(sp_prices))))
+        self.slope = slope[-1]          
         if base_time >= panic_time and not self.panicked:
-            sp_prices = numpy.array(self.panic_prices)
-            slope = talib.LINEARREG_SLOPE(sp_prices, (min(int(self.config.RSI_CANDLE_TYPE) * int(self.config.RSI_LENGTH), len(sp_prices))))
-            self.slope = slope[-1]
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
             #ratio_dict = {k: v for k, v in ratio_dict.items() if v > 0}
             
@@ -150,15 +150,15 @@ class Strategy(AutoTrader):
 		
         elif base_time >= panic_time and self.panicked:
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
-            if self.mean_price < current_coin_price:
+            if slope >= 0:
                 self.logger.info("Price seems to rise, buying in")
                 self.panicked = False
                 if self.manager.buy_alt(panic_pair.from_coin, self.config.BRIDGE, current_coin_price) is None:
                     self.logger.info("Couldn't buy, going back to panic mode...")
                     self.panicked = True
-                else:
-                    self.panic_prices = []
-                    self.panic_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 60)
+               # else:
+                #    self.panic_prices = []
+                   # self.panic_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 60)
 		
         #elif base_time >= panic_time:
          #   self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)                
