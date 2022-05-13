@@ -55,6 +55,7 @@ class Strategy(AutoTrader):
         allowed_rsi_time = self.reinit_rsi
         allowed_rsi_idle_time = self.reinit_idle
         panic_time = self.panic_time
+	
         current_coin_price = self.manager.get_sell_price(current_coin + self.config.BRIDGE)
         panic_price = self.manager.get_buy_price(current_coin + self.config.BRIDGE)
         
