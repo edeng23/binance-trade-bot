@@ -21,7 +21,7 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
         config = configparser.ConfigParser()
         config["DEFAULT"] = {
             "bridge": "USDT", 
-            "use_margin": "no",
+            "use_margin": "true",
             "scout_multiplier": "5",
             "scout_margin": "0.8",
             "scout_sleep_time": "5",
@@ -145,8 +145,7 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
         
 
         accept_losses_str = os.environ.get("ACCEPT_LOSSES") or config.get(USER_CFG_SECTION, "accept_losses")
-        self.ACCEPT_LOSSES = accept_losses_str == 'true' or accept_losses_str == 'True'
-
+        self.ACCEPT_LOSSES = str(accept_losses_str).lower() == 'true'
 
         auto_adjust_bnb_balance_str = os.environ.get("AUTO_ADJUST_BNB_BALANCE") or config.get(USER_CFG_SECTION, "auto_adjust_bnb_balance")
         self.AUTO_ADJUST_BNB_BALANCE = str(auto_adjust_bnb_balance_str).lower() == "true"
@@ -158,5 +157,6 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
         allow_coin_merge = os.environ.get("ALLOW_COIN_MERGE") or config.get(USER_CFG_SECTION, "allow_coin_merge")
         self.ALLOW_COIN_MERGE = str(allow_coin_merge).lower() == 'true'
 
-        self.USE_MARGIN = os.environ.get("USE_MARGIN") or config.get(USER_CFG_SECTION, "use_margin")
+        use_margin = os.environ.get("USE_MARGIN") or config.get(USER_CFG_SECTION, "use_margin")
+        self.USE_MARGIN = str(use_margin).lower() == 'true'
         self.SCOUT_MARGIN = float(os.environ.get("SCOUT_MARGIN") or config.get(USER_CFG_SECTION, "scout_margin"))
