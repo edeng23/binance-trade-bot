@@ -153,6 +153,9 @@ class Strategy(AutoTrader):
                 if can_sell and self.manager.sell_alt(panic_pair.from_coin, self.config.BRIDGE) is None:
                     self.logger.info("Couldn't sell, going back to scouting mode...")
                     self.panicked = False
+                else:
+                    self.panic_prices = []
+                    self.panic_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 1800)
 		
         elif base_time >= panic_time and self.panicked:
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
