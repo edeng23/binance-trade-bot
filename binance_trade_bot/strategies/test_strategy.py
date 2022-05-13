@@ -55,7 +55,6 @@ class Strategy(AutoTrader):
         allowed_rsi_time = self.reinit_rsi
         allowed_rsi_idle_time = self.reinit_idle
         panic_time = self.panic_time
-	
         panic_price = self.manager.get_buy_price(current_coin + self.config.BRIDGE)
         
         if base_time >= allowed_idle_time:
@@ -93,7 +92,8 @@ class Strategy(AutoTrader):
             #f"bullish " if (self.f_slope + self.s_slope) / 2 > 0 and self.rsi else "",
             #f"bearish " if (self.f_slope + self.s_slope) / 2 < 0 and self.rsi else "",
             end='\r',
-                
+        )
+	
         current_coin_price = self.manager.get_sell_price(current_coin + self.config.BRIDGE)
 
         if current_coin_price is None:
