@@ -88,7 +88,7 @@ class Strategy(AutoTrader):
         print(
             f"{self.manager.now().replace(microsecond=0)} - " ,
             f"Panic-meter: {(self.slope):.3E} " if self.slope and not self.panicked else "",
-            f"Panicked {(self.slope):.3E} " if self.panicked else "",
+            f"Panicked {(self.slope):.3E} " if self.slope and self.panicked else "",
             f"Current ratio weight: {self.auto_weight} ",
             f"Current coin: {current_coin + self.config.BRIDGE} price direction: {(self.from_coin_prices[-1] - self.mean_price):.3E} ",
             f"(go negative) " if self.from_coin_prices[-1] > self.mean_price else "",
