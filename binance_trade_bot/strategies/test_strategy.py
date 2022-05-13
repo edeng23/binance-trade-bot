@@ -105,7 +105,7 @@ class Strategy(AutoTrader):
             self.logger.info("Skipping scouting... current coin {} not found".format(current_coin + self.config.BRIDGE))
             return
             
-        if self.rsi and current_coin_price <= self.mean_price:
+        if self.rsi and self.from_coin_prices[-1] <= self.mean_price:
            if base_time >= allowed_rsi_idle_time:
                 if self.rsi <= 30 or self.pre_rsi < self.rsi > 50:
                         print("")
@@ -150,7 +150,7 @@ class Strategy(AutoTrader):
                     self.logger.info("Not enough balance")
                     self.panicked = False
 
-                if can_sell and self.manager.sell_alt(panic_pair.from_coin, self.config.BRIDGE) is None:
+                if can_sell and self.manager.sell_alt(panic_pair.from_coin, self.config.BRIDGE, current_coin_price) is None:
                     self.logger.info("Couldn't sell, going back to scouting mode...")
                     self.panicked = False
                 else:
@@ -163,7 +163,7 @@ class Strategy(AutoTrader):
             if self.mean_price <= self.from_coin_prices[-1] and self.slope >= 0:
                 self.logger.info("Price seems to rise, buying in")
                 self.panicked = False
-                if self.manager.buy_alt(panic_pair.from_coin, self.config.BRIDGE) is None:
+                if self.manager.buy_alt(panic_pair.from_coin, self.config.BRIDGE, current_coin_price) is None:
                     self.logger.info("Couldn't buy, going back to panic mode...")
                     self.panicked = True
                 else:
