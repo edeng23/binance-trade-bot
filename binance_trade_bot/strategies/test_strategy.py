@@ -162,8 +162,7 @@ class Strategy(AutoTrader):
 		
         elif base_time >= panic_time:
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)                
-        else:
-            self.logger.info("Something's wrong")
+	
 
     def bridge_scout(self):
         current_coin = self.db.get_current_coin()
