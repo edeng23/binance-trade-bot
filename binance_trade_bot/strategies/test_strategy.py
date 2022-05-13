@@ -150,7 +150,7 @@ class Strategy(AutoTrader):
                     self.logger.info("Not enough balance")
                     self.panicked = False
 
-                if can_sell and self.manager.sell_alt(panic_pair.from_coin, self.config.BRIDGE, panic_price) is None:
+                if can_sell and self.manager.sell_alt(panic_pair.from_coin, self.config.BRIDGE) is None:
                     self.logger.info("Couldn't sell, going back to scouting mode...")
                     self.panicked = False
 		
@@ -159,7 +159,7 @@ class Strategy(AutoTrader):
             if self.mean_price <= self.from_coin_prices[-1]:
                 self.logger.info("Price seems to rise, buying in")
                 self.panicked = False
-                if self.manager.buy_alt(panic_pair.from_coin, self.config.BRIDGE, current_coin_price) is None:
+                if self.manager.buy_alt(panic_pair.from_coin, self.config.BRIDGE) is None:
                     self.logger.info("Couldn't buy, going back to panic mode...")
                     self.panicked = True
                 else:
