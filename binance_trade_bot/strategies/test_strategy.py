@@ -58,6 +58,11 @@ class Strategy(AutoTrader):
         
         if base_time >= allowed_idle_time:
             print("")
+            ratio_dict, prices = self._get_ratios(current_coin, panic_price)
+            panic_pair = max(ratio_dict, key=ratio_dict.get) 
+            sp_prices = numpy.array(self.panic_prices)
+            slope = talib.LINEARREG_SLOPE(sp_prices, (min(int(self.config.RSI_CANDLE_TYPE) * int(self.config.RSI_LENGTH), len(sp_prices))))
+            self.slope = slope[-1] 
             self.auto_weight = max(1, self.auto_weight + self.jumpable_coins - 1)
             self.re_initialize_trade_thresholds()
             self.reinit_threshold = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
@@ -123,11 +128,7 @@ class Strategy(AutoTrader):
                         self.slope = []
                         self._jump_to_best_coin(current_coin, current_coin_price)
            
-        ratio_dict, prices = self._get_ratios(current_coin, panic_price)
-        panic_pair = max(ratio_dict, key=ratio_dict.get) 
-        sp_prices = numpy.array(self.panic_prices)
-        slope = talib.LINEARREG_SLOPE(sp_prices, (min(int(self.config.RSI_CANDLE_TYPE) * int(self.config.RSI_LENGTH), len(sp_prices))))
-        self.slope = slope[-1]          
+                
         if base_time >= panic_time and not self.panicked:
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
             #ratio_dict = {k: v for k, v in ratio_dict.items() if v > 0}
