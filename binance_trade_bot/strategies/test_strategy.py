@@ -74,8 +74,9 @@ class Strategy(AutoTrader):
             ratio_dict, prices = self._get_ratios(current_coin, panic_price)
             panic_pair = max(ratio_dict, key=ratio_dict.get) 
             sp_prices = numpy.array(self.panic_prices)
-            slope = talib.LINEARREG_SLOPE(sp_prices, (min(int(self.config.RSI_CANDLE_TYPE) * int(self.config.RSI_LENGTH), len(sp_prices))))
-            self.slope = slope[-1] 
+            if len(sp_prices) >= 2:
+                slope = talib.LINEARREG_SLOPE(sp_prices, (min(int(self.config.RSI_CANDLE_TYPE) * int(self.config.RSI_LENGTH), len(sp_prices))))
+                self.slope = slope[-1] 
 		
         """
         Scout for potential jumps from the current coin to another coin
