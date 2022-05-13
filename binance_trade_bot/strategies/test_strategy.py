@@ -160,8 +160,8 @@ class Strategy(AutoTrader):
                     self.panic_prices = []
                     self.panic_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 60)
 		
-        elif base_time >= panic_time:
-            self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)                
+        #elif base_time >= panic_time:
+         #   self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)                
 	
 
     def bridge_scout(self):
