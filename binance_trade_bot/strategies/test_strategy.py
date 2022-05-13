@@ -58,12 +58,12 @@ class Strategy(AutoTrader):
         
         if base_time >= allowed_idle_time:
             print("")
-            self.panic_prices.append(self.manager.get_buy_price(current_coin + self.config.BRIDGE))
             self.auto_weight = max(1, self.auto_weight + self.jumpable_coins - 1)
             self.re_initialize_trade_thresholds()
             self.reinit_threshold = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
 		
         if base_time >= allowed_rsi_time:
+            self.panic_prices.append(self.manager.get_buy_price(current_coin + self.config.BRIDGE))
             self.from_coin_prices.append(self.manager.get_buy_price(current_coin + self.config.BRIDGE))
             self.mean_price = numpy.mean(self.from_coin_prices)
             self.rsi_calc()
@@ -156,9 +156,9 @@ class Strategy(AutoTrader):
                 if self.manager.buy_alt(panic_pair.from_coin, self.config.BRIDGE, current_coin_price) is None:
                     self.logger.info("Couldn't buy, going back to panic mode...")
                     self.panicked = True
-               # else:
-                #    self.panic_prices = []
-                   # self.panic_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 60)
+                else:
+                    self.panic_prices = []
+                    self.panic_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 60)
 		
         #elif base_time >= panic_time:
          #   self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)                
