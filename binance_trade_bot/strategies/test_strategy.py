@@ -75,7 +75,7 @@ class Strategy(AutoTrader):
             panic_pair = max(ratio_dict, key=ratio_dict.get) 
             sp_prices = numpy.array(self.panic_prices)
             if len(sp_prices) >= 2:
-                slope = talib.LINEARREG_SLOPE(sp_prices, (min(int(self.config.RSI_CANDLE_TYPE) * int(self.config.RSI_LENGTH), len(sp_prices))))
+                slope = talib.LINEARREG_SLOPE(sp_prices, (min(int(self.config.RSI_CANDLE_TYPE) * int(self.config.RSI_LENGTH) * 60, len(sp_prices))))
                 self.slope = slope[-1] 
             else:
                 self.slope = []
