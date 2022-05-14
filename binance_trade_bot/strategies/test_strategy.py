@@ -95,7 +95,7 @@ class Strategy(AutoTrader):
             f"Next coin: {self.rsi_coin} with RSI: {round(self.rsi, 3)} price direction: {(self.to_coin_price - self.tema):.3E} " if self.rsi else "",
             f"(go positive) " if self.rsi and self.to_coin_price < self.tema else "",
             f"bullish " if (self.f_slope + self.s_slope) / 2 > 0 and self.rsi else "",
-            f"bearish " if (self.f_slope + self.s_slope) / 2 < 0 and self.rsi else "",
+            f"bearish " if (self.f_slope + self.s_slope) / 2 < 0 and self.rsi and self.f_slope and self.s_slope else "",
             end='\r',
         )
 	
