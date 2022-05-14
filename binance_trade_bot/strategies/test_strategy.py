@@ -23,17 +23,17 @@ class Strategy(AutoTrader):
         self.initialize_current_coin()
         self.rsi_coin = ""
         self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
-        self.tema = []
-        self.f_slope = []
-        self.s_slope =[]
+        self.tema = 0
+        self.f_slope = 0
+        self.s_slope =0
         self.mean_price = 0
         self.to_coin_price = 0
-        self.slope = []
+        self.slope = 0
         self.from_coin_prices = deque(maxlen=int(self.config.RSI_CANDLE_TYPE) * 60)
         self.panicked = False
         self.panic_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 1800)
         self.jumpable_coins = 0
-        self.pre_rsi = []
+        self.pre_rsi = 0
         self.rsi = self.rsi_calc()
         self.reinit_threshold = self.manager.now().replace(second=0, microsecond=0)
         self.reinit_rsi = self.manager.now().replace(second=0, microsecond=0)
@@ -78,7 +78,7 @@ class Strategy(AutoTrader):
                 slope = talib.LINEARREG_SLOPE(sp_prices, (min(int(self.config.RSI_CANDLE_TYPE) * int(self.config.RSI_LENGTH) * 60, len(sp_prices))))
                 self.slope = slope[-1] 
             else:
-                self.slope = []
+                self.slope = 0
 		
         """
         Scout for potential jumps from the current coin to another coin
@@ -117,7 +117,7 @@ class Strategy(AutoTrader):
                         self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
                         self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
                         self.panicked = False
-                        self.slope = []
+                        self.slope = 0
                         self._jump_to_best_coin(current_coin, current_coin_price)
            else:
                 if (self.to_coin_price > self.tema and (self.pre_rsi < self.rsi <= 30 or self.pre_rsi < self.rsi > 50 and not self.rsi >= 70)) or self.rsi < 20:
@@ -130,7 +130,7 @@ class Strategy(AutoTrader):
                         self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
                         self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
                         self.panicked = False
-                        self.slope = []
+                        self.slope = 0
                         self._jump_to_best_coin(current_coin, current_coin_price)
            
                  
