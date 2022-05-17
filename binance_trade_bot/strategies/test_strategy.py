@@ -29,9 +29,9 @@ class Strategy(AutoTrader):
         self.mean_price = 0
         self.to_coin_price = 0
         self.slope = 0
-        self.from_coin_prices = deque(maxlen=int(self.config.RSI_CANDLE_TYPE) * 60)
+        self.from_coin_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 1800)
         self.panicked = False
-        self.panic_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 1800)
+        #self.panic_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 1800)
         self.jumpable_coins = 0
         self.pre_rsi = 0
         self.rsi = self.rsi_calc()
@@ -65,15 +65,13 @@ class Strategy(AutoTrader):
             self.reinit_threshold = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
 		
         if base_time >= allowed_rsi_time:
-            self.panic_prices.append(self.manager.get_buy_price(current_coin + self.config.BRIDGE))
+            #self.panic_prices.append(self.manager.get_buy_price(current_coin + self.config.BRIDGE))
             self.from_coin_prices.append(self.manager.get_buy_price(current_coin + self.config.BRIDGE))
             self.mean_price = numpy.mean(self.from_coin_prices)
             self.rsi_calc()
             self.reinit_rsi = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
 	    
-            ratio_dict, prices = self._get_ratios(current_coin, panic_price)
-            panic_pair = max(ratio_dict, key=ratio_dict.get) 
-            sp_prices = numpy.array(self.panic_prices)
+            sp_prices = numpy.array(self.from_coin_prices)
             if len(sp_prices) >= 2:
                 slope = talib.LINEARREG_SLOPE(sp_prices, len(sp_prices))
                 self.slope = slope[-1] 
@@ -91,10 +89,10 @@ class Strategy(AutoTrader):
             f"Panicked {(self.slope):.3E} " if self.slope and self.panicked else "",
             f"Current ratio weight: {self.auto_weight} ",
             f"Current coin: {current_coin + self.config.BRIDGE} price direction: {(self.from_coin_prices[-1] - self.mean_price):.3E} ",
-            f"(go negative) " if self.from_coin_prices[-1] > self.mean_price else "",
+            f"(ready) " if self.from_coin_prices[-1] < self.mean_price else "",
             f"Next coin: {self.rsi_coin} with RSI: {round(self.rsi, 3)} price direction: {(self.to_coin_price - self.tema):.3E} " if self.rsi else "",
-            f"(go positive) " if self.rsi and self.to_coin_price < self.tema else "",
-            f"bullish " if (self.f_slope + self.s_slope) / 2 > 0 and self.rsi else "",
+            f"(ready) " if self.rsi and self.to_coin_price > self.tema else "",
+            f"bullish " if (self.f_slope + self.s_slope) / 2 > 0 and self.rsi and self.f_slope and self.s_slope else "",
             f"bearish " if (self.f_slope + self.s_slope) / 2 < 0 and self.rsi and self.f_slope and self.s_slope else "",
             end='\r',
         )
@@ -110,9 +108,9 @@ class Strategy(AutoTrader):
                 if self.rsi <= 30 or self.pre_rsi < self.rsi > 50:
                         print("")
                         self.from_coin_prices = []
-                        self.from_coin_prices = deque(maxlen=int(self.config.RSI_CANDLE_TYPE) * 60)
-                        self.panic_prices = []
-                        self.panic_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 1800)
+                        self.from_coin_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 1800)
+                        #self.panic_prices = []
+                        #self.panic_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 1800)
                         self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
                         self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
                         self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
@@ -123,9 +121,9 @@ class Strategy(AutoTrader):
                 if (self.to_coin_price > self.tema and (self.pre_rsi < self.rsi <= 30 or self.pre_rsi < self.rsi > 50 and not self.rsi >= 70)) or self.rsi < 20:
                         print("")
                         self.from_coin_prices = []
-                        self.from_coin_prices = deque(maxlen=int(self.config.RSI_CANDLE_TYPE) * 60)
-                        self.panic_prices = []
-                        self.panic_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 1800)
+                        self.from_coin_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 1800)
+                        #self.panic_prices = []
+                        #self.panic_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 1800)
                         self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
                         self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
                         self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
@@ -136,7 +134,6 @@ class Strategy(AutoTrader):
                  
         if base_time >= panic_time and not self.panicked:
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
-            #ratio_dict = {k: v for k, v in ratio_dict.items() if v > 0}
             
             if self.mean_price >= self.from_coin_prices[-1] and self.slope < 0:
                 self.logger.info("!!! Panic sell !!!")
@@ -155,8 +152,8 @@ class Strategy(AutoTrader):
                     self.panicked = False
                 else:
                     self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
-                    self.panic_prices = []
-                    self.panic_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 1800)
+                    self.from_coin_prices = []
+                    self.from_coin_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 1800)
 		
         elif base_time >= panic_time and self.panicked:
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
@@ -168,11 +165,8 @@ class Strategy(AutoTrader):
                     self.panicked = True
                 else:
                     self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
-                    self.panic_prices = []
-                    self.panic_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 1800)
-		
-        #elif base_time >= panic_time:
-         #   self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)                
+                    self.from_coin_prices = []
+                    self.from_coin_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 1800)               
 	
 
     def bridge_scout(self):
