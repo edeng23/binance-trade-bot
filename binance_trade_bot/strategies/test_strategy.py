@@ -29,6 +29,8 @@ class Strategy(AutoTrader):
         self.mean_price = 0
         self.to_coin_price = 0
         self.slope = 0
+        self.from_coin_direction = 0
+        self.to_coin_direction = 0
         self.from_coin_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 1800)
         self.panicked = False
         #self.panic_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 1800)
@@ -68,6 +70,7 @@ class Strategy(AutoTrader):
             #self.panic_prices.append(self.manager.get_buy_price(current_coin + self.config.BRIDGE))
             self.from_coin_prices.append(self.manager.get_buy_price(current_coin + self.config.BRIDGE))
             self.mean_price = numpy.mean(self.from_coin_prices)
+            self.from_coin_direction = self.from_coin_prices[-1] / self.mean_price * 100 - 100
             self.rsi_calc()
             self.reinit_rsi = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
 	    
@@ -90,10 +93,10 @@ class Strategy(AutoTrader):
             f"Panic-meter: {(self.slope):.3E} " if self.slope and not self.panicked else "",
             f"Panicked {(self.slope):.3E} " if self.slope and self.panicked else "",
             f"Current ratio weight: {self.auto_weight} ",
-            f"Current coin: {current_coin + self.config.BRIDGE} price direction: {(self.from_coin_prices[-1] - self.mean_price):.3E} ",
-            f"(ready) " if self.from_coin_prices[-1] < self.mean_price else "",
-            f"Next coin: {self.rsi_coin} with RSI: {round(self.rsi, 3)} price direction: {(self.to_coin_price - self.tema):.3E} " if self.rsi else "",
-            f"(ready) " if self.rsi and self.to_coin_price > self.tema else "",
+            f"Current coin: {current_coin + self.config.BRIDGE} price direction: {round(self.from_coin_direction, 3)}% ",
+            f"(ready) " if self.from_coin_direction < 0 else "",
+            f"Next coin: {self.rsi_coin} with RSI: {round(self.rsi, 3)} price direction: {round(self.to_coin_direction, 3)}% " if self.rsi else "",
+            f"(ready) " if self.rsi and self.to_coin_direction > 0 else "",
             f"bullish " if (self.f_slope + self.s_slope) / 2 > 0 and self.rsi and self.f_slope and self.s_slope else "",
             f"bearish " if (self.f_slope + self.s_slope) / 2 < 0 and self.rsi and self.f_slope and self.s_slope else "",
             end='\r',
@@ -105,7 +108,7 @@ class Strategy(AutoTrader):
             self.logger.info("Skipping scouting... current coin {} not found".format(current_coin + self.config.BRIDGE))
             return
             
-        if self.rsi and self.from_coin_prices[-1] <= self.mean_price:
+        if self.rsi and self.from_coin_direction < self.to_coin_direction:
            if base_time >= allowed_rsi_idle_time:
                 if self.rsi <= 30 or self.pre_rsi < self.rsi > 50:
                         print("")
@@ -120,7 +123,7 @@ class Strategy(AutoTrader):
                         self.slope = 0
                         self._jump_to_best_coin(current_coin, current_coin_price)
            else:
-                if (self.to_coin_price > self.tema and (self.pre_rsi < self.rsi <= 30 or self.pre_rsi < self.rsi > 50 and not self.rsi >= 70)) or self.rsi < 20:
+                if (self.to_coin_direction > 0 and (self.pre_rsi < self.rsi <= 30 or self.pre_rsi < self.rsi > 50 and not self.rsi >= 70)) or self.rsi < 20:
                         print("")
                         self.from_coin_prices = []
                         self.from_coin_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 1800)
@@ -377,12 +380,14 @@ class Strategy(AutoTrader):
               self.f_slope = fast_slope[-1]
               self.s_slope = slow_slope[-1]
               self.tema = tema[-1]
+              self.to_coin_direction = self.to_coin_price / self.tema * 100 - 100
               #self.logger.info(f"Finished ratio init...")
 
         else:
-           self.rsi = ""
-           self.pre_rsi = "" 
-           self.tema = ""
+           self.rsi = 0
+           self.pre_rsi = 0 
+           self.tema = 0
            self.to_coin_price = 0
-           self.rsi_coin = ""
+           #self.rsi_coin = ""
+           self.to_coin_direction = 0
            #self.logger.info(f"Not enough data for RSI calculation. Continue scouting...")
