@@ -71,6 +71,8 @@ class Strategy(AutoTrader):
             self.rsi_calc()
             self.reinit_rsi = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
 	    
+            ratio_dict, prices = self._get_ratios(current_coin, panic_price)
+            panic_pair = max(ratio_dict, key=ratio_dict.get) 
             sp_prices = numpy.array(self.from_coin_prices)
             if len(sp_prices) >= 2:
                 slope = talib.LINEARREG_SLOPE(sp_prices, len(sp_prices))
