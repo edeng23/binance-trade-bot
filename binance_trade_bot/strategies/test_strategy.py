@@ -68,6 +68,8 @@ class Strategy(AutoTrader):
 		
         if base_time >= allowed_rsi_time:
             #self.panic_prices.append(self.manager.get_buy_price(current_coin + self.config.BRIDGE))
+            if not self.from_coin_prices:
+                self.from_coin_prices.append(self.manager.get_buy_price(current_coin + self.config.BRIDGE))
             if self.from_coin_prices[-1] != self.manager.get_buy_price(current_coin + self.config.BRIDGE):
                 self.from_coin_prices.append(self.manager.get_buy_price(current_coin + self.config.BRIDGE))
             self.mean_price = numpy.mean(self.from_coin_prices)
