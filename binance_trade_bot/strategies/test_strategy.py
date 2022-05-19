@@ -108,7 +108,7 @@ class Strategy(AutoTrader):
             self.logger.info("Skipping scouting... current coin {} not found".format(current_coin + self.config.BRIDGE))
             return
             
-        if self.rsi and self.from_coin_direction < self.to_coin_direction:
+        if self.rsi:
            if base_time >= allowed_rsi_idle_time:
                 if self.rsi <= 30 or self.pre_rsi < self.rsi > 50:
                         print("")
@@ -123,7 +123,7 @@ class Strategy(AutoTrader):
                         self.slope = 0
                         self._jump_to_best_coin(current_coin, current_coin_price)
            else:
-                if (self.to_coin_direction > 0 and (self.pre_rsi < self.rsi <= 30 or self.pre_rsi < self.rsi > 50 and not self.rsi >= 70)) or self.rsi < 20:
+                if (self.from_coin_direction <= self.to_coin_direction >= 0 and (self.pre_rsi < self.rsi <= 30 or self.pre_rsi < self.rsi > 50 and not self.rsi >= 70)) or self.rsi < 20:
                         print("")
                         self.from_coin_prices = []
                         self.from_coin_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 1800)
