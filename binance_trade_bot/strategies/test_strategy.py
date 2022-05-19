@@ -150,18 +150,18 @@ class Strategy(AutoTrader):
                     can_sell = True
                 else:
                     self.logger.info("Not enough balance")
-                    #self.panicked = False
+                    self.panicked = False
                     self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
-                    self.from_coin_prices = []
-                    self.from_coin_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 1800)
+                    #self.from_coin_prices = []
+                    #self.from_coin_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 1800)
 
                 if can_sell and self.manager.sell_alt(panic_pair.from_coin, self.config.BRIDGE, current_coin_price) is None:
                     self.logger.info("Couldn't sell, going back to scouting mode...")
                     self.panicked = False
                 else:
                     self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
-                    self.from_coin_prices = []
-                    self.from_coin_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 1800)
+                    #self.from_coin_prices = []
+                    #self.from_coin_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 1800)
 		
         elif base_time >= panic_time and self.panicked:
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
@@ -173,8 +173,8 @@ class Strategy(AutoTrader):
                     self.panicked = True
                 else:
                     self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
-                    self.from_coin_prices = []
-                    self.from_coin_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 1800)               
+                    #self.from_coin_prices = []
+                    #self.from_coin_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 1800)               
 	
 
     def bridge_scout(self):
