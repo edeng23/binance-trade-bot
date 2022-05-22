@@ -163,8 +163,8 @@ class Strategy(AutoTrader):
                     self.panicked = False
                 else:
                     self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
-                    self.from_coin_prices = []
-                    self.from_coin_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 1800)
+                    #self.from_coin_prices = []
+                    #self.from_coin_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 1800)
 		
         elif base_time >= panic_time and self.panicked:
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
