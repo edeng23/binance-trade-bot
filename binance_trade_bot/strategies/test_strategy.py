@@ -113,7 +113,7 @@ class Strategy(AutoTrader):
             
         if self.rsi:
            if base_time >= allowed_rsi_idle_time:
-                if self.rsi <= 30 or self.pre_rsi < self.rsi > 50:
+                if self.rsi <= 30 or self.pre_rsi < self.rsi > 50 or self.panicked:
                         print("")
                         self.from_coin_prices = []
                         self.from_coin_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 1800)
