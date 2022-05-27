@@ -25,8 +25,8 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
         config["DEFAULT"] = {
             "bridge": "USDT",
             "scout_multiplier": "5",
-            "scout_sleep_time": "5",
-            "hourToKeepScoutHistory": "1",
+            "scout_sleep_time": "1",
+            "hourToKeepScoutHistory": "24",
             "tld": "com",
             "trade_fee": "auto",
             "strategy": "default",
@@ -40,9 +40,9 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
             "price_type": self.PRICE_TYPE_ORDERBOOK,
             "ratio_calc": "default",
             "accept_losses": "false",
-            "max_idle_hours": "3",
-            "ratio_adjust_weight":"100",
-            "auto_adjust_bnb_balance": "false",
+            "max_idle_hours": "4",
+            "ratio_adjust_weight":"1000",
+            "auto_adjust_bnb_balance": "true",
             "auto_adjust_bnb_balance_rate": "3",
             "allow_coin_merge": "true",
             "rsi_length": "14",
@@ -132,11 +132,11 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
                 f"{self.ORDER_TYPE_LIMIT} or {self.ORDER_TYPE_MARKET} expected, got {buy_order_type}"
                 "for buy_order_type"
             )
-        if buy_order_type == self.ORDER_TYPE_MARKET:
-            raise Exception(
-                "Market buys are reported to do extreme losses, they are disabled right now,"
-                "comment this line only if you know what you're doing"
-            )
+        #if buy_order_type == self.ORDER_TYPE_MARKET:
+         #   raise Exception(
+          #      "Market buys are reported to do extreme losses, they are disabled right now,"
+           #     "comment this line only if you know what you're doing"
+            #)
         self.BUY_ORDER_TYPE = order_type_map[buy_order_type]
 
         self.BUY_MAX_PRICE_CHANGE = os.environ.get("BUY_MAX_PRICE_CHANGE") or config.get(USER_CFG_SECTION, "buy_max_price_change")
