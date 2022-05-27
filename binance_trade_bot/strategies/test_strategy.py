@@ -68,10 +68,10 @@ class Strategy(AutoTrader):
 		
         if base_time >= allowed_rsi_time:
             #self.panic_prices.append(self.manager.get_buy_price(current_coin + self.config.BRIDGE))
-            if not self.from_coin_prices:
-                self.from_coin_prices.append(self.manager.get_buy_price(current_coin + self.config.BRIDGE))
-            if self.from_coin_prices[-1] != self.manager.get_buy_price(current_coin + self.config.BRIDGE):
-                self.from_coin_prices.append(self.manager.get_buy_price(current_coin + self.config.BRIDGE))
+            #if not self.from_coin_prices:
+                #self.from_coin_prices.append(self.manager.get_sell_price(current_coin + self.config.BRIDGE))
+            if self.manager.get_sell_price(current_coin + self.config.BRIDGE):
+                self.from_coin_prices.append(self.manager.get_sell_price(current_coin + self.config.BRIDGE))
             self.mean_price = numpy.mean(self.from_coin_prices)
             self.from_coin_direction = self.from_coin_prices[-1] / self.mean_price * 100 - 100
             self.rsi_calc()
@@ -113,7 +113,7 @@ class Strategy(AutoTrader):
             
         if self.rsi:
            if base_time >= allowed_rsi_idle_time:
-                if self.rsi <= 30 or self.pre_rsi < self.rsi > 50 or self.panicked:
+                if self.rsi <= 30 or self.pre_rsi < self.rsi > 50:
                         print("")
                         self.from_coin_prices = []
                         self.from_coin_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 1800)
