@@ -73,7 +73,7 @@ class Strategy(AutoTrader):
                 #self.from_coin_prices.append(self.manager.get_sell_price(current_coin + self.config.BRIDGE))
             self.from_coin_prices.append(self.manager.get_sell_price(current_coin + self.config.BRIDGE)**2)
             self.mean_price = math.sqrt(numpy.mean(self.from_coin_prices))
-            self.from_coin_direction = self.from_coin_prices[-1] / self.mean_price * 100 - 100
+            self.from_coin_direction = math.sqrt(self.from_coin_prices[-1]) / self.mean_price * 100 - 100
             self.rsi_calc()
             self.reinit_rsi = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
 	    
