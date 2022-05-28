@@ -70,9 +70,8 @@ class Strategy(AutoTrader):
             #self.panic_prices.append(self.manager.get_buy_price(current_coin + self.config.BRIDGE))
             #if not self.from_coin_prices:
                 #self.from_coin_prices.append(self.manager.get_sell_price(current_coin + self.config.BRIDGE))
-            if self.manager.get_sell_price(current_coin + self.config.BRIDGE):
-                self.from_coin_prices.append(self.manager.get_sell_price(current_coin + self.config.BRIDGE))
-            self.mean_price = numpy.mean(self.from_coin_prices)
+            self.from_coin_prices.append(self.manager.get_sell_price(current_coin + self.config.BRIDGE)**2)
+            self.mean_price = math.sqrt(numpy.mean(self.from_coin_prices))
             self.from_coin_direction = self.from_coin_prices[-1] / self.mean_price * 100 - 100
             self.rsi_calc()
             self.reinit_rsi = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
@@ -143,7 +142,7 @@ class Strategy(AutoTrader):
         if base_time >= panic_time and not self.panicked:
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
             
-            if self.from_coin_direction < 0 and self.slope > 0:
+            if self.from_coin_direction < 0 and self.slope < 0:
                 self.logger.info("!!! Panic sell !!!")
                 self.panicked = True
                 can_sell = False
@@ -168,7 +167,7 @@ class Strategy(AutoTrader):
 		
         elif base_time >= panic_time and self.panicked:
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
-            if self.from_coin_direction >= 0 and self.slope <= 0:
+            if self.from_coin_direction >= 0:
                 self.logger.info("Price seems to rise, buying in")
                 self.panicked = False
                 if self.manager.buy_alt(panic_pair.from_coin, self.config.BRIDGE, current_coin_price) is None:
