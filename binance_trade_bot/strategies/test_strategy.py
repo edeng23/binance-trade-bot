@@ -60,6 +60,15 @@ class Strategy(AutoTrader):
         panic_time = self.panic_time
         
         panic_price = self.manager.get_buy_price(current_coin + self.config.BRIDGE)
+        current_coin_price = self.manager.get_sell_price(current_coin + self.config.BRIDGE)
+
+        if current_coin_price is None:
+            self.logger.info("Skipping scouting... current coin {} not found".format(current_coin + self.config.BRIDGE))
+            return
+
+        if panic_price is None:
+            self.logger.info("Skipping scouting... current coin {} not found".format(current_coin + self.config.BRIDGE))
+            return
         
         if base_time >= allowed_idle_time:
             print("")
@@ -71,7 +80,10 @@ class Strategy(AutoTrader):
             #self.panic_prices.append(self.manager.get_buy_price(current_coin + self.config.BRIDGE))
             #if not self.from_coin_prices:
                 #self.from_coin_prices.append(self.manager.get_sell_price(current_coin + self.config.BRIDGE))
-            self.from_coin_prices.append(self.manager.get_sell_price(current_coin + self.config.BRIDGE)**2)
+            if not self.panicked:
+                self.from_coin_prices.append(current_coin_price**2)
+            else:
+                self.from_coin_prices.append(panic_price**2)
             self.mean_price = math.sqrt(numpy.mean(self.from_coin_prices))
             self.from_coin_direction = math.sqrt(self.from_coin_prices[-1]) / self.mean_price * 100 - 100
             self.rsi_calc()
@@ -105,11 +117,7 @@ class Strategy(AutoTrader):
             end='\r',
         )
 	
-        current_coin_price = self.manager.get_sell_price(current_coin + self.config.BRIDGE)
-
-        if current_coin_price is None:
-            self.logger.info("Skipping scouting... current coin {} not found".format(current_coin + self.config.BRIDGE))
-            return
+        
             
         if self.rsi:
            if base_time >= allowed_rsi_idle_time:
@@ -158,7 +166,7 @@ class Strategy(AutoTrader):
                     #self.from_coin_prices = []
                     #self.from_coin_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 1800)
 
-                if can_sell and self.manager.sell_alt(panic_pair.from_coin, self.config.BRIDGE, current_coin_price) is None:
+                if can_sell and self.manager.sell_alt(panic_pair.from_coin, self.config.BRIDGE, panic_price) is None:
                     self.logger.info("Couldn't sell, going back to scouting mode...")
                     self.panicked = False
                 #else:
