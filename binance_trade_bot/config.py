@@ -46,7 +46,9 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
             "auto_adjust_bnb_balance_rate": "3",
             "allow_coin_merge": "true",
             "rsi_length": "14",
-            "rsi_candle_type": "15"
+            "rsi_candle_type": "15",
+            "target_win": "100",
+            "jumps_per_day": "10"
         }
 
         if not os.path.exists(CFG_FL_NAME):
@@ -189,4 +191,12 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
         
         self.RSI_CANDLE_TYPE = int(
             os.environ.get("RSI_CANDLE_TYPE") or config.get(USER_CFG_SECTION, "rsi_candle_type")
+        )
+
+        self.TARGET_WIN = int(
+            os.environ.get("TARGET_WIN") or config.get(USER_CFG_SECTION, "target_win")
+        )
+
+        self.JUMPS_PER_DAY = int(
+            os.environ.get("JUMPS_PER_DAY") or config.get(USER_CFG_SECTION, "jumps_per_day")
         )
