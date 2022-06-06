@@ -197,6 +197,6 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
             os.environ.get("TARGET_WIN") or config.get(USER_CFG_SECTION, "target_win")
         )
 
-        self.JUMPS_PER_DAY = int(
+        self.JUMPS_PER_DAY = float(
             os.environ.get("JUMPS_PER_DAY") or config.get(USER_CFG_SECTION, "jumps_per_day")
         )
