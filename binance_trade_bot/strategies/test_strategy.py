@@ -149,7 +149,7 @@ class Strategy(AutoTrader):
         if base_time >= panic_time and not self.panicked:
             balance = self.manager.get_currency_balance(panic_pair.from_coin.symbol)
             balance_in_bridge = balance * panic_price
-            win_threshold = ((1+self.win/balance_in_bridge)**(1/self.jumps)-1)*100
+            win_threshold = min(((1+self.win/balance_in_bridge)**(1/self.jumps)-1)*100, (2**(1/self.jumps)-1)*100)
             
             if self.from_coin_direction >= win_threshold:
                 self.active_threshold = win_threshold
@@ -177,7 +177,7 @@ class Strategy(AutoTrader):
 		
         elif base_time >= panic_time and self.panicked:
             balance = self.manager.get_currency_balance(self.config.BRIDGE.symbol)
-            win_threshold = ((1+self.win/balance)**(1/self.jumps)-1)*100
+            win_threshold = min(((1+self.win/balance)**(1/self.jumps)-1)*100, (2**(1/self.jumps)-1)*100)
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
             if win_threshold > self.from_coin_direction >= 0 and self.slope < 0:
                 self.logger.info("Price seems to rise, buying in")
