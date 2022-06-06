@@ -120,7 +120,7 @@ class Strategy(AutoTrader):
         
             
         if self.rsi:
-           if base_time >= allowed_rsi_idle_time or self.panicked:
+           if self.panicked:
                 if self.rsi > self.pre_rsi <= 30 or self.pre_rsi < self.rsi > 50:
                         print("")
                         self.from_coin_prices = []
