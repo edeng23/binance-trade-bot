@@ -158,8 +158,14 @@ class Strategy(AutoTrader):
             if self.from_coin_direction < 0 and self.slope >= 0 or self.from_coin_direction < self.active_threshold:
                 if self.from_coin_direction < 0:
                     self.logger.info("!!! Panic sell !!!")
+                    
                 else:
                     self.logger.info("!!! Target sell !!!")
+                    self.from_coin_prices = []
+                    self.from_coin_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 1800)
+                    self.active_threshold = -100
+                    self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
+                
                 self.panicked = True
                 can_sell = False
                 
