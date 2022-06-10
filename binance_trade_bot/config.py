@@ -16,18 +16,22 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
     PRICE_TYPE_ORDERBOOK = "orderbook"
     PRICE_TYPE_TICKER = "ticker"
 
+    RATIO_CALC_DEFAULT = "default"
+    RATIO_CALC_SCOUT_MARGIN = "scout_margin"
+
     def __init__(self):
         # Init config
         config = configparser.ConfigParser()
         config["DEFAULT"] = {
             "bridge": "USDT", 
-            "use_margin": "true",
+            "use_margin": "false",
             "scout_multiplier": "5",
             "scout_margin": "0.8",
             "scout_sleep_time": "5",
             "hourToKeepScoutHistory": "1",
             "tld": "com",
             "trade_fee": "auto",
+            "strategy": "default",
             "enable_paper_trading": "false",
             "sell_timeout": "0",
             "buy_timeout": "0",
@@ -37,6 +41,8 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
             "buy_max_price_change": "0.005",
             "price_type": self.PRICE_TYPE_ORDERBOOK,
             "accept_losses": "false",
+            "max_idle_hours": "24",
+            "ratio_adjust_weight":"1000",
             "auto_adjust_bnb_balance": "false",
             "auto_adjust_bnb_balance_rate": "3",
             "allow_coin_merge": "true"
@@ -62,6 +68,10 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
         )
         self.SCOUT_SLEEP_TIME = int(
             os.environ.get("SCOUT_SLEEP_TIME") or config.get(USER_CFG_SECTION, "scout_sleep_time")
+        )
+
+         self.RATIO_ADJUST_WEIGHT = int(
+            os.environ.get("RATIO_ADJUST_WEIGHT") or config.get(USER_CFG_SECTION, "ratio_adjust_weight")
         )
 
         # Get config for binance
@@ -146,6 +156,8 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
 
         accept_losses_str = os.environ.get("ACCEPT_LOSSES") or config.get(USER_CFG_SECTION, "accept_losses")
         self.ACCEPT_LOSSES = str(accept_losses_str).lower() == 'true'
+
+        self.MAX_IDLE_HOURS = os.environ.get("MAX_IDLE_HOURS") or config.get(USER_CFG_SECTION, "max_idle_hours")
 
         auto_adjust_bnb_balance_str = os.environ.get("AUTO_ADJUST_BNB_BALANCE") or config.get(USER_CFG_SECTION, "auto_adjust_bnb_balance")
         self.AUTO_ADJUST_BNB_BALANCE = str(auto_adjust_bnb_balance_str).lower() == "true"
