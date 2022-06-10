@@ -1,30 +1,77 @@
 [binance_user_config]
+
+# API key and Secret key created on Binance
 api_key=$apiKey
 api_secret_key=$apiSecret
-current_coin=
+
+# Starting coin, leave empty when it's the bridge to jump to a random coin.
+# Fill out when already on holding the coin or to make the first jump to that coin.
+current_coin=BTC
+
+#Bridge coin of your choice
 bridge=USDT
+
+#com or us, depending on your region
 tld=com
-hourToKeepScoutHistory=1
+
+#Defines how long the scout history is stored
+hourToKeepScoutHistory=24
+
+#Defines to use either scout_margin or scout_multiplier
 use_margin=true
+
+# It's recommended to use something between 3-7 as scout_multiplier
 scout_multiplier=5
-scout_margin=0.8
+
+#It's recommended to use something between 0.3 and 1.2 as scout_margin
+scout_margin=0.5
+
+# Controls how many seconds bot should wait between analysis of current prices
 scout_sleep_time=1
+
+# Pre-configured strategies are default and multiple_coins. Use any of the strategies in the strategy folder at your own risk.
 strategy=default
+
+# Run fake trades without using real money
 enable_paper_trading=False
+
+# Controls how many minutes to wait before cancelling a limit order (buy/sell) and returning to "scout" mode.
+# 0 means that the order will never be cancelled prematurely.
 buy_timeout=10
 sell_timeout=5
+
+# Use market or limit order. Highly recommend limit orders
 buy_order_type=limit
 sell_order_type=limit
+
+# Indicates how much the price differences (slippage) between order price and actual price are allowed (1 = 100%)
 sell_max_price_change=0.005
 buy_max_price_change=0.005
+
+# Defines how much you pay for a transaction
 trade_fee=auto
+
+# Using orderbook or ticker.
 price_type=orderbook
+
+# Put this to true if you consent that trading might lead to total loss.
 accept_losses=false
+
+# Defines how long the bot stays on one coin. Jumps are not guaranteed after this time.
 max_idle_hours=72
-ratio_adjust_weight=500
-auto_adjust_bnb_balance=false
+
+# With the cumstom stretegies, this pulls back coins that outperformed your current coin. Small numbers lead to issues so leave above 250 at least.
+ratio_adjust_weight=1000
+
+# To keep trade fees low by paying them with BNB. Make sure to enable this feature on Binance as well.
+auto_adjust_bnb_balance=true
 auto_adjust_bnb_balance_rate=3
+
+# Define for the custom strategies from which candle chart you want the bot to calculate the RSI and from how many candles.
 rsi_length=14
 rsi_candle_type=15              #only 1, 3, 5, 15, 30 minutes possible!
-target_win=100                  #how much bridge coin you'd like to earn in a day
-jumps_per_day=10                #estimated amount of jumps per day (if no clue, check telegram bot stats to get an idea)
+
+# Define for the custom strategy how much bridge coin you would like to earn on a daily basis given on how many jumps a day the bot makes. The bot will adjust the margin accordingly and try to deliver. 
+# Check the telegram bot stats to get an idea of how many jumps the bot makes per day.
+target_win=100
+jumps_per_day=10.5

@@ -50,7 +50,7 @@ class MockBinanceManager(BinanceAPIManager):
         if self.config.TRADE_FEE != "auto":
             return float(self.config.TRADE_FEE)
             
-        return 0.001
+        return 0.00075
 
     def get_min_notional(self, origin_symbol: str, target_symbol: str):
         return 10.0
