@@ -24,3 +24,7 @@ max_idle_hours=72
 ratio_adjust_weight=500
 auto_adjust_bnb_balance=false
 auto_adjust_bnb_balance_rate=3
+rsi_length=14
+rsi_candle_type=15              #only 1, 3, 5, 15, 30 minutes possible!
+target_win=100                  #how much bridge coin you'd like to earn in a day
+jumps_per_day=10                #estimated amount of jumps per day (if no clue, check telegram bot stats to get an idea)

@@ -27,8 +27,8 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
             "use_margin": "false",
             "scout_multiplier": "5",
             "scout_margin": "0.8",
-            "scout_sleep_time": "5",
-            "hourToKeepScoutHistory": "1",
+            "scout_sleep_time": "1",
+            "hourToKeepScoutHistory": "24",
             "tld": "com",
             "trade_fee": "auto",
             "strategy": "default",
@@ -43,9 +43,13 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
             "accept_losses": "false",
             "max_idle_hours": "24",
             "ratio_adjust_weight":"1000",
-            "auto_adjust_bnb_balance": "false",
+            "auto_adjust_bnb_balance": "true",
             "auto_adjust_bnb_balance_rate": "3",
-            "allow_coin_merge": "true"
+            "allow_coin_merge": "true",
+            "rsi_length": "14",
+            "rsi_candle_type": "15",
+            "target_win": "100",
+            "jumps_per_day": "10"
         }
 
         if not os.path.exists(CFG_FL_NAME):
@@ -131,11 +135,11 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
                 f"{self.ORDER_TYPE_LIMIT} or {self.ORDER_TYPE_MARKET} expected, got {buy_order_type}"
                 "for buy_order_type"
             )
-        if buy_order_type == self.ORDER_TYPE_MARKET:
-            raise Exception(
-                "Market buys are reported to do extreme losses, they are disabled right now,"
-                "comment this line only if you know what you're doing"
-            )
+        #if buy_order_type == self.ORDER_TYPE_MARKET:
+         #   raise Exception(
+          #      "Market buys are reported to do extreme losses, they are disabled right now,"
+           #     "comment this line only if you know what you're doing"
+            #)
         self.BUY_ORDER_TYPE = order_type_map[buy_order_type]
 
         self.BUY_MAX_PRICE_CHANGE = os.environ.get("BUY_MAX_PRICE_CHANGE") or config.get(USER_CFG_SECTION, "buy_max_price_change")
@@ -172,3 +176,19 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
         use_margin = os.environ.get("USE_MARGIN") or config.get(USER_CFG_SECTION, "use_margin")
         self.USE_MARGIN = str(use_margin).lower() == 'true'
         self.SCOUT_MARGIN = float(os.environ.get("SCOUT_MARGIN") or config.get(USER_CFG_SECTION, "scout_margin"))
+        
+        self.RSI_LENGTH = int(
+            os.environ.get("RSI_LENGTH") or config.get(USER_CFG_SECTION, "rsi_length")
+        )
+        
+        self.RSI_CANDLE_TYPE = int(
+            os.environ.get("RSI_CANDLE_TYPE") or config.get(USER_CFG_SECTION, "rsi_candle_type")
+        )
+
+        self.TARGET_WIN = int(
+            os.environ.get("TARGET_WIN") or config.get(USER_CFG_SECTION, "target_win")
+        )
+
+        self.JUMPS_PER_DAY = float(
+            os.environ.get("JUMPS_PER_DAY") or config.get(USER_CFG_SECTION, "jumps_per_day")
+        )

@@ -177,6 +177,18 @@ class AutoTrader:
             best_pair = max(ratio_dict, key=ratio_dict.get)
             self.logger.info(f"Will be jumping from {coin} to {best_pair.to_coin_id}")
             self.transaction_through_bridge(best_pair, coin_price, prices[best_pair.to_coin_id])
+            
+    def _panic(self, coin: Coin, coin_price: float, excluded_coins: List[Coin] = []):
+        """
+        Given a coin, search for a coin to jump to
+        """
+        ratio_dict, prices = self._get_ratios(coin, coin_price, excluded_coins)
+        
+        ratio_dict = {k: v for k, v in ratio_dict.items() if v <= 0}
+        
+        best_pair = max(ratio_dict, key=ratio_dict.get)
+        self.logger.info(f"Will be jumping from {coin} to {best_pair.to_coin_id}")
+        self.transaction_through_bridge(best_pair, coin_price, prices[best_pair.to_coin_id])
 
     def bridge_scout(self):
         """
