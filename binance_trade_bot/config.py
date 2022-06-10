@@ -74,7 +74,7 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
             os.environ.get("SCOUT_SLEEP_TIME") or config.get(USER_CFG_SECTION, "scout_sleep_time")
         )
 
-         self.RATIO_ADJUST_WEIGHT = int(
+        self.RATIO_ADJUST_WEIGHT = int(
             os.environ.get("RATIO_ADJUST_WEIGHT") or config.get(USER_CFG_SECTION, "ratio_adjust_weight")
         )
 
