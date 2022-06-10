@@ -16,7 +16,7 @@ def main():
     config = Config()
     db = Database(logger, config)
     if config.ENABLE_PAPER_TRADING:
-        manager = BinanceAPIManager.create_manager_paper_trading(config, db, logger, {config.BRIDGE.symbol: 21_000.0})
+        manager = BinanceAPIManager.create_manager_paper_trading(config, db, logger, {config.BRIDGE.symbol: 1_000.0})
     else:
         manager = BinanceAPIManager.create_manager(config, db, logger)
 
@@ -38,10 +38,12 @@ def main():
     else:
         logger.warning("RUNNING IN REAL TRADING MODE")
 
-    if config.RATIO_CALC != config.RATIO_CALC_DEFAULT:
-        logger.info(f"Using {config.RATIO_CALC} method for caluclation of the ratios.")
+    if config.USE_MARGIN:
+        logger.info(f"Using scout margin method for calculation of the ratios.")
+    else:
+        logger.info(f"Using default method for calculation of the ratios.")
 
-    if config.AUTO_ADJUST_BNB_BALANCE:
+    if config.AUTO_ADJUST_BNB_BALANCE and not config.ENABLE_PAPER_TRADING:
         logger.info(f"Auto adjust for BNB enabled.")
 
     logger.info(f"Buy type: {config.BUY_ORDER_TYPE}, Sell type: {config.SELL_ORDER_TYPE}")

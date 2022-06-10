@@ -59,7 +59,9 @@ Create a .cfg file named `user.cfg` based off `.user.cfg.example`, then add your
 -   **bridge** - Your bridge currency of choice. Notice that different bridges will allow different sets of supported coins. For example, there may be a Binance particular-coin/USDT pair but no particular-coin/BUSD pair.
 -   **tld** - 'com' or 'us', depending on your region. Default is 'com'.
 -   **hourToKeepScoutHistory** - Controls how many hours of scouting values are kept in the database. After the amount of time specified has passed, the information will be deleted.
+-   **use_margin** - 'yes' to use scout_margin. 'no' to use scout_multiplier.
 -   **scout_multiplier** - Controls the value by which the difference between the current state of coin ratios and previous state of ratios is multiplied. For bigger values, the bot will wait for bigger margins to arrive before making a trade.
+-   **scout_margin** - Minimum percentage coin gain per trade. 0.8 translates to a scout multiplier of 5 at 0.1% fee.
 -   **trade_fee** - Controls trade fee for calculating profitable jumps. By default it doesn't have value: gets values through the binance api calls. Otherwise use float values for the fee. [Binance fee table for reference](https://www.binance.com/en/fee/schedule)
 -   **strategy** - The trading strategy to use. See [`binance_trade_bot/strategies`](binance_trade_bot/strategies/README.md) for more information
 -   **enable_paper_trading** - (`True` or `False` default `False`) run bot with virtual wallet to check its performance without risking any money.
@@ -69,7 +71,6 @@ Create a .cfg file named `user.cfg` based off `.user.cfg.example`, then add your
 -   **sell_order_type** - Controls the type of placed sell orders, types available: market, limit (default=market)
 -   **buy_max_price_change/sell_max_price_change** - Controls how much price change in decimal percentage is accepted between calculation of ratios and trading.
 -   **price_type** - Controls the type of prices used by the bot, types available: orderbook, ticker (default=orderbook). Please note that using the orderbook prices increase the CPU usage.
--   **ratio_calc** - Controls the calculation for ratios between coins. Options available: default, scout_margin. Keep in mind you need to decrease your scout_multiplier for the scout_margin. A scout_multiplier of 12 with the default calc would be a scout_multiplier of 2 with the scout_margin calc.
 -   **accept_losses** - Needs to be set to true for highly risky and gamling strategies. Otherwise the bot wont start.
 -   **auto_adjust_bnb_balance** - Controls the bot to auto buy BNB while there is no enough BNB balance in your account, to get the benifits of using BNB to pay the commisions. Default is false. Effective if you have enabled to [use BNB to pay for any fees on the Binance platform](https://www.binance.com/en/support/faq/115000583311-Using-BNB-to-Pay-for-Fees), reade more information [here](#paying-fees-with-bnb).
 -   **auto_adjust_bnb_balance_rate** - The multiplying power of buying quantity of BNB compares to evaluated comission of the coming order, effective only if auto_adjust_bnb_balance is true. Default value is 3.
@@ -86,6 +87,8 @@ BRIDGE_SYMBOL: USDT
 API_KEY: vmPUZE6mv9SD5VNHk4HlWFsOr6aKE2zvsw0MuIgwCIPy6utIco14y7Ju91duEh8A
 API_SECRET_KEY: NhqPtmdSJYdKjVHjA7PZj4Mge3R5YNiP1e3UZjInClVN65XAbvqqM6A7H5fATj0j
 SCOUT_MULTIPLIER: 5
+USE_MARGIN : no
+SCOUT_MARGIN : 0.8
 SCOUT_SLEEP_TIME: 1
 TLD: com
 STRATEGY: default
@@ -120,15 +123,24 @@ If you are interested in running a Telegram bot, more information can be found a
 python -m binance_trade_bot
 ```
 
-### Docker
+## Docker
 
-The official image is available [here](https://hub.docker.com/r/idkravitz/binance-trade-bot) and will update on every new change.
+Please remember that this is a fork. To maintain the security of your API key it relies on local builds.
 
-```shell
-docker-compose up
-```
+### Build and run locally
+1. Clone this git to a location of your choice: 
+`git clone https://github.com/tntwist/binance-trade-bot tntwist-binance-trade-bot`
+2. Change to the directory:
+`cd tntwist-binance-trade-bot`
+3. Build the container locally (this may take a few minutes depending on your hardware):
+`docker build . -t tntwist-binance-trade-bot`
+4. Follow the steps in [Create user configuration](#create-user-configuration) to ensure you have created a `user.cfg` file in the directory created in step 2. If you have already done this, continue to step 5. 
+5. Run docker-compose up
+`docker-compose up`
 
-If you only want to start the SQLite browser
+To update, repeat steps 1 through 5. These commands can also be added to a shell script to automate the process.
+
+### If you only want to start the SQLite browser
 
 ```shell
 docker-compose up -d sqlitebrowser

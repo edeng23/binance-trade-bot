@@ -474,7 +474,7 @@ class BinanceAPIManager:
         """
         Buy altcoin
         """
-        if self.config.AUTO_ADJUST_BNB_BALANCE and origin_coin.symbol != "BNB":
+        if self.config.AUTO_ADJUST_BNB_BALANCE and origin_coin.symbol != "BNB" and not self.config.ENABLE_PAPER_TRADING:
             self._adjust_bnb_balance(origin_coin, target_coin)
 
         origin_symbol = origin_coin.symbol
