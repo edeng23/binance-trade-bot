@@ -34,7 +34,7 @@ The bot jumps between a configured set of coins on the condition that it does no
 
 ## Binance Setup
 
--   Create a [Binance account](https://accounts.binance.com/en/register?ref=DDA1SQA) (Includes my referral link, I'll be super grateful if you use it).
+-   Create a [Binance account](https://accounts.binance.me/en/register?ref=139017085) (Includes my referral link, I'll be super grateful if you use it).
 -   Enable Two-factor Authentication.
 -   Create a new API key and whitelist your IP for it.
 -   Get a cryptocurrency. If its symbol is not in the default list, add it.
