@@ -148,7 +148,7 @@ class Strategy(AutoTrader):
                  
         if base_time >= panic_time and not self.panicked:
             balance = self.manager.get_currency_balance(panic_pair.from_coin.symbol)
-            balance_in_bridge = balance * panic_price
+            balance_in_bridge = max(balance * panic_price, 1)
             win_threshold = min(((1+self.win/balance_in_bridge)**(1/self.jumps)-1)*100, (2**(1/self.jumps)-1)*100)
             
             if self.from_coin_direction >= win_threshold:
