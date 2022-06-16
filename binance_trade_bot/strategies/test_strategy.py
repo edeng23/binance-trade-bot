@@ -95,7 +95,7 @@ class Strategy(AutoTrader):
                 #slope = talib.LINEARREG_SLOPE(sp_prices, len(sp_prices))
                 #self.slope = slope[-1]
                 reg_price = talib.LINEARREG(sp_prices, len(sp_prices))
-                self.slope = math.sqrt(reg_price[-1]) / self.mean_price * 100 - 100
+                self.slope = math.sqrt(self.from_coin_prices[-1]) / math.sqrt(reg_price[-1]) * 100 - 100
 
                 
             else:
