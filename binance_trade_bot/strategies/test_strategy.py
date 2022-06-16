@@ -174,7 +174,7 @@ class Strategy(AutoTrader):
                 else:
                     self.logger.info("Not enough balance")
 
-                if can_sell and self.manager.sell_alt(panic_pair.from_coin, self.config.BRIDGE, panic_price) is None:
+                if not can_sell or self.manager.sell_alt(panic_pair.from_coin, self.config.BRIDGE, panic_price) is None:
                     self.logger.info("Couldn't sell, going back to scouting mode...")
                     self.panicked = False
                 else:
