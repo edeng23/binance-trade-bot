@@ -155,7 +155,7 @@ class Strategy(AutoTrader):
                 self.active_threshold = win_threshold
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
             
-            if self.from_coin_direction < 0 and self.slope >= 0 or self.from_coin_direction < self.active_threshold:
+            if self.from_coin_direction < win_threshold * (-1) and self.slope >= 0 or self.from_coin_direction < self.active_threshold:
                 if self.from_coin_direction < 0:
                     self.logger.info("!!! Panic sell !!!")
                     
