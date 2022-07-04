@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y rustc
 COPY requirements.txt /requirements.txt
 RUN pip install --prefix=/install -r /requirements.txt
 
-FROM python:3.9-slim-buster
+FROM python:3.10.4-slim-bullseye
 
 WORKDIR /app
 
