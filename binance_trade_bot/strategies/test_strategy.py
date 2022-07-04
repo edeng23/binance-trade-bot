@@ -179,6 +179,7 @@ class Strategy(AutoTrader):
                     self.panicked = False
                 else:
                     self.active_threshold = -100
+                    self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
                 
 		
         elif base_time >= panic_time and self.panicked:
