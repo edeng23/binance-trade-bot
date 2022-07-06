@@ -121,7 +121,7 @@ class Strategy(AutoTrader):
             
         if self.rsi:
            if self.panicked:
-                if (self.to_coin_direction >= 0 and (self.rsi > self.pre_rsi <= 30 or self.pre_rsi < self.rsi > 50)) or self.rsi < 20:
+                if (self.to_coin_direction >= 0 and (self.rsi > self.pre_rsi <= 30 and (self.f_slope + self.s_slope) / 2 < 0 or self.pre_rsi < self.rsi > 50 and (self.f_slope + self.s_slope) / 2 > 0)) or self.rsi < 20:
                         print("")
                         self.from_coin_prices = []
                         self.from_coin_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 1800)
@@ -133,7 +133,7 @@ class Strategy(AutoTrader):
                         self.active_threshold = -100
                         self._jump_to_best_coin(current_coin, current_coin_price)
            else:
-                if (self.from_coin_direction <= self.to_coin_direction >= 0 and (self.pre_rsi < self.rsi <= 30 or self.pre_rsi < self.rsi > 50)) or self.rsi < 20:
+                if (self.from_coin_direction <= self.to_coin_direction >= 0 and (self.pre_rsi < self.rsi <= 30 and (self.f_slope + self.s_slope) / 2 < 0 or self.pre_rsi < self.rsi > 50 and (self.f_slope + self.s_slope) / 2 > 0)) or self.rsi < 20:
                         print("")
                         self.from_coin_prices = []
                         self.from_coin_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 1800)
