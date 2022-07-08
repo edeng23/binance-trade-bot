@@ -80,8 +80,12 @@ class Strategy(AutoTrader):
 		
         if base_time >= allowed_rsi_time:
             if not self.panicked:
+                if self.rsi:
+                    self.from_coin_prices.append(panic_price**2)
                 self.from_coin_prices.append(current_coin_price**2)
             else:
+                if self.rsi:
+                    self.from_coin_prices.append(current_coin_price**2)
                 self.from_coin_prices.append(panic_price**2)
             self.mean_price = math.sqrt(numpy.mean(self.from_coin_prices))
             self.from_coin_direction = math.sqrt(self.from_coin_prices[-1]) / self.mean_price * 100 - 100
