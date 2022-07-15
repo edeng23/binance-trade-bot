@@ -32,7 +32,7 @@ class Strategy(AutoTrader):
         self.s_slope =0
         self.mean_price = 0
         self.to_coin_price = 0
-        self.slope = 0
+        self.meter = 0
         self.from_coin_direction = 0
         self.to_coin_direction = 0
         self.from_coin_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 1800)
@@ -81,14 +81,14 @@ class Strategy(AutoTrader):
         if base_time >= allowed_rsi_time:
             if not self.panicked:
                 if self.rsi:
-                    self.from_coin_prices.append(panic_price**2)
-                self.from_coin_prices.append(current_coin_price**2)
+                    self.from_coin_prices.append(panic_price)
+                self.from_coin_prices.append(current_coin_price)
             else:
                 if self.rsi:
-                    self.from_coin_prices.append(current_coin_price**2)
-                self.from_coin_prices.append(panic_price**2)
-            self.mean_price = math.sqrt(numpy.mean(self.from_coin_prices))
-            self.from_coin_direction = math.sqrt(self.from_coin_prices[-1]) / self.mean_price * 100 - 100
+                    self.from_coin_prices.append(current_coin_price)
+                self.from_coin_prices.append(panic_price)
+            self.mean_price = numpy.mean(self.from_coin_prices)
+            self.from_coin_direction = self.from_coin_prices[-1] / self.mean_price * 100 - 100
             self.rsi_calc()
             self.reinit_rsi = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
 	    
@@ -96,10 +96,9 @@ class Strategy(AutoTrader):
             panic_pair = max(ratio_dict, key=ratio_dict.get) 
             sp_prices = numpy.array(self.from_coin_prices)
             if len(sp_prices) >= 2:
-                slope = talib.LINEARREG_SLOPE(sp_prices, len(sp_prices))
-                self.slope = slope[-1] 
+                self.meter = self.from_coin_prices[-1]) / ((max(sp_prices) + min(sp_prices) / 2) * 100 - 100
             else:
-                self.slope = 0
+                self.meter = 0
 		
         """
         Scout for potential jumps from the current coin to another coin
@@ -108,8 +107,8 @@ class Strategy(AutoTrader):
         # stopped. Not logging though to reduce log size.
         print(
             f"{self.manager.now().replace(microsecond=0)} - " ,
-            f"Panic-meter: {(self.slope):.3E} " if self.slope and not self.panicked else "",
-            f"Panicked {(self.slope):.3E} " if self.slope and self.panicked else "",
+            f"Panic-meter: {round(self.meter, 3)}% " if self.meter and not self.panicked else "",
+            f"Panicked {round(self.meter, 3)}% " if self.meter and self.panicked else "",
             f"Current ratio weight: {self.auto_weight} ",
             f"Current coin: {current_coin + self.config.BRIDGE} price direction: {round(self.from_coin_direction, 3)}% ",
             f"Target {round(self.active_threshold, 3)}% reached!" if not self.active_threshold == -100 else "",
@@ -133,7 +132,7 @@ class Strategy(AutoTrader):
                         self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
                         self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
                         self.panicked = False
-                        self.slope = 0
+                        self.meter = 0
                         self.active_threshold = -100
                         self._jump_to_best_coin(current_coin, current_coin_price)
            else:
@@ -145,7 +144,7 @@ class Strategy(AutoTrader):
                         self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
                         self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
                         self.panicked = False
-                        self.slope = 0
+                        self.meter = 0
                         self.active_threshold = -100
                         self._jump_to_best_coin(current_coin, current_coin_price)
            
@@ -159,7 +158,7 @@ class Strategy(AutoTrader):
                 self.active_threshold = win_threshold
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
             
-            if self.from_coin_direction < win_threshold * (-1) and self.slope >= 0 or self.from_coin_direction < self.active_threshold or self.from_coin_direction < 0 and self.rsi:
+            if self.from_coin_direction < 0 and self.meter < 0 or self.from_coin_direction < self.active_threshold:
                 if self.from_coin_direction < 0:
                     self.logger.info("!!! Panic sell !!!")
                     
@@ -190,7 +189,7 @@ class Strategy(AutoTrader):
             balance = self.manager.get_currency_balance(self.config.BRIDGE.symbol)
             win_threshold = min(((1+self.win/balance)**(1/self.jumps)-1)*100, (2**(1/self.jumps)-1)*100)
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
-            if win_threshold > self.from_coin_direction >= 0 and self.slope < 0:
+            if win_threshold > self.from_coin_direction > 0 and self.meter > 0:
                 self.logger.info("Price seems to rise, buying in")
                 self.panicked = False
                 if self.manager.buy_alt(panic_pair.from_coin, self.config.BRIDGE, current_coin_price) is None:
