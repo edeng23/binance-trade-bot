@@ -95,8 +95,10 @@ class Strategy(AutoTrader):
             ratio_dict, prices = self._get_ratios(current_coin, panic_price)
             panic_pair = max(ratio_dict, key=ratio_dict.get) 
             sp_prices = numpy.array(self.from_coin_prices)
+            
             if len(sp_prices) >= 2:
-                self.meter = self.from_coin_prices[-1] / ((max(sp_prices) + min(sp_prices) / 2) * 100 - 100
+                self.meter = self.from_coin_prices[-1] / ((max(sp_prices) + min(sp_prices)) / 2) * 100 - 100
+            
             else:
                 self.meter = 0
 		
