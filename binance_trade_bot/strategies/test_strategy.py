@@ -160,7 +160,7 @@ class Strategy(AutoTrader):
                 self.active_threshold = win_threshold
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
             
-            if self.from_coin_direction < 0 and self.meter < 0 or self.from_coin_direction < self.active_threshold:
+            if self.from_coin_direction < self.meter or self.from_coin_direction < self.active_threshold:
                 if self.from_coin_direction < 0:
                     print("")
                     self.logger.info("!!! Panic sell !!!")
@@ -191,11 +191,20 @@ class Strategy(AutoTrader):
 		
         elif base_time >= panic_time and self.panicked:
             balance = self.manager.get_currency_balance(self.config.BRIDGE.symbol)
-            win_threshold = min(((1+self.win/balance)**(1/self.jumps)-1)*100, (2**(1/self.jumps)-1)*100)
+            win_threshold = min(((1+self.win/balance)**(1/self.jumps)-1)*100, (2**(1/self.jumps)-1)*100) * (-1)
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
-            if win_threshold > self.from_coin_direction > 0 and self.meter > 0:
-                print("")
-                self.logger.info("Price seems to rise, buying in")
+            if self.from_coin_direction > self.meter or self.from_coin_direction < win_threshold:
+                if self.from_coin_direction < win_threshold:
+                    print("")
+                    self.logger.info("!!! Target buy !!!")
+                    self.from_coin_prices = []
+                    self.from_coin_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 1800)
+                    self.active_threshold = -100
+                    self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
+                else:
+                    print("")
+                    self.logger.info("Price seems to rise, buying in")
+                        
                 self.panicked = False
                 if self.manager.buy_alt(panic_pair.from_coin, self.config.BRIDGE, current_coin_price) is None:
                     self.logger.info("Couldn't buy, going back to panic mode...")
