@@ -162,9 +162,11 @@ class Strategy(AutoTrader):
             
             if self.from_coin_direction < 0 and self.meter < 0 or self.from_coin_direction < self.active_threshold:
                 if self.from_coin_direction < 0:
+                    print("")
                     self.logger.info("!!! Panic sell !!!")
                     
                 else:
+                    print("")
                     self.logger.info("!!! Target sell !!!")
                     self.from_coin_prices = []
                     self.from_coin_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 1800)
