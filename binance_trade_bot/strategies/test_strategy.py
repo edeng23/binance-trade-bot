@@ -97,7 +97,7 @@ class Strategy(AutoTrader):
             sp_prices = numpy.array(self.from_coin_prices)
             
             if len(sp_prices) >= 2:
-                self.meter = self.from_coin_prices[-1] / ((max(sp_prices) + min(sp_prices) + self.from_coin_prices[0] + self.from_coin_prices[-1]) / 4) * 100 - 100
+                self.meter = self.from_coin_prices[-1] / ((max(sp_prices) + min(sp_prices) + self.from_coin_prices[0] + self.from_coin_prices[-2]) / 4) * 100 - 100
             
             else:
                 self.meter = 0
