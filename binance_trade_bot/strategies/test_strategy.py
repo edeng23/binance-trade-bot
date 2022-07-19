@@ -138,7 +138,7 @@ class Strategy(AutoTrader):
                         self.active_threshold = -100
                         self._jump_to_best_coin(current_coin, current_coin_price)
            else:
-                if (self.from_coin_direction <= self.to_coin_direction >= 0 and (self.pre_rsi < self.rsi <= 30 and (self.f_slope + self.s_slope) / 2 < 0 or self.pre_rsi < self.rsi > 50 and (self.f_slope + self.s_slope) / 2 > 0)) or self.rsi < 20:
+                if (self.from_coin_direction - self.meter <= self.to_coin_direction >= 0 and (self.pre_rsi < self.rsi <= 30 and (self.f_slope + self.s_slope) / 2 < 0 or self.pre_rsi < self.rsi > 50 and (self.f_slope + self.s_slope) / 2 > 0)) or self.rsi < 20:
                         print("")
                         self.from_coin_prices = []
                         self.from_coin_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 1800)
@@ -170,7 +170,6 @@ class Strategy(AutoTrader):
                     self.logger.info("!!! Target sell !!!")
                     self.from_coin_prices = []
                     self.from_coin_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 1800)
-                    self.active_threshold = -100
                     self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
                 
                 self.panicked = True
@@ -185,34 +184,35 @@ class Strategy(AutoTrader):
                     self.logger.info("Couldn't sell, going back to scouting mode...")
                     self.panicked = False
                 else:
-                    self.active_threshold = -100
+                    self.active_threshold = 100
                     self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
                 
 		
         elif base_time >= panic_time and self.panicked:
             balance = self.manager.get_currency_balance(self.config.BRIDGE.symbol)
             win_threshold = min(((1+self.win/balance)**(1/self.jumps)-1)*100, (2**(1/self.jumps)-1)*100) * (-1)
+            if self.from_coin_direction <= win_threshold:
+                self.active_threshold = win_threshold
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
-            if self.from_coin_direction > self.meter or self.from_coin_direction < win_threshold:
-                if self.from_coin_direction < win_threshold:
+            if self.from_coin_direction > self.meter or self.from_coin_direction > self.active_threshold:
+                if self.from_coin_direction > self.meter:
+                    print("")
+                    self.logger.info("Price seems to rise, buying in")
+                else:
                     print("")
                     self.logger.info("!!! Target buy !!!")
                     self.from_coin_prices = []
                     self.from_coin_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 1800)
-                    self.active_threshold = -100
                     self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
-                else:
-                    print("")
-                    self.logger.info("Price seems to rise, buying in")
                         
                 self.panicked = False
                 if self.manager.buy_alt(panic_pair.from_coin, self.config.BRIDGE, current_coin_price) is None:
                     self.logger.info("Couldn't buy, going back to panic mode...")
                     self.panicked = True
                 else:
+                    self.active_threshold = -100
                     self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
-                
-
+                    
 
     def bridge_scout(self):
         current_coin = self.db.get_current_coin()
