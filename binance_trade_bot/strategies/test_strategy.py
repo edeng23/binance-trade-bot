@@ -109,8 +109,8 @@ class Strategy(AutoTrader):
         # stopped. Not logging though to reduce log size.
         print(
             f"{self.manager.now().replace(microsecond=0)} - " ,
-            f"Panic-meter: {round(self.meter, 3)}% " if self.meter and not self.panicked else "",
-            f"Panicked {round(self.meter, 3)}% " if self.meter and self.panicked else "",
+            f"Panic-meter: {round((self.meter - self.from_coin_direction), 3)}% " if self.meter and not self.panicked else "",
+            f"Panicked {round((self.meter - self.from_coin_direction), 3)}% " if self.meter and self.panicked else "",
             f"Current ratio weight: {self.auto_weight} ",
             f"Current coin: {current_coin + self.config.BRIDGE} price direction: {round(self.from_coin_direction, 3)}% ",
             f"Target {round(self.active_threshold, 3)}% reached!" if not self.active_threshold == -100 else "",
