@@ -59,7 +59,6 @@ class Strategy(AutoTrader):
         allowed_idle_time = self.reinit_threshold
         allowed_rsi_time = self.reinit_rsi
         allowed_rsi_idle_time = self.reinit_idle
-        panic_time = self.panic_time
         
         panic_price = self.manager.get_buy_price(current_coin + self.config.BRIDGE)
         current_coin_price = self.manager.get_sell_price(current_coin + self.config.BRIDGE)
@@ -151,7 +150,7 @@ class Strategy(AutoTrader):
                         self._jump_to_best_coin(current_coin, current_coin_price)
            
                  
-        if base_time >= panic_time and not self.panicked:
+        if base_time >= self.panic_time and not self.panicked:
             balance = self.manager.get_currency_balance(panic_pair.from_coin.symbol)
             balance_in_bridge = max(balance * panic_price, 1)
             win_threshold = min(((1+self.win/balance_in_bridge)**(1/self.jumps)-1)*100, (2**(1/self.jumps)-1)*100)
@@ -188,7 +187,7 @@ class Strategy(AutoTrader):
                     self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
                 
 		
-        elif base_time >= panic_time and self.panicked:
+        elif base_time >= self.panic_time and self.panicked:
             balance = self.manager.get_currency_balance(self.config.BRIDGE.symbol)
             win_threshold = min(((1+self.win/balance)**(1/self.jumps)-1)*100, (2**(1/self.jumps)-1)*100) * (-1)
             if self.from_coin_direction <= win_threshold:
