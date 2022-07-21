@@ -162,7 +162,7 @@ class Strategy(AutoTrader):
             if 0 < self.from_coin_direction < self.meter or self.from_coin_direction < self.active_threshold:
                 if self.from_coin_direction < self.meter:
                     print("")
-                    self.logger.info("!!! Panic sell !!!")
+                    self.logger.info("!!! Selling high !!!")
                     
                 else:
                     print("")
@@ -196,7 +196,7 @@ class Strategy(AutoTrader):
             if 0 > self.from_coin_direction > self.meter or self.from_coin_direction > self.active_threshold:
                 if self.from_coin_direction > self.meter:
                     print("")
-                    self.logger.info("Price seems to rise, buying in")
+                    self.logger.info("!!! Buying low !!!")
                 else:
                     print("")
                     self.logger.info("!!! Target buy !!!")
