@@ -84,21 +84,21 @@ class Strategy(AutoTrader):
                     self.from_coin_prices.append(panic_price)
                     self.meter_prices.append(panic_price)
                     if len(self.meter_prices) >= 2:
-                        self.meter_prices[-1] = numpy.mean(self.meter_prices[:-2]) * (2 / len(self.meter_prices)) + self.meter_prices[-1] * (1 - 2 / len(self.meter_prices))
+                        self.meter_prices[-1] = numpy.mean(self.meter_prices[0,-2]) * (2 / len(self.meter_prices)) + self.meter_prices[-1] * (1 - 2 / len(self.meter_prices))
                 self.from_coin_prices.append(current_coin_price)
                 self.meter_prices.append(current_coin_price)
                 if len(self.meter_prices) >= 2:
-                    self.meter_prices[-1] = numpy.mean(self.meter_prices[:-2]) * (2 / len(self.meter_prices)) + self.meter_prices[-1] * (1 - 2 / len(self.meter_prices))
+                    self.meter_prices[-1] = numpy.mean(self.meter_prices[0,-2]) * (2 / len(self.meter_prices)) + self.meter_prices[-1] * (1 - 2 / len(self.meter_prices))
             else:
                 if self.rsi:
                     self.from_coin_prices.append(current_coin_price)
                     self.meter_prices.append(current_coin_price)
                     if len(self.meter_prices) >= 2:
-                        self.meter_prices[-1] = numpy.mean(self.meter_prices[:-2]) * (2 / len(self.meter_prices)) + self.meter_prices[-1] * (1 - 2 / len(self.meter_prices))
+                        self.meter_prices[-1] = numpy.mean(self.meter_prices[0,-2]) * (2 / len(self.meter_prices)) + self.meter_prices[-1] * (1 - 2 / len(self.meter_prices))
                 self.from_coin_prices.append(panic_price)
                 self.meter_prices.append(panic_price)
                 if len(self.meter_prices) >= 2:
-                    self.meter_prices[-1] = numpy.mean(self.meter_prices[:-2]) * (2 / len(self.meter_prices)) + self.meter_prices[-1] * (1 - 2 / len(self.meter_prices))
+                    self.meter_prices[-1] = numpy.mean(self.meter_prices[0,-2]) * (2 / len(self.meter_prices)) + self.meter_prices[-1] * (1 - 2 / len(self.meter_prices))
                 
             self.mean_price = numpy.mean(self.meter_prices)
             self.from_coin_direction = self.from_coin_prices[-1] / self.mean_price * 100 - 100
