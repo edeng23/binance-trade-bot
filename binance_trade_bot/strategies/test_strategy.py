@@ -186,7 +186,7 @@ class Strategy(AutoTrader):
                 self.active_threshold = win_threshold
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
             
-            if 0 < self.from_coin_direction < self.meter or self.from_coin_direction < self.active_threshold:
+            if 0 < self.from_coin_direction < self.meter or (self.from_coin_direction < self.meter and self.from_coin_prices[0] > self.from_coin_prices[-1]) or self.from_coin_direction < self.active_threshold:
                 if self.from_coin_direction < self.meter:
                     print("")
                     self.logger.info("!!! Selling high !!!")
@@ -222,7 +222,7 @@ class Strategy(AutoTrader):
             if self.from_coin_direction <= win_threshold:
                 self.active_threshold = win_threshold
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
-            if 0 > self.from_coin_direction > self.meter or self.from_coin_direction > self.active_threshold:
+            if 0 > self.from_coin_direction > self.meter or (self.from_coin_direction > self.meter and self.from_coin_prices[0] < self.from_coin_prices[-1]) or self.from_coin_direction > self.active_threshold:
                 if self.from_coin_direction > self.meter:
                     print("")
                     self.logger.info("!!! Buying low !!!")
