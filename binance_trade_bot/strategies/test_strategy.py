@@ -213,10 +213,12 @@ class Strategy(AutoTrader):
                 
                 if balance and balance * panic_price > self.manager.get_min_notional(panic_pair.from_coin.symbol, self.config.BRIDGE.symbol):
                     can_sell = True
-                else:
-                    self.logger.info("Not enough balance")
+                #else:
+                 #   self.logger.info("Not enough balance")
 
-                if not can_sell or self.manager.sell_alt(panic_pair.from_coin, self.config.BRIDGE, panic_price) is None:
+                if not can_sell:
+                    self.logger.info("Not enough balance, changing to panic mode...")
+                elif self.manager.sell_alt(panic_pair.from_coin, self.config.BRIDGE, panic_price) is None:
                     self.logger.info("Couldn't sell, going back to scouting mode...")
                     self.panicked = False
                 else:
