@@ -185,7 +185,7 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
             os.environ.get("RSI_CANDLE_TYPE") or config.get(USER_CFG_SECTION, "rsi_candle_type")
         )
 
-        self.TARGET_WIN = int(
+        self.TARGET_WIN = float(
             os.environ.get("TARGET_WIN") or config.get(USER_CFG_SECTION, "target_win")
         )
 
