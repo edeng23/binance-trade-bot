@@ -200,7 +200,7 @@ class Strategy(AutoTrader):
                     print("")
                     self.logger.info("!!! Panic sell !!!")
                     
-                else:
+                elif self.from_coin_direction < self.active_threshold:
                     print("")
                     self.logger.info("!!! Target sell !!!")
                     self.from_coin_prices = []
@@ -242,7 +242,7 @@ class Strategy(AutoTrader):
                     print("")
                     self.logger.info("!!! FOMO buy !!!")
                         
-                else:
+                elif self.from_coin_direction > self.active_threshold:
                     print("")
                     self.logger.info("!!! Target buy !!!")
                     self.from_coin_prices = []
