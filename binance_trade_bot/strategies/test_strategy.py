@@ -191,16 +191,9 @@ class Strategy(AutoTrader):
                 self.active_threshold = win_threshold
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
             
-            if 0 == round(self.from_coin_direction, 1) < self.meter and self.from_coin_direction[-1] < self.from_coin_direction[0] or (self.from_coin_direction < self.meter and self.from_coin_prices[0] > self.from_coin_prices[-1]) or self.from_coin_direction < self.active_threshold:
-                if 0 == round(self.from_coin_direction, 1) < self.meter:
-                    print("")
-                    self.logger.info("!!! Selling high !!!")
-                        
-                elif 0 > self.from_coin_direction:
-                    print("")
-                    self.logger.info("!!! Panic sell !!!")
+            if self.from_coin_direction < self.meter < 0 or self.from_coin_direction < self.active_threshold:
                     
-                elif self.from_coin_direction < self.active_threshold:
+                if self.from_coin_direction < self.active_threshold:
                     print("")
                     self.logger.info("!!! Target sell !!!")
                     self.from_coin_prices = []
@@ -208,6 +201,10 @@ class Strategy(AutoTrader):
                     self.from_coin_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 3600)
                     self.meter_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 3600)
                     self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
+                
+                else:
+                    print("")
+                    self.logger.info("!!! Panic sell !!!")
                 
                 self.panicked = True
                 can_sell = False
@@ -233,16 +230,9 @@ class Strategy(AutoTrader):
             if self.from_coin_direction <= win_threshold:
                 self.active_threshold = win_threshold
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
-            if 0 == round(self.from_coin_direction, 1) > self.meter and self.from_coin_direction[-1] > self.from_coin_direction[0] or (self.from_coin_direction > self.meter and self.from_coin_prices[0] < self.from_coin_prices[-1]) or self.from_coin_direction > self.active_threshold:
-                if 0 == round(self.from_coin_direction, 1) > self.meter:
-                    print("")
-                    self.logger.info("!!! Buying low !!!")
+            if self.from_coin_direction > self.meter > 0 or self.from_coin_direction > self.active_threshold:
                         
-                elif 0 < self.from_coin_direction:
-                    print("")
-                    self.logger.info("!!! FOMO buy !!!")
-                        
-                elif self.from_coin_direction > self.active_threshold:
+                if self.from_coin_direction > self.active_threshold:
                     print("")
                     self.logger.info("!!! Target buy !!!")
                     self.from_coin_prices = []
@@ -250,6 +240,10 @@ class Strategy(AutoTrader):
                     self.from_coin_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 3600)
                     self.meter_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 3600)
                     self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
+                
+                else:
+                    print("")
+                    self.logger.info("!!! FOMO buy !!!")
                         
                 self.panicked = False
                 if self.manager.buy_alt(panic_pair.from_coin, self.config.BRIDGE, current_coin_price) is None:
