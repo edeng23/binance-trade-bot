@@ -142,7 +142,7 @@ class Strategy(AutoTrader):
             f"Panicked {round((self.meter - self.from_coin_direction), 3)}% " if self.meter and self.panicked else "",
             f"Current ratio weight: {self.auto_weight} ",
             f"Current coin: {current_coin + self.config.BRIDGE} price direction: {round(self.from_coin_direction, 3)}% ",
-            f"Target {round(self.target, 3)}% ",
+            f"Target {round(self.target, 3)}% " if not self.target == 0 else "",
             f"(ready) " if self.from_coin_direction - self.meter < self.to_coin_direction and self.rsi else "",
             f"Next coin: {self.rsi_coin} with RSI: {round(self.rsi, 3)} price direction: {round(self.to_coin_direction, 3)}% " if self.rsi else "",
             f"(ready) " if self.rsi and self.to_coin_direction > self.from_coin_direction - self.meter else "",
