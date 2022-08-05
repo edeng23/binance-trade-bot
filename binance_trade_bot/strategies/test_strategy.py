@@ -27,6 +27,7 @@ class Strategy(AutoTrader):
         self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
         self.jumps = int(self.config.JUMPS_PER_DAY)
         self.win = int(self.config.TARGET_WIN)
+        self.target = 0
         self.active_threshold = -100
         self.tema = 0
         self.f_slope = 0
