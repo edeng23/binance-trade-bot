@@ -1,11 +1,16 @@
 # binance-trade-bot
+> Automated cryptocurrency trading bot
 
 ![github](https://img.shields.io/github/workflow/status/edeng23/binance-trade-bot/binance-trade-bot)
 ![docker](https://img.shields.io/docker/pulls/edeng23/binance-trade-bot)
 [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/edeng23/binance-trade-bot)
 
 [![Deploy to DO](https://mp-assets1.sfo2.digitaloceanspaces.com/deploy-to-do/do-btn-blue.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/coinbookbrasil/binance-trade-bot/tree/master&refcode=a076ff7a9a6a)
-> Automated cryptocurrency trading bot
+
+
+## Follow me on Twitter :)
+
+[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/cloudposse.svg?style=social&label=Follow%20%400xedeng)](https://twitter.com/0xedeng)
 
 ## Why?
 
