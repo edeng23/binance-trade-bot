@@ -193,7 +193,7 @@ class Strategy(AutoTrader):
                 self.active_threshold = win_threshold
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
             
-            if self.from_coin_direction < self.meter < 0 or self.from_coin_direction < self.active_threshold:
+            if self.from_coin_direction < self.meter < 0 or self.from_coin_direction < self.active_threshold or self.meter - self.from_coin_direction > 0:
                     
                 if self.from_coin_direction < self.active_threshold:
                     print("")
@@ -203,6 +203,10 @@ class Strategy(AutoTrader):
                     self.from_coin_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 3600)
                     self.meter_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 3600)
                     self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
+                
+                elif self.meter - self.from_coin_direction > 0:
+                    print("")
+                    self.logger.info("!!! Selling high !!!")
                 
                 else:
                     print("")
@@ -233,7 +237,7 @@ class Strategy(AutoTrader):
             if self.from_coin_direction <= win_threshold:
                 self.active_threshold = win_threshold
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
-            if self.from_coin_direction > self.meter > 0 or self.from_coin_direction > self.active_threshold:
+            if self.from_coin_direction > self.meter > 0 or self.from_coin_direction > self.active_threshold or self.meter - self.from_coin_direction < 0:
                         
                 if self.from_coin_direction > self.active_threshold:
                     print("")
@@ -243,6 +247,10 @@ class Strategy(AutoTrader):
                     self.from_coin_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 3600)
                     self.meter_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 3600)
                     self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
+                
+                elif self.meter - self.from_coin_direction < 0:
+                    print("")
+                    self.logger.info("!!! Buying low !!!")
                 
                 else:
                     print("")
