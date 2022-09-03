@@ -204,7 +204,7 @@ class Strategy(AutoTrader):
                     self.meter_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 3600)
                     self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
                 
-                elif self.meter - self.from_coin_direction > 0:
+                elif self.meter - self.from_coin_direction < 0:
                     print("")
                     self.logger.info("!!! Selling high !!!")
                 
@@ -248,7 +248,7 @@ class Strategy(AutoTrader):
                     self.meter_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 3600)
                     self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
                 
-                elif self.meter - self.from_coin_direction < 0:
+                elif self.meter - self.from_coin_direction > 0:
                     print("")
                     self.logger.info("!!! Buying low !!!")
                 
