@@ -188,7 +188,7 @@ class Strategy(AutoTrader):
             balance = self.manager.get_currency_balance(panic_pair.from_coin.symbol)
             balance_in_bridge = max(balance * panic_price, 1)
             #win_threshold = max(min(((1+self.win/balance_in_bridge)**(1/self.jumps) - 1)*100, (2**(1/self.jumps) -1)*100), ((st.stdev(numpy.array(self.meter_prices)) * 3 + self.mean_price) / (self.mean_price) - 1) * 100)
-            win_threshold = ((st.stdev(numpy.array(self.meter_prices)) + self.mean_price) / (self.mean_price) - 1) * 100
+            win_threshold = ((st.stdev(numpy.array(self.meter_prices)) * 1.5 + self.mean_price) / (self.mean_price) - 1) * 100
             self.target = win_threshold
             if self.from_coin_direction >= win_threshold:
                 self.active_threshold = win_threshold
@@ -234,7 +234,7 @@ class Strategy(AutoTrader):
         elif base_time >= self.panic_time and self.panicked:
             balance = self.manager.get_currency_balance(self.config.BRIDGE.symbol)
             #win_threshold = min(max(((1+self.win/balance)**(1/self.jumps)-1) * -100, (2**(1/self.jumps) -1) * -100), ((st.stdev(numpy.array(self.meter_prices)) * 3 + self.mean_price) / (self.mean_price) - 1) * -100)
-            win_threshold = ((st.stdev(numpy.array(self.meter_prices)) + self.mean_price) / (self.mean_price) - 1) * -100
+            win_threshold = ((st.stdev(numpy.array(self.meter_prices)) * 1.5 + self.mean_price) / (self.mean_price) - 1) * -100
             self.target = win_threshold
             if self.from_coin_direction <= win_threshold:
                 self.active_threshold = win_threshold
