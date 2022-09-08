@@ -203,7 +203,7 @@ class Strategy(AutoTrader):
                     #self.meter_prices = []
                     #self.from_coin_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 3600)
                     #self.meter_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 3600)
-                    #self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
+                    self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
                 
                 elif self.from_coin_direction < self.meter > 0:
                     print("")
@@ -248,7 +248,7 @@ class Strategy(AutoTrader):
                     #self.meter_prices = []
                     #self.from_coin_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 3600)
                     #self.meter_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 3600)
-                    #self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
+                    self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
                 
                 elif self.from_coin_direction > self.meter < 0:
                     print("")
