@@ -30,6 +30,7 @@ class Strategy(AutoTrader):
         self.target = 0
         self.active_threshold = -100
         self.tema = 0
+        self.slope = 0
         self.f_slope = 0
         self.s_slope =0
         self.mean_price = 0
