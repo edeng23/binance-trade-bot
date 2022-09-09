@@ -127,7 +127,7 @@ class Strategy(AutoTrader):
             if len(sp_prices) >= 2:
                 x = min(len(sp_prices), int(self.config.RSI_CANDLE_TYPE) * 60)
                 self.meter = self.from_coin_prices[-1] / ((max(sp_prices) + min(sp_prices) + self.from_coin_prices[-1] + self.from_coin_prices[-x]) / 4) * 100 - 100
-            
+                self.slope = talib.LINEARREG_SLOPE(sp_prices, len(sp_prices))
             else:
                 self.meter = 0
 		
