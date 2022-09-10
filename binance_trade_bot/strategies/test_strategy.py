@@ -145,7 +145,7 @@ class Strategy(AutoTrader):
             f"Current ratio weight: {self.auto_weight} ",
             f"Current coin: {current_coin + self.config.BRIDGE} price direction: {round(self.from_coin_direction, 3)}% ",
             f"Target {round(self.target, 3)}% " if not self.target == 0 else "",
-            f"bullish " if self.slope >= 0 else "bearish ",
+            f"bullish " if self.slope <= 0 else "bearish ",
             f"Next coin: {self.rsi_coin} with RSI: {round(self.rsi, 3)} price direction: {round(self.to_coin_direction, 3)}% " if self.rsi else "",
             f"bullish " if (self.f_slope + self.s_slope) / 2 > 0 and self.rsi and self.f_slope and self.s_slope else "",
             f"bearish " if (self.f_slope + self.s_slope) / 2 < 0 and self.rsi and self.f_slope and self.s_slope else "",
