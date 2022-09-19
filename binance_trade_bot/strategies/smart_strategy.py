@@ -142,7 +142,7 @@ class Strategy(AutoTrader):
             if len(rv_prices) >= 2:
                 short_slope = talib.LINEARREG_SLOPE(rv_prices, min(int(self.config.RSI_CANDLE_TYPE), len(self.reverse_price_history)))
                 long_slope = talib.LINEARREG_SLOPE(rv_prices, len(self.reverse_price_history))
-                self.slope = (short_slope + long_slope) / 2
+                self.slope = (short_slope[-1] + long_slope[-1]) / 2
 		
         """
         Scout for potential jumps from the current coin to another coin
