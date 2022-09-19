@@ -535,6 +535,7 @@ class Strategy(AutoTrader):
         rsi_check_str = rsi_check_date.strftime('%Y-%m-%d %H:%M')
 					 
         current_coin = self.db.get_current_coin()
+	current_coin_symbol = current_coin.symbol
         
         ExpPer = 2 * init_rsi_length - 1
         K = 2 / (ExpPer + 1)
@@ -542,13 +543,13 @@ class Strategy(AutoTrader):
         ADC = 1
         check_prices = []
         
-        for checks in self.manager.binance_client.get_historical_klines(f"{current_coin}{self.config.BRIDGE_SYMBOL}", rsi_string, rsi_start_date_str, rsi_check_str, limit=init_rsi_length*5):                           
+        for checks in self.manager.binance_client.get_historical_klines(f"{current_coin_symbol}{self.config.BRIDGE_SYMBOL}", rsi_string, rsi_start_date_str, rsi_check_str, limit=init_rsi_length*5):                           
             check_price = float(checks[1])
             check_prices.append(check_price)
                 
         if not self.reverse_price_history[1] == check_prices[1]:  
             self.reverse_price_history = [1]        
-            for result in self.manager.binance_client.get_historical_klines(f"{current_coin}{self.config.BRIDGE_SYMBOL}", rsi_string, rsi_start_date_str, rsi_end_date_str, limit=init_rsi_length*5):                           
+            for result in self.manager.binance_client.get_historical_klines(f"{current_coin_symbol}{self.config.BRIDGE_SYMBOL}", rsi_string, rsi_start_date_str, rsi_end_date_str, limit=init_rsi_length*5):                           
                 rsi_price = float(result[1])
                 rsi_price_history.append(rsi_price)
            
