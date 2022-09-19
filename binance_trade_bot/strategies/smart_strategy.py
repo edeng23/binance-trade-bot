@@ -551,27 +551,27 @@ class Strategy(AutoTrader):
             self.reverse_price_history = [1]        
             for result in self.manager.binance_client.get_historical_klines(f"{current_coin_symbol}{self.config.BRIDGE_SYMBOL}", rsi_string, rsi_start_date_str, rsi_end_date_str, limit=init_rsi_length*5):                           
                 rsi_price = float(result[1])
-                rsi_price_history.append(rsi_price)
+                self.reverse_price_history.append(rsi_price)
            
-                if rsi_price_history[-1] > rsi_price_history[-2]:
-                    AUC = K * (rsi_price_history[-1] - rsi_price_history[-2]) + (1 - K) * AUC
+                if self.reverse_price_history[-1] > self.reverse_price_history[-2]:
+                    AUC = K * (self.reverse_price_history[-1] - self.reverse_price_history[-2]) + (1 - K) * AUC
                     ADC = (1 -K) * ADC
                 else:
                     AUC = (1 - K) * AUC
-                    ADC = K * (rsi_price_history[-2] - rsi_price_history[-1]) + (1 - K) * ADC
+                    ADC = K * (self.reverse_price_history[-2] - self.reverse_price_history[-1]) + (1 - K) * ADC
                 
             Val_80 = (init_rsi_length - 1) * (ADC * 80 / 20 - AUC)
             Val_50 = (init_rsi_length - 1) * (ADC - AUC)
             Val_20 = (init_rsi_length - 1) * (ADC * 20 / 80 - AUC)
         
             if Val_80 >= 0:
-                self.Res_80 = rsi_price_history[-1] + Val_80
+                self.Res_80 = self.reverse_price_history[-1] + Val_80
             else:
-                self.Res_80 = rsi_price_history[-1] + Val_80 * 20 / 80
+                self.Res_80 = self.reverse_price_history[-1] + Val_80 * 20 / 80
                            
-            self.Res_50 = rsi_price_history[-1] + Val_50
+            self.Res_50 = self.reverse_price_history[-1] + Val_50
                            
             if Val_20 >= 0:
-                self.Res_20 = rsi_price_history[-1] + Val_20
+                self.Res_20 = self.reverse_price_history[-1] + Val_20
             else:
-                self.Res_20 = rsi_price_history[-1] + Val_20 * 80 / 20
+                self.Res_20 = self.reverse_price_history[-1] + Val_20 * 80 / 20
