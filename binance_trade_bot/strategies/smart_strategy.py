@@ -130,14 +130,19 @@ class Strategy(AutoTrader):
             ratio_dict, prices = self._get_ratios(current_coin, panic_price)
             panic_pair = max(ratio_dict, key=ratio_dict.get) 
             sp_prices = numpy.array(self.from_coin_prices)
+            rv_prices = numpy.array(self.reverse_price_history)
             
             if len(sp_prices) >= 2:
                 x = min(len(sp_prices), int(self.config.RSI_CANDLE_TYPE) * 60)
                 self.meter = self.from_coin_prices[-1] / ((max(sp_prices) + min(sp_prices) + self.from_coin_prices[-1] + self.from_coin_prices[-x]) / 4) * 100 - 100
-                b = talib.LINEARREG_SLOPE(sp_prices, len(sp_prices))
-                self.slope = b[-1]
+                
             else:
                 self.meter = 0
+
+            if len(rv_prices) >= 2:
+                short_slope = talib.LINEARREG_SLOPE(rv_prices, min(init_rsi_length, len(self.reverse_price_history)))
+                long_slope = talib.LINEARREG_SLOPE(rv_prices, len(self.reverse_price_history))
+                self.slope = (short_slope + long_slope) / 2
 		
         """
         Scout for potential jumps from the current coin to another coin
@@ -151,7 +156,7 @@ class Strategy(AutoTrader):
             f"Current ratio weight: {self.auto_weight} ",
             f"Current coin: {current_coin + self.config.BRIDGE} price direction: {round(self.from_coin_direction, 3)}% ",
             f"Target {round(self.target, 3)}% " if not self.target == 0 else "",
-            f"bullish " if self.slope <= 0 else "bearish ",
+            f"bullish " if self.slope >= 0 else "bearish ",
             f"Next coin: {self.rsi_coin} with RSI: {round(self.rsi, 3)} price direction: {round(self.to_coin_direction, 3)}% " if self.rsi else "",
             f"bullish " if (self.f_slope + self.s_slope) / 2 > 0 and self.rsi and self.f_slope and self.s_slope else "",
             f"bearish " if (self.f_slope + self.s_slope) / 2 < 0 and self.rsi and self.f_slope and self.s_slope else "",
