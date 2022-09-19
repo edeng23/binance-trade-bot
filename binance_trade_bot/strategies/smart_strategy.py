@@ -535,7 +535,7 @@ class Strategy(AutoTrader):
         rsi_check_str = rsi_check_date.strftime('%Y-%m-%d %H:%M')
 					 
         current_coin = self.db.get_current_coin()
-	current_coin_symbol = current_coin.symbol
+        current_coin_symbol = current_coin.symbol
         
         ExpPer = 2 * init_rsi_length - 1
         K = 2 / (ExpPer + 1)
