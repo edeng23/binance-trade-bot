@@ -559,6 +559,8 @@ class Strategy(AutoTrader):
                 else:
                     AUC = (1 - K) * AUC
                     ADC = K * (self.reverse_price_history[-2] - self.reverse_price_history[-1]) + (1 - K) * ADC
+                        
+            self.reverse_price_history.del(0)
                 
             Val_80 = (init_rsi_length - 1) * (ADC * 80 / 20 - AUC)
             Val_50 = (init_rsi_length - 1) * (ADC - AUC)
