@@ -45,9 +45,9 @@ class Strategy(AutoTrader):
         self.panicked = False
         self.jumpable_coins = 0
         self.pre_rsi = 0
-        self.Res_80 = 0
+        self.Res_70 = 0
         self.Res_50 = 0
-        self.Res_20 = 0
+        self.Res_30 = 0
         self.rsi = self.rsi_calc()
         self.reinit_threshold = self.manager.now().replace(second=0, microsecond=0)
         self.reinit_rsi = self.manager.now().replace(second=0, microsecond=0)
@@ -207,7 +207,7 @@ class Strategy(AutoTrader):
                 self.active_threshold = win_threshold
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
             
-            if ((self.from_coin_direction < self.meter > 0 and self.slope > 0) or self.from_coin_direction < self.active_threshold or self.meter - self.from_coin_direction > 0) and (self.Res_50 > self.from_coin_prices[-1] or self.Res_80 < self.from_coin_prices[-1]):
+            if ((self.from_coin_direction < self.meter > 0 and self.slope > 0) or self.from_coin_direction < self.active_threshold or self.meter - self.from_coin_direction > 0) and (self.Res_50 > self.from_coin_prices[-1] or self.Res_70 < self.from_coin_prices[-1]):
                     
                 if self.from_coin_direction < self.active_threshold:
                     print("")
@@ -253,7 +253,7 @@ class Strategy(AutoTrader):
             if self.from_coin_direction <= win_threshold:
                 self.active_threshold = win_threshold
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
-            if ((self.from_coin_direction > self.meter < 0 and self.slope < 0) or self.from_coin_direction > self.active_threshold or self.meter - self.from_coin_direction < 0) and (self.Res_50 < self.from_coin_prices[-1] or self.Res_20 > self.from_coin_prices[-1]):
+            if ((self.from_coin_direction > self.meter < 0 and self.slope < 0) or self.from_coin_direction > self.active_threshold or self.meter - self.from_coin_direction < 0) and (self.Res_50 < self.from_coin_prices[-1] or self.Res_30 > self.from_coin_prices[-1]):
                         
                 if self.from_coin_direction > self.active_threshold:
                     print("")
@@ -567,21 +567,21 @@ class Strategy(AutoTrader):
         
             del self.reverse_price_history[0]
                 
-            Val_80 = (init_rsi_length - 1) * (ADC * 80 / 20 - AUC)
+            Val_70 = (init_rsi_length - 1) * (ADC * 70 / 30 - AUC)
             Val_50 = (init_rsi_length - 1) * (ADC - AUC)
-            Val_20 = (init_rsi_length - 1) * (ADC * 20 / 80 - AUC)
+            Val_30 = (init_rsi_length - 1) * (ADC * 30 / 70 - AUC)
         
-            if Val_80 >= 0:
-                self.Res_80 = self.reverse_price_history[-1] + Val_80
+            if Val_70 >= 0:
+                self.Res_70 = self.reverse_price_history[-1] + Val_70
             else:
-                self.Res_80 = self.reverse_price_history[-1] + Val_80 * 20 / 80
+                self.Res_70 = self.reverse_price_history[-1] + Val_70 * 30 / 70
                            
             self.Res_50 = self.reverse_price_history[-1] + Val_50
                            
-            if Val_20 >= 0:
-                self.Res_20 = self.reverse_price_history[-1] + Val_20
+            if Val_30 >= 0:
+                self.Res_30 = self.reverse_price_history[-1] + Val_30
             else:
-                self.Res_20 = self.reverse_price_history[-1] + Val_20 * 80 / 20
+                self.Res_30 = self.reverse_price_history[-1] + Val_30 * 70 / 30
         
         else:
             self.reverse_price_history[-1] = self.from_coin_prices[-1]
