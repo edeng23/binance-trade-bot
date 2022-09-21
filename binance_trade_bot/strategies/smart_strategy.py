@@ -124,7 +124,6 @@ class Strategy(AutoTrader):
             self.mean_price = numpy.mean(self.meter_prices)
             self.from_coin_direction = self.from_coin_prices[-1] / self.mean_price * 100 - 100
             self.rsi_calc()
-            self.reverse_rsi()
             self.reinit_rsi = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
 	    
             ratio_dict, prices = self._get_ratios(current_coin, panic_price)
@@ -509,36 +508,9 @@ class Strategy(AutoTrader):
             #self.rsi_coin = ""
             self.to_coin_direction = 0
             #self.logger.info(f"Not enough data for RSI calculation. Continue scouting...")
-        
-        
-        
 
-    def reverse_rsi(self):
-        """
-        Calculate the RSI for the next best coin.
-        """
-		
-        init_rsi_length = self.config.RSI_LENGTH
-        rsi_type = self.config.RSI_CANDLE_TYPE
-        rsi_string = str(self.config.RSI_CANDLE_TYPE) + 'm'
-                        
-        #Binance api allows retrieving max 1000 candles
-        if init_rsi_length > 200:
-            init_rsi_length = 200
 
-        init_rsi_delta = (init_rsi_length * 5 ) * rsi_type
-			
-        #self.logger.info(f"Using last {init_rsi_length} candles to initialize RSI")
 
-        rsi_base_date = self.manager.now().replace(second=0, microsecond=0)
-        rsi_start_date = rsi_base_date - timedelta(minutes=init_rsi_delta)
-        rsi_end_date = rsi_base_date
-        rsi_check_date = rsi_start_date + timedelta(minutes=self.config.RSI_CANDLE_TYPE*2)
-
-        rsi_start_date_str = rsi_start_date.strftime('%Y-%m-%d %H:%M')
-        rsi_end_date_str = rsi_end_date.strftime('%Y-%m-%d %H:%M')
-        rsi_check_str = rsi_check_date.strftime('%Y-%m-%d %H:%M')
-					 
         current_coin = self.db.get_current_coin()
         current_coin_symbol = current_coin.symbol
         
@@ -566,22 +538,24 @@ class Strategy(AutoTrader):
                     ADC = K * (self.reverse_price_history[-2] - self.reverse_price_history[-1]) + (1 - K) * ADC
         
             del self.reverse_price_history[0]
-                
-            Val_70 = (init_rsi_length - 1) * (ADC * 70 / 30 - AUC)
-            Val_50 = (init_rsi_length - 1) * (ADC - AUC)
-            Val_30 = (init_rsi_length - 1) * (ADC * 30 / 70 - AUC)
-        
-            if Val_70 >= 0:
-                self.Res_70 = self.reverse_price_history[-1] + Val_70
-            else:
-                self.Res_70 = self.reverse_price_history[-1] + Val_70 * 30 / 70
-                           
-            self.Res_50 = self.reverse_price_history[-1] + Val_50
-                           
-            if Val_30 >= 0:
-                self.Res_30 = self.reverse_price_history[-1] + Val_30
-            else:
-                self.Res_30 = self.reverse_price_history[-1] + Val_30 * 70 / 30
         
         else:
             self.reverse_price_history[-1] = self.from_coin_prices[-1]
+        
+        Val_70 = (init_rsi_length - 1) * (ADC * 70 / 30 - AUC)
+        Val_50 = (init_rsi_length - 1) * (ADC - AUC)
+        Val_30 = (init_rsi_length - 1) * (ADC * 30 / 70 - AUC)
+        
+        if Val_70 >= 0:
+            self.Res_70 = self.reverse_price_history[-1] + Val_70
+        else:
+            self.Res_70 = self.reverse_price_history[-1] + Val_70 * 30 / 70
+                           
+        self.Res_50 = self.reverse_price_history[-1] + Val_50
+                           
+        if Val_30 >= 0:
+            self.Res_30 = self.reverse_price_history[-1] + Val_30
+        else:
+            self.Res_30 = self.reverse_price_history[-1] + Val_30 * 70 / 30
+
+
