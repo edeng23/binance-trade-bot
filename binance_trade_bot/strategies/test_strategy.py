@@ -25,6 +25,7 @@ class Strategy(AutoTrader):
         self.initialize_current_coin()
         self.rsi_coin = ""
         self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
+        self.target = 0
         self.active_threshold = -100
         self.tema = 0
         self.rv_tema = 0
@@ -63,17 +64,13 @@ class Strategy(AutoTrader):
         allowed_rsi_time = self.reinit_rsi
         allowed_rsi_idle_time = self.reinit_idle
         
-        if self.panicked:
+        if not self.panicked:
             self.from_coin_price = self.manager.get_buy_price(current_coin + self.config.BRIDGE)
 
         else:
             self.from_coin_price = self.manager.get_sell_price(current_coin + self.config.BRIDGE)
 
-        if current_coin_price is None:
-            self.logger.info("Skipping scouting... current coin {} not found".format(current_coin + self.config.BRIDGE))
-            return
-
-        if panic_price is None:
+        if self.from_coin_price is None:
             self.logger.info("Skipping scouting... current coin {} not found".format(current_coin + self.config.BRIDGE))
             return
         
@@ -114,7 +111,7 @@ class Strategy(AutoTrader):
                         print("")
                         self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
                         self.panicked = False
-                        self._jump_to_best_coin(current_coin, self.current_coin_price)
+                        self._jump_to_best_coin(current_coin, self.from_coin_price)
                         self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
                         self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
            else:
@@ -122,12 +119,21 @@ class Strategy(AutoTrader):
                         print("")
                         self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
                         self.panicked = False
-                        self._jump_to_best_coin(current_coin, current_coin_price)
+                        self._jump_to_best_coin(current_coin, self.from_coin_price)
                         self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
                         self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
                         
                  
         if base_time >= self.panic_time and not self.panicked:
+            balance = self.manager.get_currency_balance(panic_pair.from_coin.symbol)
+            balance_in_bridge = max(balance * panic_price, 1)
+            stdev = talib.STDDEV(numpy.array(self.from_coin_prices), timeperiod=init_rsi_length, nbdev=1) / self.rv_tema * 100
+            win_threshold = stdev ** 3 / 100 + stdev
+            self.target = win_threshold
+
+            if self.from_coin_direction >= win_threshold:
+                self.active_threshold = win_threshold
+
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
             
             if self.from_coin_direction < 0 and (30 > self.rv_pre_rsi > self.rv_rsi or 50 < self.rv_pre_rsi > self.rv_rsi < 50):
@@ -148,10 +154,17 @@ class Strategy(AutoTrader):
                 
 		
         elif base_time >= self.panic_time and self.panicked:
-            self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
+            balance = self.manager.get_currency_balance(self.config.BRIDGE.symbol)
+            stdev = st.stdev(numpy.array(self.meter_prices)) / self.mean_price * 100
+            win_threshold = (stdev ** 3 / 100 + stdev) * -1
+            self.target = win_threshold
 
+            if self.from_coin_direction <= win_threshold:
+                self.active_threshold = win_threshold
+
+            self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
+            
             if self.from_coin_direction > 0 and self.rv_pre_rsi < self.rv_rsi:
-    
                 if self.from_coin_direction > self.active_threshold:
                     print("")
                     self.logger.info("!!! Target buy !!!")
