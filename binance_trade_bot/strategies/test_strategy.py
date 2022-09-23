@@ -25,8 +25,11 @@ class Strategy(AutoTrader):
         self.initialize_current_coin()
         self.rsi_coin = ""
         self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
-        self.target = 0
-        self.active_threshold = -100
+        self.active_threshold = 0
+        self.dir_threshold = 0
+        self.Res_70 = 0
+        self.Res_50 = 0
+        self.Res_30 = 0
         self.tema = 0
         self.rv_tema = 0
         self.slope = 0
@@ -37,7 +40,6 @@ class Strategy(AutoTrader):
         self.to_coin_direction = 0
         self.reverse_price_history = []
         self.rsi_price_history = []
-        self.from_coin_price = 0
         self.panicked = False
         self.jumpable_coins = 0
         self.pre_rsi = 0
@@ -91,15 +93,13 @@ class Strategy(AutoTrader):
         # stopped. Not logging though to reduce log size.
         print(
             f"{self.manager.now().replace(microsecond=0)} - " ,
-            f"Panic-meter: {round((self.meter - self.from_coin_direction), 3)}% " if self.meter and not self.panicked else "",
-            f"Panicked {round((self.meter - self.from_coin_direction), 3)}% " if self.meter and self.panicked else "",
+            f"Threshold: {round(self.dir_threshold - self.from_coin_direction, 3)}% " if self.dir_threshold != 0 else "",
+            f"Long position " if not self.panicked else "Short position ",
             f"Current ratio weight: {self.auto_weight} ",
-            f"Current coin: {current_coin + self.config.BRIDGE} price direction: {round(self.from_coin_direction, 3)}% ",
-            f"Target {round(self.target, 3)}% " if not self.target == 0 else "",
-            f"bullish " if self.slope >= 0 else "bearish ",
+            f"Current coin: {current_coin + self.config.BRIDGE} with RSI: {round(self.rv_rsi, 3)} price direction: {round(self.from_coin_direction, 3)}% ",
+            f"bullish " if self.rv_slope >= 0 else "bearish ",
             f"Next coin: {self.rsi_coin} with RSI: {round(self.rsi, 3)} price direction: {round(self.to_coin_direction, 3)}% " if self.rsi else "",
-            f"bullish " if (self.f_slope + self.s_slope) / 2 > 0 and self.rsi and self.f_slope and self.s_slope else "",
-            f"bearish " if (self.f_slope + self.s_slope) / 2 < 0 and self.rsi and self.f_slope and self.s_slope else "",
+            f"bullish " if self.slope >= 0 else "bearish ",
             end='\r',
         )
 	
@@ -112,82 +112,109 @@ class Strategy(AutoTrader):
                         self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
                         self.panicked = False
                         self._jump_to_best_coin(current_coin, self.from_coin_price)
+                        self.active_threshold = 0
+                        self.dir_threshold = 0
                         self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
                         self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
+
            else:
                 if self.from_coin_direction <= self.to_coin_direction >= 0 and (self.pre_rsi < self.rsi <= 30 or self.pre_rsi < self.rsi > 50) or self.rsi < 20:
                         print("")
                         self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
                         self.panicked = False
                         self._jump_to_best_coin(current_coin, self.from_coin_price)
+                        self.active_threshold = 0
+                        self.dir_threshold = 0
                         self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
                         self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
                         
                  
         if base_time >= self.panic_time and not self.panicked:
-            balance = self.manager.get_currency_balance(panic_pair.from_coin.symbol)
-            balance_in_bridge = max(balance * panic_price, 1)
-            stdev = talib.STDDEV(numpy.array(self.from_coin_prices), timeperiod=init_rsi_length, nbdev=1) / self.rv_tema * 100
-            win_threshold = stdev ** 3 / 100 + stdev
-            self.target = win_threshold
+            balance = self.manager.get_currency_balance(current_coin.symbol)
+            stdev = (talib.STDDEV(numpy.array(self.reverse_price_history), timeperiod=init_rsi_length, nbdev=1) / self.rv_tema + 1) * 100
+            self.dir_threshold = (stdev ** 3 / 100 + stdev) * -1
 
-            if self.from_coin_direction >= win_threshold:
-                self.active_threshold = win_threshold
+            if self.from_coin_price > self.Res_70 > self.active_threshold:
+                self.active_threshold = self.Res_70
+
+            elif self.from_coin_price > self.Res_50 > self.active_threshold:
+                self.active_threshold = self.Res_50
+
+            elif self.from_coin_price > self.Res_30 > self.active_threshold:
+                self.active_threshold = self.Res_30
 
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
             
-            if self.from_coin_direction < 0 and (30 > self.rv_pre_rsi > self.rv_rsi or 50 < self.rv_pre_rsi > self.rv_rsi < 50):
-                print("")
-                self.logger.info("!!! Selling high !!!")
+            if self.pre_rv_rsi > self.rv_rsi and self.from_coin_price < self.active_threshold or self.from_coin_direction < self.dir_threshold or self.rv_rsi > 80:
+                if self.rv_rsi > 80:
+                    print("")
+                    self.logger.infor("!!! Target sell !!!")
+                
+                elif self.from_coin_direction < self.dir_threshold:
+                    print("")
+                    self.logger.info("!!! Panic sell !!!")
+                
+                else:
+                    print("")
+                    self.logger.info("!!! Selling high !!!")
+
                 self.panicked = True
                 can_sell = False
                 
-                if balance and balance * panic_price > self.manager.get_min_notional(panic_pair.from_coin.symbol, self.config.BRIDGE.symbol):
+                if balance and balance * self.from_coin_price > self.manager.get_min_notional(current_coin.symbol, self.config.BRIDGE.symbol):
                     can_sell = True
 
                 if not can_sell:
                     self.logger.info("Not enough balance, changing to panic mode...")
 
-                elif self.manager.sell_alt(panic_pair.from_coin, self.config.BRIDGE, panic_price) is None:
+                elif self.manager.sell_alt(current_coin.symbol, self.config.BRIDGE, self.from_coin_price) is None:
                     self.logger.info("Couldn't sell, going back to scouting mode...")
                     self.panicked = False
+
+                else:
+                    self.active_threshold = max(self.reverse_price_history) * 3
+                    self.dir_threshold = 0
+                    self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
                 
 		
         elif base_time >= self.panic_time and self.panicked:
             balance = self.manager.get_currency_balance(self.config.BRIDGE.symbol)
-            stdev = st.stdev(numpy.array(self.meter_prices)) / self.mean_price * 100
-            win_threshold = (stdev ** 3 / 100 + stdev) * -1
-            self.target = win_threshold
+            stdev = (talib.STDDEV(numpy.array(self.reverse_price_history), timeperiod=init_rsi_length, nbdev=1) / self.rv_tema + 1) * 100
+            self.dir_threshold = stdev ** 3 / 100 + stdev
 
-            if self.from_coin_direction <= win_threshold:
-                self.active_threshold = win_threshold
+            if self.from_coin_price < self.Res_30 < self.active_threshold:
+                self.active_threshold = self.Res_30
+
+            elif self.from_coin_price < self.Res_50 < self.active_threshold:
+                self.active_threshold = self.Res_50
+
+            elif self.from_coin_price < self.Res_70 < self.active_threshold:
+                self.active_threshold = self.Res_70
 
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
             
-            if self.from_coin_direction > 0 and self.rv_pre_rsi < self.rv_rsi:
-                if self.from_coin_direction > self.active_threshold:
+            if self.pre_rv_rsi < self.rv_rsi and self.from_coin_price > self.active_threshold or self.from_coin_direction > self.dir_threshold or self.rv_rsi < 20:
+                if self.rv_rsi < 20:
                     print("")
-                    self.logger.info("!!! Target buy !!!")
-                    #self.from_coin_prices = []
-                    #self.meter_prices = []
-                    #self.from_coin_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 3600)
-                    #self.meter_prices = deque(maxlen=int(self.config.MAX_IDLE_HOURS) * 3600)
-                    #self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
+                    self.logger.infor("!!! Target buy !!!")
                 
-                elif self.from_coin_direction > self.meter < 0:
+                elif self.from_coin_direction > self.dir_threshold:
+                    print("")
+                    self.logger.info("!!! FOMO sell !!!")
+                
+                else:
                     print("")
                     self.logger.info("!!! Buying low !!!")
-                
-                else:
-                    print("")
-                    self.logger.info("!!! FOMO buy !!!")
                         
                 self.panicked = False
-                if self.manager.buy_alt(panic_pair.from_coin, self.config.BRIDGE, current_coin_price) is None:
+
+                if self.manager.buy_alt(current_coin.symbol, self.config.BRIDGE, self.from_coin_price) is None:
                     self.logger.info("Couldn't buy, going back to panic mode...")
                     self.panicked = True
+
                 else:
-                    self.active_threshold = -100
+                    self.active_threshold = 0
+                    self.dir_threshold = 0
                     self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
                     
 
@@ -418,25 +445,62 @@ class Strategy(AutoTrader):
             self.to_coin_direction = 0
             #self.logger.info(f"Not enough data for RSI calculation. Continue scouting...")
 
-
+        ExpPer = 2 * init_rsi_length - 1
+        K = 2 / (ExpPer + 1)
+        AUC = 1
+        ADC = 1
         rev_prices = []
 
         for reverse in self.manager.binance_client.get_historical_klines(f"{current_coin_symbol}{self.config.BRIDGE_SYMBOL}", rsi_string, rsi_start_date_str, rsi_check_str, limit=init_rsi_length*5):                           
             rev_price = float(reverse[1])
             rev_prices.append(rev_price)
                 
-        if self.reverse_price_history[0] == rev_prices[0]:    
-            self.from_coin_price = self.manager.get_buy_price(current_coin + self.config.BRIDGE)  
-            self.reverse_price_history[-1] = self.from_coin_price
+        if not self.reverse_price_history[0] == check_prices[0]:  
+            self.reverse_price_history = [1]        
+            for result in self.manager.binance_client.get_historical_klines(f"{current_coin_symbol}{self.config.BRIDGE_SYMBOL}", rsi_string, rsi_start_date_str, rsi_end_date_str, limit=init_rsi_length*5):                           
+                rsi_price = float(result[1])
+                self.reverse_price_history.append(rsi_price)
+           
+                if self.reverse_price_history[-1] > self.reverse_price_history[-2]:
+                    AUC = K * (self.reverse_price_history[-1] - self.reverse_price_history[-2]) + (1 - K) * AUC
+                    ADC = (1 -K) * ADC
+                else:
+                    AUC = (1 - K) * AUC
+                    ADC = K * (self.reverse_price_history[-2] - self.reverse_price_history[-1]) + (1 - K) * ADC
+        
+            del self.reverse_price_history[0]
         
         else:
-            self.reverse_price_history = []
+            self.reverse_price_history[-1] = self.from_coin_price
+        
+        Val_70 = (init_rsi_length - 1) * (ADC * 70 / 30 - AUC)
+        Val_50 = (init_rsi_length - 1) * (ADC - AUC)
+        Val_30 = (init_rsi_length - 1) * (ADC * 30 / 70 - AUC)
+        
+        if Val_70 >= 0:
+            self.Res_70 = self.reverse_price_history[-1] + Val_70
+        else:
+            self.Res_70 = self.reverse_price_history[-1] + Val_70 * 30 / 70
+                           
+        self.Res_50 = self.reverse_price_history[-1] + Val_50
+                           
+        if Val_30 >= 0:
+            self.Res_30 = self.reverse_price_history[-1] + Val_30
+        else:
+            self.Res_30 = self.reverse_price_history[-1] + Val_30 * 70 / 30
 
-            for result in self.manager.binance_client.get_historical_klines(f"{current_coin_symbol}{self.config.BRIDGE_SYMBOL}", rsi_string, rsi_start_date_str, rsi_end_date_str, limit=init_rsi_length*5):                           
-                rv_price = float(result[1])
-                self.reverse_price_history.append(rv_price)
+        # if self.reverse_price_history[0] == rev_prices[0]:    
+        #     self.from_coin_price = self.manager.get_buy_price(current_coin + self.config.BRIDGE)  
+        #     self.reverse_price_history[-1] = self.from_coin_price
+        
+        # else:
+        #     self.reverse_price_history = []
 
-            self.from_coin_price = self.manager.get_buy_price(current_coin + self.config.BRIDGE)
+        #     for result in self.manager.binance_client.get_historical_klines(f"{current_coin_symbol}{self.config.BRIDGE_SYMBOL}", rsi_string, rsi_start_date_str, rsi_end_date_str, limit=init_rsi_length*5):                           
+        #         rv_price = float(result[1])
+        #         self.reverse_price_history.append(rv_price)
+
+        #     self.from_coin_price = self.manager.get_buy_price(current_coin + self.config.BRIDGE)
 
         if len(self.reverse_price_history) >= init_rsi_length:
             rv_closes = numpy.array(self.reverse_price_history)
