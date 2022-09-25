@@ -417,8 +417,11 @@ class Strategy(AutoTrader):
                 self.rsi_price_history = []
 
                 for result in self.manager.binance_client.get_historical_klines(f"{to_coin_symbol}{self.config.BRIDGE_SYMBOL}", rsi_string, rsi_start_date_str, rsi_end_date_str, limit=init_rsi_length*5):                           
-                   rsi_price = float(result[1])
-                   self.rsi_price_history.append(rsi_price)
+                    rsi_price = float(result[1])
+                    self.rsi_price_history.append(rsi_price)
+                        
+                self.to_coin_price = self.manager.get_buy_price(self.rsi_coin + self.config.BRIDGE)
+                self.rsi_price_history.append(self.to_coin_price)
 
            
 
