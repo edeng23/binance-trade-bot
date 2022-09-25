@@ -131,7 +131,8 @@ class Strategy(AutoTrader):
                  
         if base_time >= self.panic_time and not self.panicked:
             balance = self.manager.get_currency_balance(current_coin.symbol)
-            stdev = (talib.STDDEV(numpy.array(self.reverse_price_history), timeperiod=self.config.RSI_LENGTH, nbdev=1) / self.rv_tema + 1) * 100
+            dev = (talib.STDDEV(numpy.array(self.reverse_price_history), timeperiod=self.config.RSI_LENGTH, nbdev=1) / self.rv_tema + 1) * 100
+            stdev = dev[-1]
             self.dir_threshold = (stdev ** 3 / 100 + stdev) * -1
 
             if self.from_coin_price > self.Res_70 > self.active_threshold:
@@ -179,7 +180,8 @@ class Strategy(AutoTrader):
 		
         elif base_time >= self.panic_time and self.panicked:
             balance = self.manager.get_currency_balance(self.config.BRIDGE.symbol)
-            stdev = (talib.STDDEV(numpy.array(self.reverse_price_history), timeperiod=self.config.RSI_LENGTH, nbdev=1) / self.rv_tema + 1) * 100
+            dev = (talib.STDDEV(numpy.array(self.reverse_price_history), timeperiod=self.config.RSI_LENGTH, nbdev=1) / self.rv_tema + 1) * 100
+            stdev = dev[-1]
             self.dir_threshold = stdev ** 3 / 100 + stdev
 
             if self.from_coin_price < self.Res_30 < self.active_threshold:
