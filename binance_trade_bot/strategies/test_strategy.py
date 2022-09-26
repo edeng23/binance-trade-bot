@@ -96,7 +96,7 @@ class Strategy(AutoTrader):
         print(
             f"{self.manager.now().replace(microsecond=0)} - " ,
             f"Threshold: {round(self.from_coin_direction - self.dir_threshold, 3)}% " if self.dir_threshold != 0 else "",
-            f"Bottom: {round(self.active_threshold, 3)} {self.config.BRIDGE} ",
+            f"Bottom: {self.active_threshold} {self.config.BRIDGE} ",
             f"Long position " if not self.panicked else "Short position ",
             f"Current ratio weight: {self.auto_weight} ",
             f"Current coin: {current_coin + self.config.BRIDGE} with RSI: {round(self.rv_rsi, 3)} price direction: {round(self.from_coin_direction, 3)}% ",
@@ -488,13 +488,12 @@ class Strategy(AutoTrader):
                 if close > prev_close:
                     AUC = K * (self.reverse_price_history[-1] - self.reverse_price_history[-2]) + (1 - K) * AUC
                     ADC = (1 -K) * ADC
-                    prev_close = close
+                        
                 else:
                     AUC = (1 - K) * AUC
                     ADC = K * (self.reverse_price_history[-2] - self.reverse_price_history[-1]) + (1 - K) * ADC
-                    prev_close = close
-                        
-            del self.reverse_price_history[0]
+                prev_close = close
+
         
         Val_70 = (init_rsi_length - 1) * (ADC * 70 / 30 - AUC)
         Val_50 = (init_rsi_length - 1) * (ADC - AUC)
@@ -511,19 +510,6 @@ class Strategy(AutoTrader):
             self.Res_30 = self.reverse_price_history[-1] + Val_30
         else:
             self.Res_30 = self.reverse_price_history[-1] + Val_30 * 70 / 30
-
-        # if self.reverse_price_history[0] == rev_prices[0]:    
-        #     self.from_coin_price = self.manager.get_buy_price(current_coin + self.config.BRIDGE)  
-        #     self.reverse_price_history[-1] = self.from_coin_price
-        
-        # else:
-        #     self.reverse_price_history = []
-
-        #     for result in self.manager.binance_client.get_historical_klines(f"{current_coin_symbol}{self.config.BRIDGE_SYMBOL}", rsi_string, rsi_start_date_str, rsi_end_date_str, limit=init_rsi_length*5):                           
-        #         rv_price = float(result[1])
-        #         self.reverse_price_history.append(rv_price)
-
-        #     self.from_coin_price = self.manager.get_buy_price(current_coin + self.config.BRIDGE)
 
         if len(self.reverse_price_history) >= init_rsi_length:
             rv_closes = numpy.array(self.reverse_price_history)
