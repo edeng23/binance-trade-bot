@@ -94,10 +94,10 @@ class Strategy(AutoTrader):
         # Display on the console, the current coin+Bridge, so users can see *some* activity and not think the bot has
         # stopped. Not logging though to reduce log size.
         print(
-            f"{self.manager.now().replace(microsecond=0)} - " ,
+            f"{self.manager.now().strftime('%Y-%m-%d %H:%M:%S')} - " ,
+            f"Long " if not self.panicked else f"Short ",
             f"Threshold: {round(self.from_coin_direction - self.dir_threshold, 3)}% ",
             f"Bottom: {round(self.active_threshold, 4)}{self.config.BRIDGE} " if not self.panicked else f"Top: {round(self.active_threshold, 4)}{self.config.BRIDGE} ",
-            f"Long position " if not self.panicked else f"Short position ",
             f"Current ratio weight: {self.auto_weight} ",
             f"Current coin: {current_coin + self.config.BRIDGE} with RSI: {round(self.rv_rsi, 3)} price direction: {round(self.from_coin_direction, 3)}% ",
             f"bullish " if self.rv_slope >= 0 else f"bearish ",
