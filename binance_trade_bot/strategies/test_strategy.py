@@ -95,7 +95,7 @@ class Strategy(AutoTrader):
         # stopped. Not logging though to reduce log size.
         print(
             f"{self.manager.now().replace(microsecond=0)} - " ,
-            f"Threshold: {round(self.from_coin_direction - self.dir_threshold, 3)}% " if self.dir_threshold != 0 else f"",
+            f"Threshold: {round(self.from_coin_direction - self.dir_threshold, 3)}% ",
             f"Bottom: {round(self.active_threshold, 4)}{self.config.BRIDGE} " if not self.panicked else f"Top: {round(self.active_threshold, 4)}{self.config.BRIDGE} ",
             f"Long position " if not self.panicked else f"Short position ",
             f"Current ratio weight: {self.auto_weight} ",
@@ -514,6 +514,6 @@ class Strategy(AutoTrader):
             self.rv_rsi = rv_rsi[-1]
             self.rv_pre_rsi = rv_rsi[-2]
             self.rv_tema = rv_tema[-1]
-            self.from_coin_direction = self.from_coin_price / self.rv_tema * 100 - 100
+            self.from_coin_direction = int(self.from_coin_price) / self.rv_tema * 100 - 100
             #self.logger.info(f"Finished ratio init...")
 
