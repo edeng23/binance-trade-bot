@@ -97,7 +97,7 @@ class Strategy(AutoTrader):
         print(
             f"{self.manager.now().strftime('%Y-%m-%d %H:%M:%S')} - " ,
             f"Long " if not self.panicked else f"Short ",
-            f"Threshold: {round(self.from_coin_direction - self.dir_threshold, 3)}% ",
+            f"Threshold: {round(self.from_coin_direction - self.dir_threshold, 3)}% " if self.dir_threshold != 0 else f"",
             f"Bottom: {self.active_threshold} " if not self.panicked else f"Top: {self.active_threshold} ",
             f"Current ratio weight: {self.auto_weight} ",
             f"Current coin: {current_coin} with RSI: {round(self.rv_rsi, 3)} price direction: {round(self.from_coin_direction, 3)}% ",
@@ -105,7 +105,7 @@ class Strategy(AutoTrader):
             f"Next coin: {self.rsi_coin} with RSI: {round(self.rsi, 3)} price direction: {round(self.to_coin_direction, 3)}% " if self.rsi else f"",
             f"bullish " if self.slope >= 0 and self.rsi else f"",
             f"bearish " if self.slope < 0 and self.rsi else f"",
-            f"30: {self.Res_30} 50: {self.Res_50} 70: {self.Res_70} ",
+            #f"30: {self.Res_30} 50: {self.Res_50} 70: {self.Res_70} ",
             end='\r',
         )
 	
