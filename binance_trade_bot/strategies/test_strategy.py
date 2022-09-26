@@ -473,27 +473,33 @@ class Strategy(AutoTrader):
                 rsi_price = float(result[1])
                 self.reverse_price_history.append(rsi_price)
                 
-                if self.reverse_price_history[-1] > self.reverse_price_history[-2]:
-                    AUC = K * (self.reverse_price_history[-1] - self.reverse_price_history[-2]) + (1 - K) * AUC
-                    ADC = (1 -K) * ADC
-                else:
-                    AUC = (1 - K) * AUC
-                    ADC = K * (self.reverse_price_history[-2] - self.reverse_price_history[-1]) + (1 - K) * ADC
+            if self.reverse_price_history[-1] > self.reverse_price_history[-2]:
+                AUC = K * (self.reverse_price_history[-1] - self.reverse_price_history[-2]) + (1 - K) * AUC
+                ADC = (1 -K) * ADC
+            else:
+                AUC = (1 - K) * AUC
+                ADC = K * (self.reverse_price_history[-2] - self.reverse_price_history[-1]) + (1 - K) * ADC
         
             del self.reverse_price_history[0]
                 
         else:
             self.reverse_price_history[-1] = float(self.from_coin_price)
-            prev_close = 1
-            for close in self.reverse_price_history:                           
-                if close > prev_close:
-                    AUC = K * (close - prev_close) + (1 - K) * AUC
-                    ADC = (1 -K) * ADC
+            #prev_close = 1
+            #for close in self.reverse_price_history:                           
+             #   if close > prev_close:
+              #      AUC = K * (close - prev_close) + (1 - K) * AUC
+               #     ADC = (1 -K) * ADC
                         
-                else:
-                    AUC = (1 - K) * AUC
-                    ADC = K * (prev_close - close) + (1 - K) * ADC
-                prev_close = close
+                #else:
+                 #   AUC = (1 - K) * AUC
+               #     ADC = K * (prev_close - close) + (1 - K) * ADC
+                #prev_close = close
+            if self.reverse_price_history[-1] > self.reverse_price_history[-2]:
+                AUC = K * (self.reverse_price_history[-1] - self.reverse_price_history[-2]) + (1 - K) * AUC
+                ADC = (1 -K) * ADC
+            else:
+                AUC = (1 - K) * AUC
+                ADC = K * (self.reverse_price_history[-2] - self.reverse_price_history[-1]) + (1 - K) * ADC
 
         
         Val_70 = (init_rsi_length - 1) * (ADC * 70 / 30 - AUC)
