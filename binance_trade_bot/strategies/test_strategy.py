@@ -208,7 +208,7 @@ class Strategy(AutoTrader):
                 
                 elif self.from_coin_direction > self.dir_threshold:
                     print("")
-                    self.logger.info("!!! FOMO sell !!!")
+                    self.logger.info("!!! FOMO buy !!!")
                 
                 else:
                     print("")
