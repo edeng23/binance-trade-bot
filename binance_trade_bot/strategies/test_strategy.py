@@ -38,8 +38,8 @@ class Strategy(AutoTrader):
         self.to_coin_price = 0
         self.from_coin_direction = 0
         self.to_coin_direction = 0
-        self.reverse_price_history = []
-        self.rsi_price_history = []
+        self.reverse_price_history = [0]
+        self.rsi_price_history = [0]
         self.panicked = False
         self.jumpable_coins = 0
         self.pre_rsi = 0
