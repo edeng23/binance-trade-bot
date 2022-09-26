@@ -93,7 +93,7 @@ class Strategy(AutoTrader):
         # stopped. Not logging though to reduce log size.
         print(
             f"{self.manager.now().replace(microsecond=0)} - " ,
-            f"Threshold: {round(self.dir_threshold - self.from_coin_direction, 3)}% " if self.dir_threshold != 0 else "",
+            f"Threshold: {round(self.from_coin_direction - self.dir_threshold, 3)}% " if self.dir_threshold != 0 else "",
             f"Long position " if not self.panicked else "Short position ",
             f"Current ratio weight: {self.auto_weight} ",
             f"Current coin: {current_coin + self.config.BRIDGE} with RSI: {round(self.rv_rsi, 3)} price direction: {round(self.from_coin_direction, 3)}% ",
@@ -164,7 +164,7 @@ class Strategy(AutoTrader):
                 self.panicked = True
                 can_sell = False
                 
-                if balance and balance * self.from_coin_price > self.manager.get_min_notional(current_coin.symbol, self.config.BRIDGE.symbol):
+                if balance and balance * self.from_coin_price > self.manager.get_min_notional(current_coin, self.config.BRIDGE.symbol):
                     can_sell = True
 
                 if not can_sell:
@@ -213,7 +213,7 @@ class Strategy(AutoTrader):
                         
                 self.panicked = False
 
-                if self.manager.buy_alt(current_coin.symbol, self.config.BRIDGE, self.from_coin_price) is None:
+                if self.manager.buy_alt(current_coin, self.config.BRIDGE, self.from_coin_price) is None:
                     self.logger.info("Couldn't buy, going back to panic mode...")
                     self.panicked = True
 
