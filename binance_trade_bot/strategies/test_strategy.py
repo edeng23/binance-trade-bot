@@ -95,15 +95,16 @@ class Strategy(AutoTrader):
         # stopped. Not logging though to reduce log size.
         print(
             f"{self.manager.now().replace(microsecond=0)} - " ,
-            f"Threshold: {round(self.from_coin_direction - self.dir_threshold, 3)}% " if self.dir_threshold != 0 else "",
-            f"Bottom: {round(self.active_threshold, 4)}{self.config.BRIDGE} " if not self.panicked else "Top: {round(self.active_threshold, 4)}{self.config.BRIDGE} ",
-            f"Long position " if not self.panicked else "Short position ",
+            f"Threshold: {round(self.from_coin_direction - self.dir_threshold, 3)}% " if self.dir_threshold != 0 else f"",
+            f"Bottom: {round(self.active_threshold, 4) + self.config.BRIDGE} " if not self.panicked else f"Top: {round(self.active_threshold, 4) + self.config.BRIDGE} ",
+            f"Long position " if not self.panicked else f"Short position ",
             f"Current ratio weight: {self.auto_weight} ",
             f"Current coin: {current_coin + self.config.BRIDGE} with RSI: {round(self.rv_rsi, 3)} price direction: {round(self.from_coin_direction, 3)}% ",
-            f"bullish " if self.rv_slope >= 0 else "bearish ",
-            f"Next coin: {self.rsi_coin} with RSI: {round(self.rsi, 3)} price direction: {round(self.to_coin_direction, 3)}% " if self.rsi else "",
-            f"bullish " if self.slope >= 0 and self.rsi else "",
-            f"bearish " if self.slope < 0 and self.rsi else "",
+            f"bullish " if self.rv_slope >= 0 else f"bearish ",
+            f"Next coin: {self.rsi_coin} with RSI: {round(self.rsi, 3)} price direction: {round(self.to_coin_direction, 3)}% " if self.rsi else f"",
+            f"bullish " if self.slope >= 0 and self.rsi else f"",
+            f"bearish " if self.slope < 0 and self.rsi else f"",
+            f"30: {self.Res_30} 50: {self.Res_50} 70: {self.Res_70} ",
             end='\r',
         )
 	
