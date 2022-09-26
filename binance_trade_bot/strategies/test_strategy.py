@@ -483,14 +483,16 @@ class Strategy(AutoTrader):
                 
         else:
             self.reverse_price_history[-1] = self.from_coin_price
-            self.reverse_price_history.insert(0, 1)
-            for close in self.reverse_price_history[1:]:                           
-                if self.reverse_price_history[-1] > self.reverse_price_history[-2]:
+            prev_close = 1
+            for close in self.reverse_price_history:                           
+                if close > prev_close:
                     AUC = K * (self.reverse_price_history[-1] - self.reverse_price_history[-2]) + (1 - K) * AUC
                     ADC = (1 -K) * ADC
+                    prev_close = close
                 else:
                     AUC = (1 - K) * AUC
                     ADC = K * (self.reverse_price_history[-2] - self.reverse_price_history[-1]) + (1 - K) * ADC
+                    prev_close = close
                         
             del self.reverse_price_history[0]
         
