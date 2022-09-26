@@ -97,14 +97,14 @@ class Strategy(AutoTrader):
             f"{self.manager.now().strftime('%Y-%m-%d %H:%M:%S')} - " ,
             f"Long " if not self.panicked else f"Short ",
             f"Threshold: {round(self.from_coin_direction - self.dir_threshold, 3)}% ",
-            f"Bottom: {round(self.active_threshold, 5)} " if not self.panicked else f"Top: {round(self.active_threshold, 5)} ",
+            f"Bottom: {self.active_threshold} " if not self.panicked else f"Top: {self.active_threshold} ",
             f"Current ratio weight: {self.auto_weight} ",
             f"Current coin: {current_coin} with RSI: {round(self.rv_rsi, 3)} price direction: {round(self.from_coin_direction, 3)}% ",
             f"bullish " if self.rv_slope >= 0 else f"bearish ",
             f"Next coin: {self.rsi_coin} with RSI: {round(self.rsi, 3)} price direction: {round(self.to_coin_direction, 3)}% " if self.rsi else f"",
             f"bullish " if self.slope >= 0 and self.rsi else f"",
             f"bearish " if self.slope < 0 and self.rsi else f"",
-            f"30: {round(self.Res_30, 5)} 50: {round(self.Res_50, 5)} 70: {round(self.Res_70, 5)} ",
+            f"30: {self.Res_30} 50: {self.Res_50} 70: {self.Res_70} ",
             end='\r',
         )
 	
@@ -164,6 +164,7 @@ class Strategy(AutoTrader):
                 else:
                     print("")
                     self.logger.info("!!! Selling high !!!")
+                    self.from_coin_price = self.active_threshold
 
                 self.panicked = True
                 can_sell = False
@@ -214,6 +215,7 @@ class Strategy(AutoTrader):
                 else:
                     print("")
                     self.logger.info("!!! Buying low !!!")
+                    self.from_coin_price = self.active_threshold
                         
                 self.panicked = False
 
@@ -502,6 +504,11 @@ class Strategy(AutoTrader):
             self.Res_30 = self.reverse_price_history[-1] + Val_30
         else:
             self.Res_30 = self.reverse_price_history[-1] + (Val_30 * 70 / 30)
+        
+        d = abs(decimal.Decimal(str(self.reverse_price_history[-1])).as_tuple().exponent)
+        self.Res_30 = round(self.Res_30, d)
+        self.Res_50 = round(self.Res_50, d)
+        self.Res_70 = round(self.Res_70, d)
 
         if len(self.reverse_price_history) >= init_rsi_length:
             rv_closes = numpy.array(self.reverse_price_history)
