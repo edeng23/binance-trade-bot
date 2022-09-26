@@ -468,7 +468,7 @@ class Strategy(AutoTrader):
             rev_prices.append(rev_price)
                 
         if not self.reverse_price_history[0] == rev_prices[0]:  
-            self.reverse_price_history = [1]        
+            self.reverse_price_history = [self.reverse_price_history[-1]]
             for result in self.manager.binance_client.get_historical_klines(f"{current_coin_symbol}{self.config.BRIDGE_SYMBOL}", rsi_string, rsi_start_date_str, rsi_end_date_str, limit=init_rsi_length*5):                           
                 rsi_price = float(result[1])
                 self.reverse_price_history.append(rsi_price)
@@ -480,28 +480,21 @@ class Strategy(AutoTrader):
                 AUC = (1 - K) * AUC
                 ADC = K * (self.reverse_price_history[-2] - self.reverse_price_history[-1]) + (1 - K) * ADC
         
-            del self.reverse_price_history[0]
+            #del self.reverse_price_history[0]
                 
         else:
             self.reverse_price_history[-1] = float(self.from_coin_price)
-            #prev_close = 1
-            #for close in self.reverse_price_history:                           
-             #   if close > prev_close:
-              #      AUC = K * (close - prev_close) + (1 - K) * AUC
-               #     ADC = (1 -K) * ADC
+            prev_close = self.reverse_price_history[0]
+            for close in self.reverse_price_history:                           
+                if close > prev_close:
+                    AUC = K * (close - prev_close) + (1 - K) * AUC
+                    ADC = (1 -K) * ADC
                         
-                #else:
-                 #   AUC = (1 - K) * AUC
-               #     ADC = K * (prev_close - close) + (1 - K) * ADC
-                #prev_close = close
-            if self.reverse_price_history[-1] > self.reverse_price_history[-2]:
-                AUC = K * (self.reverse_price_history[-1] - self.reverse_price_history[-2]) + (1 - K) * AUC
-                ADC = (1 -K) * ADC
-            else:
-                AUC = (1 - K) * AUC
-                ADC = K * (self.reverse_price_history[-2] - self.reverse_price_history[-1]) + (1 - K) * ADC
-
-        
+                else:
+                    AUC = (1 - K) * AUC
+                    ADC = K * (prev_close - close) + (1 - K) * ADC
+                prev_close = close
+       
         Val_70 = (init_rsi_length - 1) * (ADC * 70 / 30 - AUC)
         Val_50 = (init_rsi_length - 1) * (ADC - AUC)
         Val_30 = (init_rsi_length - 1) * (ADC * 30 / 70 - AUC)
