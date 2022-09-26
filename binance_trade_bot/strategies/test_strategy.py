@@ -494,14 +494,14 @@ class Strategy(AutoTrader):
         if Val_70 >= 0:
             self.Res_70 = self.reverse_price_history[-1] + Val_70
         else:
-            self.Res_70 = self.reverse_price_history[-1] + Val_70 * 30 / 70
+            self.Res_70 = self.reverse_price_history[-1] + (Val_70 * 30 / 70)
                            
         self.Res_50 = self.reverse_price_history[-1] + Val_50
                            
         if Val_30 >= 0:
             self.Res_30 = self.reverse_price_history[-1] + Val_30
         else:
-            self.Res_30 = self.reverse_price_history[-1] + Val_30 * 70 / 30
+            self.Res_30 = self.reverse_price_history[-1] + (Val_30 * 70 / 30)
 
         if len(self.reverse_price_history) >= init_rsi_length:
             rv_closes = numpy.array(self.reverse_price_history)
