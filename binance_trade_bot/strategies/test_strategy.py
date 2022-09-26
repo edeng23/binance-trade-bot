@@ -339,7 +339,7 @@ class Strategy(AutoTrader):
 
                 if from_coin_symbol not in price_history.keys():
                     price_history[from_coin_symbol] = []
-                    for result in  self.manager.binance_client.get_historical_klines(f"{from_coin_symbol}{self.config.BRIDGE_SYMBOL}", "1m", start_date_str, end_date_str, limit=init_weight*2):
+                    for result in  self.manager.binance_client.get_historical_klines(f"{from_coin_symbol}{self.config.BRIDGE_SYMBOL}", "1m", start_date_str, end_date_str, limit=1000):
                         price = float(result[1])
                         price_history[from_coin_symbol].append(price)
 
@@ -347,7 +347,7 @@ class Strategy(AutoTrader):
                     to_coin_symbol = pair.to_coin.symbol
                     if to_coin_symbol not in price_history.keys():
                         price_history[to_coin_symbol] = []
-                        for result in self.manager.binance_client.get_historical_klines(f"{to_coin_symbol}{self.config.BRIDGE_SYMBOL}", "1m", start_date_str, end_date_str, limit=init_weight*2):                           
+                        for result in self.manager.binance_client.get_historical_klines(f"{to_coin_symbol}{self.config.BRIDGE_SYMBOL}", "1m", start_date_str, end_date_str, limit=1000):                           
                            price = float(result[1])
                            price_history[to_coin_symbol].append(price)
 
@@ -378,7 +378,7 @@ class Strategy(AutoTrader):
         Calculate the RSI for the next best coin.
         """
 		
-        init_rsi_length = self.config.RSI_LENGTH
+        init_rsi_length = int(self.config.RSI_LENGTH)
         rsi_type = self.config.RSI_CANDLE_TYPE
         rsi_string = str(self.config.RSI_CANDLE_TYPE) + 'm'
                         
@@ -413,7 +413,7 @@ class Strategy(AutoTrader):
             to_coin_symbol = best_pair.to_coin_id
             check_prices = []
         
-            for checks in self.manager.binance_client.get_historical_klines(f"{to_coin_symbol}{self.config.BRIDGE_SYMBOL}", rsi_string, rsi_start_date_str, rsi_check_str, limit=init_rsi_length*5):                           
+            for checks in self.manager.binance_client.get_historical_klines(f"{to_coin_symbol}{self.config.BRIDGE_SYMBOL}", rsi_string, rsi_start_date_str, rsi_check_str, limit=1000):                           
                 check_price = float(checks[1])
                 check_prices.append(check_price)
                 
@@ -425,7 +425,7 @@ class Strategy(AutoTrader):
                 self.rsi_coin = self.db.get_coin(to_coin_symbol)
                 self.rsi_price_history = []
 
-                for result in self.manager.binance_client.get_historical_klines(f"{to_coin_symbol}{self.config.BRIDGE_SYMBOL}", rsi_string, rsi_start_date_str, rsi_end_date_str, limit=init_rsi_length*5):                           
+                for result in self.manager.binance_client.get_historical_klines(f"{to_coin_symbol}{self.config.BRIDGE_SYMBOL}", rsi_string, rsi_start_date_str, rsi_end_date_str, limit=1000):                           
                     rsi_price = float(result[1])
                     self.rsi_price_history.append(rsi_price)
                         
@@ -477,31 +477,31 @@ class Strategy(AutoTrader):
             self.reverse_price_history[-1] = float(self.from_coin_price)
         
         prev_close = self.reverse_price_history[0]
-        for close in self.reverse_price_history:                           
+        for close in self.reverse_price_history[1:]:                           
             if close > prev_close:
                 AUC = K * (close - prev_close) + (1 - K) * AUC
-                ADC = (1 -K) * ADC
+                ADC = (1 - K) * ADC
                         
             else:
                 AUC = (1 - K) * AUC
                 ADC = K * (prev_close - close) + (1 - K) * ADC
             prev_close = close
        
-            Val_70 = (init_rsi_length - 1) * (ADC * 70 / 30 - AUC)
-            Val_50 = (init_rsi_length - 1) * (ADC - AUC)
-            Val_30 = (init_rsi_length - 1) * (ADC * 30 / 70 - AUC)
+        Val_70 = (init_rsi_length - 1) * (ADC * 70 / 30 - AUC)
+        Val_50 = (init_rsi_length - 1) * (ADC - AUC)
+        Val_30 = (init_rsi_length - 1) * (ADC * 30 / 70 - AUC)
         
-            if Val_70 >= 0:
-                self.Res_70 = close + Val_70
-            else:
-                self.Res_70 = close + Val_70 * 30 / 70
+        if Val_70 >= 0:
+            self.Res_70 = self.reverse_price_history[-1] + Val_70
+        else:
+            self.Res_70 = self.reverse_price_history[-1] + Val_70 * 30 / 70
                            
-            self.Res_50 = close + Val_50
+        self.Res_50 = self.reverse_price_history[-1] + Val_50
                            
-            if Val_30 >= 0:
-                self.Res_30 = close + Val_30
-            else:
-                self.Res_30 = close + Val_30 * 70 / 30
+        if Val_30 >= 0:
+            self.Res_30 = self.reverse_price_history[-1] + Val_30
+        else:
+            self.Res_30 = self.reverse_price_history[-1] + Val_30 * 70 / 30
 
         if len(self.reverse_price_history) >= init_rsi_length:
             rv_closes = numpy.array(self.reverse_price_history)
