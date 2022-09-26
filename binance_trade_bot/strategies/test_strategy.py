@@ -60,6 +60,7 @@ class Strategy(AutoTrader):
             self.bridge_scout()
         
         current_coin = self.db.get_current_coin()
+        panic_pair = max(ratio_dict, key=ratio_dict.get)
         
         base_time: datetime = self.manager.now()
         allowed_idle_time = self.reinit_threshold
@@ -131,7 +132,7 @@ class Strategy(AutoTrader):
                         
                  
         if base_time >= self.panic_time and not self.panicked:
-            balance = self.manager.get_currency_balance(current_coin.symbol)
+            balance = self.manager.get_currency_balance(panic_pair.from_coin.symbol)
             dev = talib.STDDEV(numpy.array(self.reverse_price_history), timeperiod=self.config.RSI_LENGTH, nbdev=1)
             stdev = dev[-1]
             stdev = stdev / self.rv_tema * 100
@@ -164,13 +165,13 @@ class Strategy(AutoTrader):
                 self.panicked = True
                 can_sell = False
                 
-                if balance and balance * self.from_coin_price > self.manager.get_min_notional(current_coin, self.config.BRIDGE.symbol):
+                if balance and balance * self.from_coin_price > self.manager.get_min_notional(panic_pair.from_coin.symbol, self.config.BRIDGE.symbol):
                     can_sell = True
 
                 if not can_sell:
                     self.logger.info("Not enough balance, changing to panic mode...")
 
-                elif self.manager.sell_alt(current_coin.symbol, self.config.BRIDGE, self.from_coin_price) is None:
+                elif self.manager.sell_alt(panic_pair.from_coin, self.config.BRIDGE, self.from_coin_price) is None:
                     self.logger.info("Couldn't sell, going back to scouting mode...")
                     self.panicked = False
 
@@ -213,7 +214,7 @@ class Strategy(AutoTrader):
                         
                 self.panicked = False
 
-                if self.manager.buy_alt(current_coin, self.config.BRIDGE, self.from_coin_price) is None:
+                if self.manager.buy_alt(panic_pair.from_coin, self.config.BRIDGE, self.from_coin_price) is None:
                     self.logger.info("Couldn't buy, going back to panic mode...")
                     self.panicked = True
 
