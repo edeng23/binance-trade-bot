@@ -104,7 +104,7 @@ class Strategy(AutoTrader):
             f"Next coin: {self.rsi_coin} with RSI: {round(self.rsi, 3)} price direction: {round(self.to_coin_direction, 3)}% " if self.rsi else f"",
             f"bullish " if self.slope >= 0 and self.rsi else f"",
             f"bearish " if self.slope < 0 and self.rsi else f"",
-            f"30: {self.Res_30} 50: {self.Res_50} 70: {self.Res_70} ",
+            f"30: {round(self.Res_30, 5)} 50: {round(self.Res_50, 5)} 70: {round(self.Res_70, 5)} ",
             end='\r',
         )
 	
