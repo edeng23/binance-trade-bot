@@ -38,8 +38,8 @@ class Strategy(AutoTrader):
         self.to_coin_price = 0
         self.from_coin_direction = 0
         self.to_coin_direction = 0
-        self.reverse_price_history = [0]
-        self.rsi_price_history = [0]
+        self.reverse_price_history = []
+        self.rsi_price_history = []
         self.panicked = False
         self.jumpable_coins = 0
         self.pre_rsi = 0
@@ -468,48 +468,40 @@ class Strategy(AutoTrader):
             rev_prices.append(rev_price)
                 
         if not self.reverse_price_history[0] == rev_prices[0]:  
-            self.reverse_price_history = [self.reverse_price_history[-1]]
+            self.reverse_price_history = []
             for result in self.manager.binance_client.get_historical_klines(f"{current_coin_symbol}{self.config.BRIDGE_SYMBOL}", rsi_string, rsi_start_date_str, rsi_end_date_str, limit=init_rsi_length*5):                           
                 rsi_price = float(result[1])
                 self.reverse_price_history.append(rsi_price)
                 
-            if self.reverse_price_history[-1] > self.reverse_price_history[-2]:
-                AUC = K * (self.reverse_price_history[-1] - self.reverse_price_history[-2]) + (1 - K) * AUC
-                ADC = (1 -K) * ADC
-            else:
-                AUC = (1 - K) * AUC
-                ADC = K * (self.reverse_price_history[-2] - self.reverse_price_history[-1]) + (1 - K) * ADC
-        
-            #del self.reverse_price_history[0]
-                
         else:
             self.reverse_price_history[-1] = float(self.from_coin_price)
-            prev_close = self.reverse_price_history[0]
-            for close in self.reverse_price_history:                           
-                if close > prev_close:
-                    AUC = K * (close - prev_close) + (1 - K) * AUC
-                    ADC = (1 -K) * ADC
-                        
-                else:
-                    AUC = (1 - K) * AUC
-                    ADC = K * (prev_close - close) + (1 - K) * ADC
-                prev_close = close
-       
-        Val_70 = (init_rsi_length - 1) * (ADC * 70 / 30 - AUC)
-        Val_50 = (init_rsi_length - 1) * (ADC - AUC)
-        Val_30 = (init_rsi_length - 1) * (ADC * 30 / 70 - AUC)
         
-        if Val_70 >= 0:
-            self.Res_70 = self.reverse_price_history[-1] + Val_70
-        else:
-            self.Res_70 = self.reverse_price_history[-1] + Val_70 * 30 / 70
+        prev_close = self.reverse_price_history[0]
+        for close in self.reverse_price_history:                           
+            if close > prev_close:
+                AUC = K * (close - prev_close) + (1 - K) * AUC
+                ADC = (1 -K) * ADC
+                        
+            else:
+                AUC = (1 - K) * AUC
+                ADC = K * (prev_close - close) + (1 - K) * ADC
+            prev_close = close
+       
+            Val_70 = (init_rsi_length - 1) * (ADC * 70 / 30 - AUC)
+            Val_50 = (init_rsi_length - 1) * (ADC - AUC)
+            Val_30 = (init_rsi_length - 1) * (ADC * 30 / 70 - AUC)
+        
+            if Val_70 >= 0:
+                self.Res_70 = close + Val_70
+            else:
+                self.Res_70 = close + Val_70 * 30 / 70
                            
-        self.Res_50 = self.reverse_price_history[-1] + Val_50
+            self.Res_50 = close + Val_50
                            
-        if Val_30 >= 0:
-            self.Res_30 = self.reverse_price_history[-1] + Val_30
-        else:
-            self.Res_30 = self.reverse_price_history[-1] + Val_30 * 70 / 30
+            if Val_30 >= 0:
+                self.Res_30 = close + Val_30
+            else:
+                self.Res_30 = close + Val_30 * 70 / 30
 
         if len(self.reverse_price_history) >= init_rsi_length:
             rv_closes = numpy.array(self.reverse_price_history)
