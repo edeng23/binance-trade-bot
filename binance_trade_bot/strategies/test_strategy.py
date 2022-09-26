@@ -514,6 +514,6 @@ class Strategy(AutoTrader):
             self.rv_rsi = rv_rsi[-1]
             self.rv_pre_rsi = rv_rsi[-2]
             self.rv_tema = rv_tema[-1]
-            self.from_coin_direction = int(self.from_coin_price) / self.rv_tema * 100 - 100
+            self.from_coin_direction = float(self.from_coin_price) / self.rv_tema * 100 - 100
             #self.logger.info(f"Finished ratio init...")
 
