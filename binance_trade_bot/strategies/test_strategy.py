@@ -96,7 +96,7 @@ class Strategy(AutoTrader):
         print(
             f"{self.manager.now().replace(microsecond=0)} - " ,
             f"Threshold: {round(self.from_coin_direction - self.dir_threshold, 3)}% " if self.dir_threshold != 0 else "",
-            f"Bottom: {self.active_threshold} {self.config.BRIDGE} " if self.active_threshold != 0 else "",
+            f"Bottom: {self.active_threshold} {self.config.BRIDGE} ",
             f"Long position " if not self.panicked else "Short position ",
             f"Current ratio weight: {self.auto_weight} ",
             f"Current coin: {current_coin + self.config.BRIDGE} with RSI: {round(self.rv_rsi, 3)} price direction: {round(self.from_coin_direction, 3)}% ",
