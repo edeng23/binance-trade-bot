@@ -4,6 +4,7 @@ import random
 import sys
 import talib
 import numpy
+import decimal
 import statistics as st
 from datetime import datetime, timedelta
 
