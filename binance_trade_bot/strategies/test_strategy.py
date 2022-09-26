@@ -60,6 +60,7 @@ class Strategy(AutoTrader):
             self.bridge_scout()
         
         current_coin = self.db.get_current_coin()
+        ratio_dict, prices = self._get_ratios(current_coin, self.from_coin_price)
         panic_pair = max(ratio_dict, key=ratio_dict.get)
         
         base_time: datetime = self.manager.now()
