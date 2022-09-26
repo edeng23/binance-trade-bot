@@ -483,7 +483,7 @@ class Strategy(AutoTrader):
             del self.reverse_price_history[0]
                 
         else:
-            self.reverse_price_history[-1] = self.from_coin_price
+            self.reverse_price_history[-1] = float(self.from_coin_price)
             prev_close = 1
             for close in self.reverse_price_history:                           
                 if close > prev_close:
