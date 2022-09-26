@@ -487,9 +487,9 @@ class Strategy(AutoTrader):
                 ADC = K * (prev_close - close) + (1 - K) * ADC
             prev_close = close
        
-        Val_70 = (init_rsi_length - 1) * (ADC * 70 / 30 - AUC)
+        Val_70 = (init_rsi_length - 1) * (ADC*70/30 - AUC)
         Val_50 = (init_rsi_length - 1) * (ADC - AUC)
-        Val_30 = (init_rsi_length - 1) * (ADC * 30 / 70 - AUC)
+        Val_30 = (init_rsi_length - 1) * (ADC*30/70 - AUC)
         
         if Val_70 >= 0:
             self.Res_70 = self.reverse_price_history[-1] + Val_70
