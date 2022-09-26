@@ -472,17 +472,17 @@ class Strategy(AutoTrader):
                 rsi_price = float(result[1])
                 self.reverse_price_history.append(rsi_price)
                 
+                if self.reverse_price_history[-1] > self.reverse_price_history[-2]:
+                    AUC = K * (self.reverse_price_history[-1] - self.reverse_price_history[-2]) + (1 - K) * AUC
+                    ADC = (1 -K) * ADC
+                else:
+                    AUC = (1 - K) * AUC
+                    ADC = K * (self.reverse_price_history[-2] - self.reverse_price_history[-1]) + (1 - K) * ADC
+        
+            del self.reverse_price_history[0]
+                
         else:
             self.reverse_price_history[-1] = self.from_coin_price
-           
-        if self.reverse_price_history[-1] > self.reverse_price_history[-2]:
-            AUC = K * (self.reverse_price_history[-1] - self.reverse_price_history[-2]) + (1 - K) * AUC
-            ADC = (1 -K) * ADC
-        else:
-            AUC = (1 - K) * AUC
-            ADC = K * (self.reverse_price_history[-2] - self.reverse_price_history[-1]) + (1 - K) * ADC
-        
-        del self.reverse_price_history[0]
         
         Val_70 = (init_rsi_length - 1) * (ADC * 70 / 30 - AUC)
         Val_50 = (init_rsi_length - 1) * (ADC - AUC)
