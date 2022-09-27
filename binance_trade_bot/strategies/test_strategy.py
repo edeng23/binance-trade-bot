@@ -195,14 +195,14 @@ class Strategy(AutoTrader):
             stdev = stdev / self.rv_tema * 100
             self.dir_threshold = stdev ** 3 / 100 + stdev
 
-            if self.from_coin_price < self.Res_low < self.active_threshold:
-                self.active_threshold = self.Res_low
+            if self.rv_rsi < 30 and self.Res_low < self.active_threshold:
+                self.active_threshold = self.Res_float
 
-            if self.from_coin_price < self.Res_mid < self.active_threshold:
-                self.active_threshold = self.Res_mid
+            if 30 < self.rv_rsi < 50 and self.Res_mid < self.active_threshold:
+                self.active_threshold = self.Res_float
 
-            if self.from_coin_price < self.Res_high < self.active_threshold:
-                self.active_threshold = self.Res_high
+            if 50 < self.rv_rsi < 70 and self.Res_high < self.active_threshold:
+                self.active_threshold = self.Res_float
 
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
             
