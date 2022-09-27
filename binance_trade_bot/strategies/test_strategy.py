@@ -28,9 +28,10 @@ class Strategy(AutoTrader):
         self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
         self.active_threshold = 0
         self.dir_threshold = 0
-        self.Res_70 = 0
-        self.Res_50 = 0
-        self.Res_30 = 0
+        self.Res_high = 0
+        self.Res_mid = 0
+        self.Res_low = 0
+        self.Res_float = 0
         self.tema = 0
         self.rv_tema = 0
         self.slope = 0
@@ -105,7 +106,7 @@ class Strategy(AutoTrader):
             f"Next coin: {self.rsi_coin} with RSI: {round(self.rsi, 1)} price direction: {round(self.to_coin_direction, 3)}% " if self.rsi else f"",
             f"bullish " if self.slope >= 0 and self.rsi else f"",
             f"bearish " if self.slope < 0 and self.rsi else f"",
-            f"30: {self.Res_30} 50: {self.Res_50} 70: {self.Res_70} ",
+            f"Low: {self.Res_low} Mid: {self.Res_mid} High: {self.Res_high} Float: {self.Res_float} ",
             end='\r',
         )
 	
@@ -142,14 +143,14 @@ class Strategy(AutoTrader):
             stdev = stdev / self.rv_tema * 100
             self.dir_threshold = (stdev ** 3 / 100 + stdev) * -1
 
-            if self.from_coin_price > self.Res_70 > self.active_threshold:
-                self.active_threshold = self.Res_70
+            if self.rv_rsi >= 70 and self.Res_high > self.active_threshold:
+                self.active_threshold = self.Res_float
 
-            if self.from_coin_price > self.Res_50 > self.active_threshold:
-                self.active_threshold = self.Res_50
+            if 70 > self.rv_rsi >= 50 and self.Res_mid > self.active_threshold:
+                self.active_threshold = self.Res_float
 
-            if self.from_coin_price > self.Res_30 > self.active_threshold:
-                self.active_threshold = self.Res_30
+            if 50 > self.rv_rsi >= 30 and self.Res_low > self.active_threshold:
+                self.active_threshold = self.Res_float
 
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
             
@@ -194,14 +195,14 @@ class Strategy(AutoTrader):
             stdev = stdev / self.rv_tema * 100
             self.dir_threshold = stdev ** 3 / 100 + stdev
 
-            if self.from_coin_price < self.Res_30 < self.active_threshold:
-                self.active_threshold = self.Res_30
+            if self.from_coin_price < self.Res_low < self.active_threshold:
+                self.active_threshold = self.Res_low
 
-            if self.from_coin_price < self.Res_50 < self.active_threshold:
-                self.active_threshold = self.Res_50
+            if self.from_coin_price < self.Res_mid < self.active_threshold:
+                self.active_threshold = self.Res_mid
 
-            if self.from_coin_price < self.Res_70 < self.active_threshold:
-                self.active_threshold = self.Res_70
+            if self.from_coin_price < self.Res_high < self.active_threshold:
+                self.active_threshold = self.Res_high
 
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
             
@@ -482,37 +483,6 @@ class Strategy(AutoTrader):
         else:
             self.reverse_price_history[-1] = float(self.from_coin_price)
         
-        prev_close = self.reverse_price_history[0]
-        for close in self.reverse_price_history[1:]:                           
-            if close > prev_close:
-                AUC = K * (close - prev_close) + (1 - K) * AUC
-                ADC = (1 - K) * ADC
-                        
-            else:
-                AUC = (1 - K) * AUC
-                ADC = K * (prev_close - close) + (1 - K) * ADC
-            prev_close = close
-       
-        Val_70 = (init_rsi_length - 1) * (ADC*70/30 - AUC)
-        Val_50 = (init_rsi_length - 1) * (ADC - AUC)
-        Val_30 = (init_rsi_length - 1) * (ADC*30/70 - AUC)
-        
-        if Val_70 >= 0:
-            self.Res_70 = self.reverse_price_history[-1] + Val_70
-        else:
-            self.Res_70 = self.reverse_price_history[-1] + (Val_70 * 30 / 70)
-                           
-        self.Res_50 = self.reverse_price_history[-1] + Val_50
-                           
-        if Val_30 >= 0:
-            self.Res_30 = self.reverse_price_history[-1] + Val_30
-        else:
-            self.Res_30 = self.reverse_price_history[-1] + (Val_30 * 70 / 30)
-        
-        self.Res_30 = round(self.Res_30, d)
-        self.Res_50 = round(self.Res_50, d)
-        self.Res_70 = round(self.Res_70, d)
-
         if len(self.reverse_price_history) >= init_rsi_length:
             rv_closes = numpy.array(self.reverse_price_history)
             rv_rsi = talib.RSI(rv_closes, init_rsi_length)
@@ -525,5 +495,44 @@ class Strategy(AutoTrader):
             self.rv_pre_rsi = rv_rsi[-2]
             self.rv_tema = round(rv_tema[-1], d)
             self.from_coin_direction = float(self.from_coin_price) / self.rv_tema * 100 - 100
-            #self.logger.info(f"Finished ratio init...")
+
+        prev_close = self.reverse_price_history[0]
+        for close in self.reverse_price_history[1:]:                           
+            if close > prev_close:
+                AUC = K * (close - prev_close) + (1 - K) * AUC
+                ADC = (1 - K) * ADC
+                        
+            else:
+                AUC = (1 - K) * AUC
+                ADC = K * (prev_close - close) + (1 - K) * ADC
+            prev_close = close
+       
+        Val_high = (init_rsi_length - 1) * (ADC * 80/20 - AUC)
+        Val_mid = (init_rsi_length - 1) * (ADC - AUC)
+        Val_low = (init_rsi_length - 1) * (ADC * 20/80 - AUC)
+        Val_float = (init_rsi_length - 1) * (ADC * self.rv_rsi / (100 - self.rv_rsi) - AUC)
+        
+        if Val_high >= 0:
+            self.Res_high = self.reverse_price_history[-1] + Val_high
+        else:
+            self.Res_high = self.reverse_price_history[-1] + (Val_high * 20/80)
+                           
+        self.Res_mid = self.reverse_price_history[-1] + Val_mid
+                           
+        if Val_low >= 0:
+            self.Res_low = self.reverse_price_history[-1] + Val_low
+        else:
+            self.Res_low = self.reverse_price_history[-1] + (Val_low * 80/20)
+
+        if Val_float >= 0:
+            self.Res_float = self.reverse_price_history[-1] + Val_float
+        else:
+            self.Res_float = self.reverse_price_history[-1] + (Val_float * (100/self.rv_rsi - 1))
+        
+        self.Res_low = round(self.Res_low, d)
+        self.Res_mid = round(self.Res_mid, d)
+        self.Res_high = round(self.Res_high, d)
+        self.Res_float = round(self.Res_float, d)
+
+        
 
