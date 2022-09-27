@@ -100,12 +100,12 @@ class Strategy(AutoTrader):
             f"Threshold: {round(self.from_coin_direction - self.dir_threshold, 3)}% " if self.dir_threshold != 0 else f"",
             f"Bottom: {self.active_threshold} " if not self.panicked else f"Top: {self.active_threshold} ",
             f"Current ratio weight: {self.auto_weight} ",
-            f"Current coin: {current_coin} with RSI: {round(self.rv_rsi, 3)} price direction: {round(self.from_coin_direction, 3)}% ",
+            f"Current coin: {current_coin} with RSI: {round(self.rv_rsi, 1)} price direction: {round(self.from_coin_direction, 3)}% ",
             f"bullish " if self.rv_slope >= 0 else f"bearish ",
-            f"Next coin: {self.rsi_coin} with RSI: {round(self.rsi, 3)} price direction: {round(self.to_coin_direction, 3)}% " if self.rsi else f"",
+            f"Next coin: {self.rsi_coin} with RSI: {round(self.rsi, 1)} price direction: {round(self.to_coin_direction, 3)}% " if self.rsi else f"",
             f"bullish " if self.slope >= 0 and self.rsi else f"",
             f"bearish " if self.slope < 0 and self.rsi else f"",
-            #f"30: {self.Res_30} 50: {self.Res_50} 70: {self.Res_70} ",
+            f"30: {self.Res_30} 50: {self.Res_50} 70: {self.Res_70} ",
             end='\r',
         )
 	
@@ -161,6 +161,7 @@ class Strategy(AutoTrader):
                 elif self.from_coin_direction < self.dir_threshold:
                     print("")
                     self.logger.info("!!! Panic sell !!!")
+                    self.from_coin_price = self.rv_tema
                 
                 else:
                     print("")
@@ -212,6 +213,7 @@ class Strategy(AutoTrader):
                 elif self.from_coin_direction > self.dir_threshold:
                     print("")
                     self.logger.info("!!! FOMO buy !!!")
+                    self.from_coin_price = self.rv_tema
                 
                 else:
                     print("")
@@ -410,7 +412,8 @@ class Strategy(AutoTrader):
         ratio_dict = {k: v for k, v in ratio_dict.items() if v > 0}
         
         self.jumpable_coins = len(ratio_dict)
-	
+	d = abs(decimal.Decimal(str(self.reverse_price_history[-1])).as_tuple().exponent)
+
         if ratio_dict:	
             best_pair = max(ratio_dict, key=ratio_dict.get)
             to_coin_symbol = best_pair.to_coin_id
@@ -447,7 +450,7 @@ class Strategy(AutoTrader):
                 self.slope = (short_slope[-1] + long_slope[-1]) / 2
                 self.rsi = rsi[-1]
                 self.pre_rsi = rsi[-2]
-                self.tema = tema[-1]
+                self.tema = round(tema[-1], d)
                 self.to_coin_direction = self.to_coin_price / self.tema * 100 - 100
                 #self.logger.info(f"Finished ratio init...")
 
@@ -506,7 +509,6 @@ class Strategy(AutoTrader):
         else:
             self.Res_30 = self.reverse_price_history[-1] + (Val_30 * 70 / 30)
         
-        d = abs(decimal.Decimal(str(self.reverse_price_history[-1])).as_tuple().exponent)
         self.Res_30 = round(self.Res_30, d)
         self.Res_50 = round(self.Res_50, d)
         self.Res_70 = round(self.Res_70, d)
@@ -521,7 +523,7 @@ class Strategy(AutoTrader):
             self.rv_slope = (rv_short_slope[-1] + rv_long_slope[-1]) / 2
             self.rv_rsi = rv_rsi[-1]
             self.rv_pre_rsi = rv_rsi[-2]
-            self.rv_tema = rv_tema[-1]
+            self.rv_tema = round(rv_tema[-1], d)
             self.from_coin_direction = float(self.from_coin_price) / self.rv_tema * 100 - 100
             #self.logger.info(f"Finished ratio init...")
 
