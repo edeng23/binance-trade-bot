@@ -70,7 +70,7 @@ class Strategy(AutoTrader):
         allowed_rsi_time = self.reinit_rsi
         allowed_rsi_idle_time = self.reinit_idle
         
-        if not self.panicked:
+        if self.panicked:
             self.from_coin_price = self.manager.get_buy_price(current_coin + self.config.BRIDGE)
 
         else:
