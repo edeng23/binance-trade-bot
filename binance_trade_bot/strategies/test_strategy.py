@@ -494,7 +494,7 @@ class Strategy(AutoTrader):
             self.rv_rsi = rv_rsi[-1]
             self.rv_pre_rsi = rv_rsi[-2]
             self.rv_tema = round(rv_tema[-1], d)
-            self.from_coin_direction = float(self.from_coin_price) / self.rv_tema * 100 - 100
+            self.from_coin_direction = self.from_coin_price / self.rv_tema * 100 - 100
 
         prev_close = self.reverse_price_history[0]
         for close in self.reverse_price_history[1:]:                           
