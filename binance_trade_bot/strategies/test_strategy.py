@@ -143,14 +143,14 @@ class Strategy(AutoTrader):
             stdev = stdev / self.rv_tema * 100
             self.dir_threshold = (stdev ** 3 / 100 + stdev) * -1
 
-            if self.rv_rsi >= 70 and self.Res_high > self.active_threshold:
-                self.active_threshold = self.Res_float
+            if self.from_coin_price >= self.Res_high > self.active_threshold:
+                self.active_threshold = self.Res_high
 
-            if 70 > self.rv_rsi >= 50 and self.Res_mid > self.active_threshold:
-                self.active_threshold = self.Res_float
+            if self.from_coin_price >= self.Res_mid > self.active_threshold:
+                self.active_threshold = self.Res_mid
 
-            if 50 > self.rv_rsi >= 30 and self.Res_low > self.active_threshold:
-                self.active_threshold = self.Res_float
+            if self.from_coin_price >= self.Res_low > self.active_threshold:
+                self.active_threshold = self.Res_low
 
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
             
@@ -195,14 +195,14 @@ class Strategy(AutoTrader):
             stdev = stdev / self.rv_tema * 100
             self.dir_threshold = stdev ** 3 / 100 + stdev
 
-            if self.rv_rsi < 30 and self.Res_low < self.active_threshold:
-                self.active_threshold = self.Res_float
+            if self.from_coin_price < self.Res_low < self.active_threshold:
+                self.active_threshold = self.Res_low
 
-            if 30 < self.rv_rsi < 50 and self.Res_mid < self.active_threshold:
-                self.active_threshold = self.Res_float
+            if self.from_coin_price < self.Res_mid < self.active_threshold:
+                self.active_threshold = self.Res_mid
 
-            if 50 < self.rv_rsi < 70 and self.Res_high < self.active_threshold:
-                self.active_threshold = self.Res_float
+            if self.from_coin_price < self.Res_high < self.active_threshold:
+                self.active_threshold = self.Res_high
 
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
             
@@ -389,10 +389,10 @@ class Strategy(AutoTrader):
         rsi_string = str(self.config.RSI_CANDLE_TYPE) + 'm'
                         
         #Binance api allows retrieving max 1000 candles
-        if init_rsi_length > 200:
-            init_rsi_length = 200
+        if init_rsi_length > 20:
+            init_rsi_length = 20
 
-        init_rsi_delta = (init_rsi_length * 5 ) * rsi_type
+        init_rsi_delta = (init_rsi_length * 50 ) * rsi_type
 			
         #self.logger.info(f"Using last {init_rsi_length} candles to initialize RSI")
 
