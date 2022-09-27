@@ -32,8 +32,8 @@ class Strategy(AutoTrader):
         self.Res_mid = 0
         self.Res_low = 0
         self.Res_float = 0
-        self.tema = 0
-        self.rv_tema = 0
+        self.tema = 1
+        self.rv_tema = 1
         self.slope = 0
         self.rv_slope = 0
         self.from_coin_price = 0
