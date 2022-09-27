@@ -507,22 +507,22 @@ class Strategy(AutoTrader):
                 ADC = K * (prev_close - close) + (1 - K) * ADC
             prev_close = close
        
-        Val_high = (init_rsi_length - 1) * (ADC * 80/20 - AUC)
+        Val_high = (init_rsi_length - 1) * (ADC * 70/30 - AUC)
         Val_mid = (init_rsi_length - 1) * (ADC - AUC)
-        Val_low = (init_rsi_length - 1) * (ADC * 20/80 - AUC)
+        Val_low = (init_rsi_length - 1) * (ADC * 30/70 - AUC)
         Val_float = (init_rsi_length - 1) * (ADC * self.rv_rsi / (100 - self.rv_rsi) - AUC)
         
         if Val_high >= 0:
             self.Res_high = self.reverse_price_history[-1] + Val_high
         else:
-            self.Res_high = self.reverse_price_history[-1] + (Val_high * 20/80)
+            self.Res_high = self.reverse_price_history[-1] + (Val_high * 30/70)
                            
         self.Res_mid = self.reverse_price_history[-1] + Val_mid
                            
         if Val_low >= 0:
             self.Res_low = self.reverse_price_history[-1] + Val_low
         else:
-            self.Res_low = self.reverse_price_history[-1] + (Val_low * 80/20)
+            self.Res_low = self.reverse_price_history[-1] + (Val_low * 70/30)
 
         if Val_float >= 0:
             self.Res_float = self.reverse_price_history[-1] + Val_float
