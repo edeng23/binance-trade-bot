@@ -26,6 +26,7 @@ class Strategy(AutoTrader):
         self.initialize_current_coin()
         self.rsi_coin = ""
         self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
+        self.d = 3
         self.active_threshold = 0
         self.dir_threshold = 0
         self.Res_high = 0
@@ -416,7 +417,7 @@ class Strategy(AutoTrader):
         ratio_dict = {k: v for k, v in ratio_dict.items() if v > 0}
         
         self.jumpable_coins = len(ratio_dict)
-        d = abs(decimal.Decimal(str(self.reverse_price_history[-1])).as_tuple().exponent)
+        self.d = abs(decimal.Decimal(str(self.reverse_price_history[-1])).as_tuple().exponent)
 
         if ratio_dict:	
             best_pair = max(ratio_dict, key=ratio_dict.get)
@@ -454,7 +455,7 @@ class Strategy(AutoTrader):
                 self.slope = (short_slope[-1] + long_slope[-1]) / 2
                 self.rsi = rsi[-1]
                 self.pre_rsi = rsi[-2]
-                self.tema = round(tema[-1], d)
+                self.tema = tema[-1] #round(tema[-1], d)
                 self.to_coin_direction = self.to_coin_price / self.tema * 100 - 100
                 #self.logger.info(f"Finished ratio init...")
 
@@ -496,7 +497,7 @@ class Strategy(AutoTrader):
             self.rv_slope = (rv_short_slope[-1] + rv_long_slope[-1]) / 2
             self.rv_rsi = rv_rsi[-1]
             self.rv_pre_rsi = rv_rsi[-2]
-            self.rv_tema = round(rv_tema[-1], d)
+            self.rv_tema = rv_tema[-1] #round(rv_tema[-1], d)
             self.from_coin_direction = self.from_coin_price / self.rv_tema * 100 - 100
 
         prev_close = self.reverse_price_history[0]
@@ -532,10 +533,10 @@ class Strategy(AutoTrader):
         else:
             self.Res_float = self.reverse_price_history[-1] + (Val_float * (100/self.rv_rsi - 1))
         
-        self.Res_low = round(self.Res_low, d)
-        self.Res_mid = round(self.Res_mid, d)
-        self.Res_high = round(self.Res_high, d)
-        self.Res_float = round(self.Res_float, d)
+        #self.Res_low = round(self.Res_low, d)
+        #self.Res_mid = round(self.Res_mid, d)
+        #self.Res_high = round(self.Res_high, d)
+        #self.Res_float = round(self.Res_float, d)
 
         
 
