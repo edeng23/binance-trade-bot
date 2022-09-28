@@ -135,7 +135,7 @@ class Strategy(AutoTrader):
                 self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
                 self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)#(minutes=int(self.config.RSI_CANDLE_TYPE))
                         
-        if base_time >= self.panic_time and self.manager.get_currency_balance(panic_pair.from_coin.symbol) == 0:
+        if base_time >= self.panic_time and self.manager.get_currency_balance(panic_pair.from_coin.symbol) == 0 and not self.panicked:
             self.panicked = True
             self.active_threshold = max(self.reverse_price_history) * 3
         
