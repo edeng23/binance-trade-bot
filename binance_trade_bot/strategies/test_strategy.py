@@ -107,9 +107,9 @@ class Strategy(AutoTrader):
             f"Current coin: {Fore.BLUE}{current_coin}{Style.RESET_ALL} with RSI: {Fore.BLUE}{round(self.rv_rsi, 1)}{Style.RESET_ALL} price direction: {Fore.BLUE}{round(self.from_coin_direction, 1)}%{Style.RESET_ALL} ",
             f"{Fore.BLUE}bullish{Style.RESET_ALL} " if self.rv_slope >= 0 else f"{Fore.BLUE}bearish{Style.RESET_ALL} ",
             f"L: {Fore.BLUE}{round(self.Res_low, self.d)}{Style.RESET_ALL} M: {Fore.BLUE}{round(self.Res_mid, self.d)}{Style.RESET_ALL} H: {Fore.BLUE}{round(self.Res_high, self.d)}{Style.RESET_ALL} C: {Fore.BLUE}{round(self.Res_float, self.d)}{Style.RESET_ALL} ",
-            f"Next coin: {Fore.ORANGE}{self.rsi_coin}{Style.RESET_ALL} with RSI: {Fore.ORANGE}{round(self.rsi, 1)}{Style.RESET_ALL} price direction: {Fore.ORANGE}{round(self.to_coin_direction, 1)}%{Style.RESET_ALL} " if self.rsi else f"",
-            f"{Fore.ORANGE}bullish{Style.RESET_ALL} " if self.slope >= 0 and self.rsi else f"",
-            f"{Fore.ORANGE}bearish{Style.RESET_ALL} " if self.slope < 0 and self.rsi else f"",
+            f"Next coin: {Fore.YELLOW}{self.rsi_coin}{Style.RESET_ALL} with RSI: {Fore.YELLOW}{round(self.rsi, 1)}{Style.RESET_ALL} price direction: {Fore.YELLOW}{round(self.to_coin_direction, 1)}%{Style.RESET_ALL} " if self.rsi else f"",
+            f"{Fore.YELLOW}bullish{Style.RESET_ALL} " if self.slope >= 0 and self.rsi else f"",
+            f"{Fore.YELLOW}bearish{Style.RESET_ALL} " if self.slope < 0 and self.rsi else f"",
             end='\r',
         )
 	
