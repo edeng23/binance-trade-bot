@@ -100,16 +100,16 @@ class Strategy(AutoTrader):
         # stopped. Not logging though to reduce log size.
         print(
             f"{self.manager.now().strftime('%Y-%m-%d %H:%M:%S')} - " ,
-            f"Long " if not self.panicked else f"Short ",
-            f"Threshold: {round(self.from_coin_direction - self.dir_threshold, 3)}% " if self.dir_threshold != 0 else f"",
-            f"Bottom: {round(self.active_threshold, self.d)} " if not self.panicked else f"Top: {round(self.active_threshold, self.d)} ",
-            f"Current ratio weight: {self.auto_weight} ",
-            f"Current coin: {current_coin} with RSI: {round(self.rv_rsi, 1)} price direction: {round(self.from_coin_direction, 1)}% ",
-            f"bullish " if self.rv_slope >= 0 else f"bearish ",
-            f"L: {round(self.Res_low, self.d)} M: {round(self.Res_mid, self.d)} H: {round(self.Res_high, self.d)} C: {round(self.Res_float, self.d)} ",
-            f"Next coin: {self.rsi_coin} with RSI: {round(self.rsi, 1)} price direction: {round(self.to_coin_direction, 1)}% " if self.rsi else f"",
-            f"bullish " if self.slope >= 0 and self.rsi else f"",
-            f"bearish " if self.slope < 0 and self.rsi else f"",
+            f"{Fore.BLUE}Long{Style.RESET_ALL} " if not self.panicked else f"{Fore.BLUE}Short{Style.RESET_ALL} ",
+            f"Threshold: {Fore.BLUE}{round(self.from_coin_direction - self.dir_threshold, 3)}%{Style.RESET_ALL} " if self.dir_threshold != 0 else f"",
+            f"Bottom: {Fore.BLUE}{round(self.active_threshold, self.d)}{Style.RESET_ALL} " if not self.panicked else f"Top: {Fore.BLUE}{round(self.active_threshold, self.d)}{Style.RESET_ALL} ",
+            f"Ratio weight: {Fore.BLUE}{self.auto_weight}{Style.RESET_ALL} ",
+            f"Current coin: {Fore.BLUE}{current_coin}{Style.RESET_ALL} with RSI: {Fore.BLUE}{round(self.rv_rsi, 1)}{Style.RESET_ALL} price direction: {Fore.BLUE}{round(self.from_coin_direction, 1)}%{Style.RESET_ALL} ",
+            f"{Fore.BLUE}bullish{Style.RESET_ALL} " if self.rv_slope >= 0 else f"{Fore.BLUE}bearish{Style.RESET_ALL} ",
+            f"L: {Fore.BLUE}{round(self.Res_low, self.d)}{Style.RESET_ALL} M: {Fore.BLUE}{round(self.Res_mid, self.d)}{Style.RESET_ALL} H: {Fore.BLUE}{round(self.Res_high, self.d)}{Style.RESET_ALL} C: {Fore.BLUE}{round(self.Res_float, self.d)}{Style.RESET_ALL} ",
+            f"Next coin: {Fore.ORANGE}{self.rsi_coin}{Style.RESET_ALL} with RSI: {Fore.ORANGE}{round(self.rsi, 1)}{Style.RESET_ALL} price direction: {Fore.ORANGE}{round(self.to_coin_direction, 1)}%{Style.RESET_ALL} " if self.rsi else f"",
+            f"{Fore.ORANGE}bullish{Style.RESET_ALL} " if self.slope >= 0 and self.rsi else f"",
+            f"{Fore.ORANGE}bearish{Style.RESET_ALL} " if self.slope < 0 and self.rsi else f"",
             end='\r',
         )
 	
