@@ -154,7 +154,7 @@ class Strategy(AutoTrader):
 
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
             
-            if self.rv_pre_rsi > self.rv_rsi and self.from_coin_price < self.active_threshold or self.from_coin_direction < self.dir_threshold or self.rv_rsi > 80:
+            if self.rv_pre_rsi > self.rv_rsi and self.from_coin_direction < 0 and self.from_coin_price < self.active_threshold or self.from_coin_direction < self.dir_threshold or self.rv_rsi > 80:
                 if self.rv_rsi > 80:
                     print("")
                     self.logger.infor("!!! Target sell !!!")
@@ -206,7 +206,7 @@ class Strategy(AutoTrader):
 
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
             
-            if self.rv_pre_rsi < self.rv_rsi and self.from_coin_price > self.active_threshold or self.from_coin_direction > self.dir_threshold or self.rv_rsi < 20:
+            if self.rv_pre_rsi < self.rv_rsi and self.from_coin_direction > 0 and self.from_coin_price > self.active_threshold or self.from_coin_direction > self.dir_threshold or self.rv_rsi < 20:
                 if self.rv_rsi < 20:
                     print("")
                     self.logger.infor("!!! Target buy !!!")
