@@ -51,7 +51,7 @@ class Strategy(AutoTrader):
         self.reinit_threshold = self.manager.now().replace(second=0, microsecond=0)
         self.reinit_rsi = self.manager.now().replace(second=0, microsecond=0)
         self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
-        self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)#int(self.config.RSI_CANDLE_TYPE))
+        self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
         self.logger.info(f"Ratio adjust weight: {self.config.RATIO_ADJUST_WEIGHT}")
         self.logger.info(f"RSI length: {self.config.RSI_LENGTH}")
         self.logger.info(f"RSI candle type: {self.config.RSI_CANDLE_TYPE}")
@@ -122,7 +122,7 @@ class Strategy(AutoTrader):
         #             self.active_threshold = 0
         #             self.dir_threshold = 0
         #             self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
-        #             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)#(minutes=int(self.config.RSI_CANDLE_TYPE))
+        #             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
 
         #    else:
             if self.from_coin_direction <= self.to_coin_direction >= 0 and (self.pre_rsi < self.rsi <= 30 or self.pre_rsi < self.rsi > 50) or self.rsi < 20:
@@ -133,11 +133,11 @@ class Strategy(AutoTrader):
                 self.active_threshold = 0
                 self.dir_threshold = 0
                 self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
-                self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)#(minutes=int(self.config.RSI_CANDLE_TYPE))
+                self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
                         
-        if base_time >= self.panic_time and self.manager.get_currency_balance(panic_pair.from_coin.symbol) == 0 and not self.panicked:
-            self.panicked = True
-            self.active_threshold = max(self.reverse_price_history) * 3
+        #if base_time >= self.panic_time and self.manager.get_currency_balance(panic_pair.from_coin.symbol) == 0 and not self.panicked:
+            #self.panicked = True
+            #self.active_threshold = max(self.reverse_price_history) * 3
         
         if base_time >= self.panic_time and not self.panicked:
             balance = self.manager.get_currency_balance(panic_pair.from_coin.symbol)
@@ -187,8 +187,8 @@ class Strategy(AutoTrader):
 
                 else:
                     self.active_threshold = max(self.reverse_price_history) * 3
-                    #self.dir_threshold = 0
-                    self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)#(minutes=int(self.config.RSI_CANDLE_TYPE))
+                    self.dir_threshold = 0
+                    self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
                 
 		
         elif base_time >= self.panic_time and self.panicked:
@@ -232,8 +232,8 @@ class Strategy(AutoTrader):
 
                 else:
                     self.active_threshold = 0
-                    #self.dir_threshold = 0
-                    self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)#(minutes=int(self.config.RSI_CANDLE_TYPE))
+                    self.dir_threshold = 0
+                    self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
                     
 
     def bridge_scout(self):
