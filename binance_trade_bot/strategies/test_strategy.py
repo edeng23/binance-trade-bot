@@ -137,6 +137,7 @@ class Strategy(AutoTrader):
                         
         if self.manager.get_currency_balance(panic_pair.from_coin.symbol) == 0:
             self.panicked = True
+            self.active_threshold = max(self.reverse_price_history) * 3
         
         if base_time >= self.panic_time and not self.panicked:
             balance = self.manager.get_currency_balance(panic_pair.from_coin.symbol)
@@ -186,7 +187,7 @@ class Strategy(AutoTrader):
 
                 else:
                     self.active_threshold = max(self.reverse_price_history) * 3
-                    self.dir_threshold = 0
+                    #self.dir_threshold = 0
                     self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)#(minutes=int(self.config.RSI_CANDLE_TYPE))
                 
 		
@@ -231,7 +232,7 @@ class Strategy(AutoTrader):
 
                 else:
                     self.active_threshold = 0
-                    self.dir_threshold = 0
+                    #self.dir_threshold = 0
                     self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)#(minutes=int(self.config.RSI_CANDLE_TYPE))
                     
 
