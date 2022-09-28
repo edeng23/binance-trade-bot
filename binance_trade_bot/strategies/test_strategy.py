@@ -461,7 +461,7 @@ class Strategy(AutoTrader):
         else:
             self.rsi = 0
             self.pre_rsi = 0 
-            self.tema = 0
+            self.tema = 1
             self.to_coin_price = 0
             #self.rsi_coin = ""
             self.to_coin_direction = 0
