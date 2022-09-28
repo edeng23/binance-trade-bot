@@ -103,10 +103,10 @@ class Strategy(AutoTrader):
             f"Current ratio weight: {self.auto_weight} ",
             f"Current coin: {current_coin} with RSI: {round(self.rv_rsi, 1)} price direction: {round(self.from_coin_direction, 3)}% ",
             f"bullish " if self.rv_slope >= 0 else f"bearish ",
+            f"L: {self.Res_low} M: {self.Res_mid} H: {self.Res_high} F: {self.Res_float} ",
             f"Next coin: {self.rsi_coin} with RSI: {round(self.rsi, 1)} price direction: {round(self.to_coin_direction, 3)}% " if self.rsi else f"",
             f"bullish " if self.slope >= 0 and self.rsi else f"",
             f"bearish " if self.slope < 0 and self.rsi else f"",
-            f"L: {self.Res_low} M: {self.Res_mid} H: {self.Res_high} F: {self.Res_float} ",
             end='\r',
         )
 	
