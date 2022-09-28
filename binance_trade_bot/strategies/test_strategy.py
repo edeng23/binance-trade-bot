@@ -1,4 +1,6 @@
 from collections import defaultdict, deque
+from colorama import Fore
+from colorama import Style
 import math
 import random
 import sys
@@ -99,12 +101,12 @@ class Strategy(AutoTrader):
         print(
             f"{self.manager.now().strftime('%Y-%m-%d %H:%M:%S')} - " ,
             f"Long " if not self.panicked else f"Short ",
-            f"Threshold: {round(self.from_coin_direction - self.dir_threshold, 3)}% ",
+            f"Threshold: {round(self.from_coin_direction - self.dir_threshold, 3)}% " if self.dir_threshold != 0 else f"",
             f"Bottom: {round(self.active_threshold, self.d)} " if not self.panicked else f"Top: {round(self.active_threshold, self.d)} ",
             f"Current ratio weight: {self.auto_weight} ",
             f"Current coin: {current_coin} with RSI: {round(self.rv_rsi, 1)} price direction: {round(self.from_coin_direction, 1)}% ",
             f"bullish " if self.rv_slope >= 0 else f"bearish ",
-            f"L: {round(self.Res_low, self.d)} M: {round(self.Res_mid, self.d)} H: {round(self.Res_high, self.d)} C: {round(self.Res_float, self.d} ",
+            f"L: {round(self.Res_low, self.d)} M: {round(self.Res_mid, self.d)} H: {round(self.Res_high, self.d)} C: {round(self.Res_float, self.d)} ",
             f"Next coin: {self.rsi_coin} with RSI: {round(self.rsi, 1)} price direction: {round(self.to_coin_direction, 1)}% " if self.rsi else f"",
             f"bullish " if self.slope >= 0 and self.rsi else f"",
             f"bearish " if self.slope < 0 and self.rsi else f"",
