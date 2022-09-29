@@ -491,7 +491,7 @@ class BinanceAPIManager:
         if from_coin_price > buy_price * (1.0 + buy_max_price_change):
             self.logger.info("Buy price became higher, cancel buy")
             return None
-        #from_coin_price = min(buy_price, from_coin_price)
+        from_coin_price = min(buy_price, from_coin_price)
         trade_log = self.db.start_trade_log(origin_coin, target_coin, False)
 
         if buy_quantity is None:
@@ -565,7 +565,7 @@ class BinanceAPIManager:
         if from_coin_price < sell_price * (1.0 - sell_max_price_change):
             self.logger.info("Sell price became lower, skipping sell")
             return None  # skip selling below price from ratio
-        #from_coin_price = max(from_coin_price, sell_price)
+        from_coin_price = max(from_coin_price, sell_price)
 
         trade_log = self.db.start_trade_log(origin_coin, target_coin, True)
 
