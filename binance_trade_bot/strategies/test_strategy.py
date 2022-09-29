@@ -78,7 +78,10 @@ class Strategy(AutoTrader):
 
         else:
             self.from_coin_price = self.manager.get_sell_price(current_coin + self.config.BRIDGE)
-
+        
+        print("")
+        print(f"{self.from_coin_price}")
+        
         if self.from_coin_price is None:
             self.logger.info("Skipping scouting... current coin {} not found".format(current_coin + self.config.BRIDGE))
             return
@@ -169,12 +172,12 @@ class Strategy(AutoTrader):
                 elif self.from_coin_direction < self.dir_threshold:
                     print("")
                     self.logger.info("!!! Panic sell !!!")
-                    self.from_coin_price = float(max(self.rv_tema, self.active_threshold))
+                    self.from_coin_price = round(max(self.rv_tema, self.active_threshold), self.d)
                 
                 else:
                     print("")
                     self.logger.info("!!! Selling high !!!")
-                    self.from_coin_price = float(max(self.rv_tema, self.active_threshold))
+                    self.from_coin_price = round(max(self.rv_tema, self.active_threshold), self.d)
 
                 self.panicked = True
                 can_sell = False
@@ -222,12 +225,12 @@ class Strategy(AutoTrader):
                 elif self.from_coin_direction > self.dir_threshold:
                     print("")
                     self.logger.info("!!! FOMO buy !!!")
-                    self.from_coin_price = float(min(self.rv_tema, self.active_threshold))
+                    self.from_coin_price = round(min(self.rv_tema, self.active_threshold), self.d)
                 
                 else:
                     print("")
                     self.logger.info("!!! Buying low !!!")
-                    self.from_coin_price = float(min(self.rv_tema, self.active_threshold))
+                    self.from_coin_price = round(min(self.rv_tema, self.active_threshold), self.d)
                         
                 self.panicked = False
 
