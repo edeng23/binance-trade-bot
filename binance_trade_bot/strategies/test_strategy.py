@@ -79,9 +79,6 @@ class Strategy(AutoTrader):
         else:
             self.from_coin_price = self.manager.get_sell_price(current_coin + self.config.BRIDGE)
         
-        print("")
-        print(f"{self.from_coin_price}")
-        
         if self.from_coin_price is None:
             self.logger.info("Skipping scouting... current coin {} not found".format(current_coin + self.config.BRIDGE))
             return
