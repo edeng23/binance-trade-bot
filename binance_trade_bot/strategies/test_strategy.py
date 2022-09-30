@@ -50,6 +50,7 @@ class Strategy(AutoTrader):
         self.pre_rsi = 0
         self.rv_pre_rsi = 0
         self.rv_rsi = 0
+        self.best_pair = ""
         self.rsi = self.rsi_calc()
         self.reinit_threshold = self.manager.now().replace(second=0, microsecond=0)
         self.reinit_rsi = self.manager.now().replace(second=0, microsecond=0)
@@ -121,7 +122,7 @@ class Strategy(AutoTrader):
               print("")
               self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
               self.panicked = False
-              self._jump_to_best_coin(current_coin, round(max(self.from_coin_price, self.rv_tema), self.d))
+              self.transaction_through_bridge(self.best_pair, round(max(self.from_coin_price, self.rv_tema), self.d), round(min(self.to_coin_price, self.tema), self.d))
               self.active_threshold = 0
               self.dir_threshold = 0
               self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
@@ -132,7 +133,7 @@ class Strategy(AutoTrader):
                 print("")
                 self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
                 self.panicked = False
-                self._jump_to_best_coin(current_coin, round(max(self.from_coin_price, self.rv_tema), self.d))
+                self.transaction_through_bridge(self.best_pair, round(max(self.from_coin_price, self.rv_tema), self.d), round(min(self.to_coin_price, self.tema), self.d))
                 self.active_threshold = 0
                 self.dir_threshold = 0
                 self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
@@ -424,7 +425,7 @@ class Strategy(AutoTrader):
         self.d = abs(decimal.Decimal(str(self.reverse_price_history[-1])).as_tuple().exponent)
 
         if ratio_dict:	
-            best_pair = max(ratio_dict, key=ratio_dict.get)
+            self.best_pair = max(ratio_dict, key=ratio_dict.get)
             to_coin_symbol = best_pair.to_coin_id
             check_prices = []
         
@@ -468,6 +469,7 @@ class Strategy(AutoTrader):
             self.pre_rsi = 0 
             self.tema = 1
             self.to_coin_price = 0
+            self.best_pair = ""
             #self.rsi_coin = ""
             self.to_coin_direction = 0
             #self.logger.info(f"Not enough data for RSI calculation. Continue scouting...")
