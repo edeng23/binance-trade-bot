@@ -121,7 +121,7 @@ class Strategy(AutoTrader):
               print("")
               self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
               self.panicked = False
-              self._jump_to_best_coin(current_coin, round(min(self.from_coin_price, self.rv_tema), self.d))
+              self._jump_to_best_coin(current_coin, round(max(self.from_coin_price, self.rv_tema), self.d))
               self.active_threshold = 0
               self.dir_threshold = 0
               self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
@@ -132,7 +132,7 @@ class Strategy(AutoTrader):
                 print("")
                 self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
                 self.panicked = False
-                self._jump_to_best_coin(current_coin, round(min(self.from_coin_price, self.rv_tema), self.d))
+                self._jump_to_best_coin(current_coin, round(max(self.from_coin_price, self.rv_tema), self.d))
                 self.active_threshold = 0
                 self.dir_threshold = 0
                 self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
