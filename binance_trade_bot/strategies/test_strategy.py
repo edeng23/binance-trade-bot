@@ -128,7 +128,7 @@ class Strategy(AutoTrader):
               self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
 
         #    else:
-            if self.from_coin_direction <= self.to_coin_direction >= 0 and (self.pre_rsi < self.rsi <= 30 or self.pre_rsi < self.rsi > 50) or self.rsi < 20:
+            elif self.from_coin_direction <= self.to_coin_direction >= 0 and (self.pre_rsi < self.rsi <= 30 or self.pre_rsi < self.rsi > 50) or self.rsi < 20:
                 print("")
                 self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
                 self.panicked = False
