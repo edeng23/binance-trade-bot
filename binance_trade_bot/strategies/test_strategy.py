@@ -170,7 +170,7 @@ class Strategy(AutoTrader):
                 elif self.from_coin_direction < self.dir_threshold:
                     print("")
                     self.logger.info("!!! Panic sell !!!")
-                    self.from_coin_price = round(max(self.rv_tema, self.active_threshold), self.d)
+                    self.from_coin_price = round(self.rv_tema, self.d)
                 
                 else:
                     print("")
@@ -223,7 +223,7 @@ class Strategy(AutoTrader):
                 elif self.from_coin_direction > self.dir_threshold:
                     print("")
                     self.logger.info("!!! FOMO buy !!!")
-                    self.from_coin_price = round(min(self.rv_tema, self.active_threshold), self.d)
+                    self.from_coin_price = round(self.rv_tema, self.d)
                 
                 else:
                     print("")
