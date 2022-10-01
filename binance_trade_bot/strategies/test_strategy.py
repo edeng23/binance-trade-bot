@@ -426,7 +426,7 @@ class Strategy(AutoTrader):
 
         if ratio_dict:	
             self.best_pair = max(ratio_dict, key=ratio_dict.get)
-            to_coin_symbol = best_pair.to_coin_id
+            to_coin_symbol = self.best_pair.to_coin_id
             check_prices = []
         
             for checks in self.manager.binance_client.get_historical_klines(f"{to_coin_symbol}{self.config.BRIDGE_SYMBOL}", rsi_string, rsi_start_date_str, rsi_check_str, limit=1000):                           
