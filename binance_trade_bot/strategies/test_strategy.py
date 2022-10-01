@@ -193,7 +193,7 @@ class Strategy(AutoTrader):
                 else:
                     self.active_threshold = max(self.reverse_price_history) * 3
                     self.dir_threshold = 0
-                    self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)#int(self.config.RSI_CANDLE_TYPE))
+                    self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
                 
 		
         elif base_time >= self.panic_time and self.panicked:
@@ -239,7 +239,7 @@ class Strategy(AutoTrader):
                 else:
                     self.active_threshold = 0
                     self.dir_threshold = 0
-                    self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)#int(self.config.RSI_CANDLE_TYPE))
+                    self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
                     
 
     def bridge_scout(self):
