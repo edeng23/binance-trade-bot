@@ -127,7 +127,7 @@ class Strategy(AutoTrader):
                     self.active_threshold = 0
                     self.dir_threshold = 0
                     self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
-                    self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
+                    self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)#int(self.config.RSI_CANDLE_TYPE))
 
             else:
                 if self.from_coin_direction <= self.to_coin_direction >= 0 and (self.pre_rsi < self.rsi <= 30 or self.pre_rsi < self.rsi > 50) or self.rsi < 20:
@@ -138,7 +138,7 @@ class Strategy(AutoTrader):
                     self.active_threshold = 0
                     self.dir_threshold = 0
                     self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
-                    self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
+                    self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)#int(self.config.RSI_CANDLE_TYPE))
                         
         #if base_time >= self.panic_time and self.manager.get_currency_balance(panic_pair.from_coin.symbol) == 0 and not self.panicked:
             #self.panicked = True
