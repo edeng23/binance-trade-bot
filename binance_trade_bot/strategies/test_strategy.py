@@ -29,6 +29,7 @@ class Strategy(AutoTrader):
         self.rsi_coin = ""
         self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
         self.d = 3
+        self.v = 3
         self.active_threshold = 0
         self.dir_threshold = 0
         self.Res_high = 0
@@ -133,7 +134,7 @@ class Strategy(AutoTrader):
                 print("")
                 self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
                 self.panicked = False
-                self.transaction_through_bridge(self.best_pair, round(max(self.from_coin_price, self.rv_tema), self.d), round(min(self.to_coin_price, self.tema), self.d))
+                self.transaction_through_bridge(self.best_pair, round(max(self.from_coin_price, self.rv_tema), self.d), round(min(self.to_coin_price, self.tema), self.v))
                 self.active_threshold = 0
                 self.dir_threshold = 0
                 self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
@@ -423,6 +424,7 @@ class Strategy(AutoTrader):
         
         self.jumpable_coins = len(ratio_dict)
         self.d = abs(decimal.Decimal(str(self.reverse_price_history[-1])).as_tuple().exponent)
+        self.v = abs(decimal.Decimal(str(self.rsi_price_history[-1])).as_tuple().exponent)
 
         if ratio_dict:	
             self.best_pair = max(ratio_dict, key=ratio_dict.get)
