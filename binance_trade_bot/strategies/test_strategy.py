@@ -480,10 +480,10 @@ class Strategy(AutoTrader):
             self.to_coin_direction = 0
             #self.logger.info(f"Not enough data for RSI calculation. Continue scouting...")
 
-        ExpPer = 2 * init_rsi_length - 1
-        K = 2 / (ExpPer + 1)
-        AUC = 1
-        ADC = 1
+        ExpPer = float(2 * init_rsi_length - 1)
+        K = float(2 / (ExpPer + 1))
+        AUC = float(1)
+        ADC = float(1)
         rev_prices = []
 
         for reverse in self.manager.binance_client.get_historical_klines(f"{current_coin_symbol}{self.config.BRIDGE_SYMBOL}", rsi_string, rsi_start_date_str, rsi_check_str, limit=init_rsi_length*5):                           
