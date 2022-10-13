@@ -429,6 +429,17 @@ class Strategy(AutoTrader):
         self.jumpable_coins = len(ratio_dict)
         self.d = abs(decimal.Decimal(str(self.reverse_price_history[-1])).as_tuple().exponent)
         self.v = abs(decimal.Decimal(str(self.rsi_price_history[-1])).as_tuple().exponent)
+        
+        for i in self.reverse_price_history:
+            di = abs(decimal.Decimal(str(self.reverse_price_history[i])).as_tuple().exponent)
+            if di > self.d:
+                self.d = di
+                
+        for k in self.rsi_price_history:
+            vi = abs(decimal.Decimal(str(self.rsi_price_history[i])).as_tuple().exponent)
+            if vi > self.v:
+                self.v = vi
+        
 
         if ratio_dict:	
             self.best_pair = max(ratio_dict, key=ratio_dict.get)
