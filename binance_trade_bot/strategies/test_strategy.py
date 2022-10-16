@@ -447,7 +447,7 @@ class Strategy(AutoTrader):
             check_prices = []
         
             for checks in self.manager.binance_client.get_historical_klines(f"{to_coin_symbol}{self.config.BRIDGE_SYMBOL}", rsi_string, rsi_start_date_str, rsi_check_str, limit=1000):                           
-                check_price = float(checks[4])
+                check_price = float(checks[1])
                 check_prices.append(check_price)
                 
                 
@@ -459,7 +459,7 @@ class Strategy(AutoTrader):
                 self.rsi_price_history = []
 
                 for result in self.manager.binance_client.get_historical_klines(f"{to_coin_symbol}{self.config.BRIDGE_SYMBOL}", rsi_string, rsi_start_date_str, rsi_end_date_str, limit=1000):                           
-                    rsi_price = float(result[4])
+                    rsi_price = float(result[1])
                     self.rsi_price_history.append(rsi_price)
                         
                 self.to_coin_price = self.manager.get_buy_price(self.rsi_coin + self.config.BRIDGE)
@@ -498,13 +498,13 @@ class Strategy(AutoTrader):
         rev_prices = []
 
         for reverse in self.manager.binance_client.get_historical_klines(f"{current_coin_symbol}{self.config.BRIDGE_SYMBOL}", rsi_string, rsi_start_date_str, rsi_check_str, limit=init_rsi_length*5):                           
-            rev_price = float(reverse[4])
+            rev_price = float(reverse[1])
             rev_prices.append(rev_price)
                 
         if not self.reverse_price_history[0] == rev_prices[0]:  
             self.reverse_price_history = []
             for result in self.manager.binance_client.get_historical_klines(f"{current_coin_symbol}{self.config.BRIDGE_SYMBOL}", rsi_string, rsi_start_date_str, rsi_end_date_str, limit=init_rsi_length*5):                           
-                rsi_price = float(result[4])
+                rsi_price = float(result[1])
                 self.reverse_price_history.append(rsi_price)
                 
         else:
