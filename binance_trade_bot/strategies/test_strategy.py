@@ -30,6 +30,8 @@ class Strategy(AutoTrader):
         self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
         self.d = 3
         self.v = 3
+        self.jumps = int(self.config.JUMPS_PER_DAY)
+        self.win = int(self.config.TARGET_WIN)
         self.active_threshold = 0
         self.dir_threshold = 0
         self.Res_high = 0
@@ -146,6 +148,8 @@ class Strategy(AutoTrader):
         
         if base_time >= self.panic_time and not self.panicked:
             balance = self.manager.get_currency_balance(panic_pair.from_coin.symbol)
+            balance_in_bridge = max(balance * self.from_coin_price, 1)
+            m = min((1+self.win/balance_in_bridge)**(1/self.jumps), 2**(1/self.jumps))
             n = min(len(self.reverse_price_history), int(self.config.RSI_LENGTH))
             dev = st.stdev(numpy.array(self.reverse_price_history[-n:]))#, timeperiod=self.config.RSI_LENGTH, nbdev=1)
             stdev = dev#[-1]
@@ -153,13 +157,13 @@ class Strategy(AutoTrader):
             self.dir_threshold = (stdev ** 3 / 100 + stdev) * -1
 
             if self.from_coin_price > self.Res_high > self.active_threshold:
-                self.active_threshold = self.Res_high
+                self.active_threshold = self.Res_high * m
 
             if self.from_coin_price > self.Res_mid > self.active_threshold:
-                self.active_threshold = self.Res_mid
+                self.active_threshold = self.Res_mid * m
 
             if self.from_coin_price > self.Res_low > self.active_threshold:
-                self.active_threshold = self.Res_low
+                self.active_threshold = self.Res_low * m
 
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
             
@@ -201,6 +205,7 @@ class Strategy(AutoTrader):
 		
         elif base_time >= self.panic_time and self.panicked:
             balance = self.manager.get_currency_balance(self.config.BRIDGE.symbol)
+            m = max(2 - (1+self.win/balance)**(1/self.jumps), 2 - 2**(1/self.jumps))
             n = min(len(self.reverse_price_history), int(self.config.RSI_LENGTH))
             dev = st.stdev(numpy.array(self.reverse_price_history[-n:]))#, timeperiod=self.config.RSI_LENGTH, nbdev=1)
             stdev = dev#[-1]
@@ -208,13 +213,13 @@ class Strategy(AutoTrader):
             self.dir_threshold = stdev ** 3 / 100 + stdev
 
             if self.from_coin_price < self.Res_low < self.active_threshold:
-                self.active_threshold = self.Res_low
+                self.active_threshold = self.Res_low * m
 
             if self.from_coin_price < self.Res_mid < self.active_threshold:
-                self.active_threshold = self.Res_mid
+                self.active_threshold = self.Res_mid * m
 
             if self.from_coin_price < self.Res_high < self.active_threshold:
-                self.active_threshold = self.Res_high
+                self.active_threshold = self.Res_high * m
 
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
             
