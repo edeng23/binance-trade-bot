@@ -149,7 +149,7 @@ class Strategy(AutoTrader):
         if base_time >= self.panic_time and not self.panicked:
             balance = self.manager.get_currency_balance(panic_pair.from_coin.symbol)
             balance_in_bridge = max(balance * self.from_coin_price, 1)
-            m = min((1+self.win/balance_in_bridge)**(1/self.jumps)+0.1, 2**(1/self.jumps))
+            m = min((1+self.win/balance_in_bridge)**(1/self.jumps)+0.1, 2**(1/self.jumps)) / 2
             n = min(len(self.reverse_price_history), int(self.config.RSI_LENGTH))
             dev = st.stdev(numpy.array(self.reverse_price_history[-n:]))#, timeperiod=self.config.RSI_LENGTH, nbdev=1)
             stdev = dev#[-1]
@@ -206,7 +206,7 @@ class Strategy(AutoTrader):
 		
         elif base_time >= self.panic_time and self.panicked:
             balance = self.manager.get_currency_balance(self.config.BRIDGE.symbol)
-            m = max(2 - (1+self.win/balance)**(1/self.jumps)-0.1, 2 - 2**(1/self.jumps))
+            m = max(2 - (1+self.win/balance)**(1/self.jumps)-0.1, 2 - 2**(1/self.jumps)) / 2
             n = min(len(self.reverse_price_history), int(self.config.RSI_LENGTH))
             dev = st.stdev(numpy.array(self.reverse_price_history[-n:]))#, timeperiod=self.config.RSI_LENGTH, nbdev=1)
             stdev = dev#[-1]
