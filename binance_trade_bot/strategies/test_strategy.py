@@ -568,7 +568,7 @@ class Strategy(AutoTrader):
         #self.Res_high = round(self.Res_high, d)
         #self.Res_float = round(self.Res_float, d)
 
-    def check_panic():
+    def check_panic(self):
         bridge = self.config.BRIDGE.symbol
         accepted_bridge = {'USDT', 'BUSD', 'USD'}
         if self.manager.get_currency_balance(bridge) >= 10 and bridge in accepted_bridge:
