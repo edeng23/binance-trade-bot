@@ -48,7 +48,7 @@ class Strategy(AutoTrader):
         self.to_coin_direction = 0
         self.reverse_price_history = [0]
         self.rsi_price_history = [0]
-        self.panicked = False
+        self.panicked = self.check_panic()
         self.jumpable_coins = 0
         self.pre_rsi = 0
         self.rv_pre_rsi = 0
@@ -121,7 +121,7 @@ class Strategy(AutoTrader):
             
         if self.rsi:
             if self.panicked:
-                #if self.to_coin_direction >= 0 and (self.rsi > self.pre_rsi <= 30 or self.pre_rsi < self.rsi > 50) or self.rsi < 20:
+                if self.to_coin_direction >= 0 and (self.rsi > self.pre_rsi <= 30 or self.pre_rsi < self.rsi > 50) or self.rsi < 20:
                     print("")
                     self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
                     self.panicked = False
@@ -132,7 +132,7 @@ class Strategy(AutoTrader):
                     self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)#int(self.config.RSI_CANDLE_TYPE))
 
             else:
-                if self.from_coin_direction <= self.to_coin_direction >= 0 and (self.pre_rsi < self.rsi <= 30 or self.pre_rsi < self.rsi > 50) or self.rsi < 20:
+                if self.from_coin_direction <= self.to_coin_direction >= 0 and (self.pre_rsi < self.rsi <= 30 or 50 <= self.pre_rsi < self.rsi) or self.rsi < 20:
                     print("")
                     self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
                     self.panicked = False
@@ -568,5 +568,12 @@ class Strategy(AutoTrader):
         #self.Res_high = round(self.Res_high, d)
         #self.Res_float = round(self.Res_float, d)
 
-        
-
+    def check_panic():
+        bridge = self.config.BRIDGE.symbol
+        accepted_bridge = {'USDT', 'BUSD', 'USD'}
+        if self.manager.get_currency_balance(bridge) >= 10 and bridge in accepted_bridge:
+            self.panicked = True
+        else:
+            self.panicked = False
+                
+                
