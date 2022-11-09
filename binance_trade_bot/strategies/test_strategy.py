@@ -153,7 +153,7 @@ class Strategy(AutoTrader):
             n = min(len(self.reverse_price_history), int(self.config.RSI_LENGTH))
             dev = st.stdev(numpy.array(self.reverse_price_history[-n:]))#, timeperiod=self.config.RSI_LENGTH, nbdev=1)
             stdev = dev + dev ** 2 / 100
-            self.dir_threshold = stdev / self.rv_tema * -100
+            self.dir_threshold = stdev / self.rv_tema * -50
 
             if self.from_coin_price > self.Res_high > self.active_threshold:
                 self.active_threshold = self.Res_high * m
@@ -209,7 +209,7 @@ class Strategy(AutoTrader):
             n = min(len(self.reverse_price_history), int(self.config.RSI_LENGTH))
             dev = st.stdev(numpy.array(self.reverse_price_history[-n:]))#, timeperiod=self.config.RSI_LENGTH, nbdev=1)
             stdev = dev + dev ** 2 / 100
-            self.dir_threshold = stdev / self.rv_tema * 100
+            self.dir_threshold = stdev / self.rv_tema * 50
 
             if self.from_coin_price < self.Res_low < self.active_threshold:
                 self.active_threshold = self.Res_low * m
@@ -569,7 +569,7 @@ class Strategy(AutoTrader):
     def check_panic(self):
         bridge = self.config.BRIDGE.symbol
         accepted_bridge = {'USDT', 'BUSD', 'USD'}
-        if self.manager.get_currency_balance(bridge) >= 10 and bridge in accepted_bridge:
+        if self.manager.get_currency_balance(bridge) >= 10:# and bridge in accepted_bridge:
             self.panicked = True
         else:
             self.panicked = False
