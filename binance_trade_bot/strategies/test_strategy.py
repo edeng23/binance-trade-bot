@@ -42,6 +42,8 @@ class Strategy(AutoTrader):
         self.rv_tema = 1
         self.slope = 0
         self.rv_slope = 0
+        self.volume = 0
+        self.volume_sma = 0
         self.from_coin_price = 0
         self.to_coin_price = 0
         self.from_coin_direction = 0
@@ -166,12 +168,12 @@ class Strategy(AutoTrader):
 
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
             
-            if self.rv_pre_rsi > self.rv_rsi and self.from_coin_direction < 0 and self.from_coin_price < self.active_threshold or self.from_coin_direction < self.dir_threshold or self.rv_rsi > 80:
+            if self.rv_pre_rsi > self.rv_rsi and (self.from_coin_direction < 0 and self.from_coin_price < self.active_threshold or self.volume[-1] / self.volume_sma >= 1.5) or self.from_coin_direction < self.dir_threshold or self.rv_rsi > 80:
                 if self.rv_rsi > 80:
                     print("")
                     self.logger.info("!!! Target sell !!!")
                 
-                elif self.from_coin_direction < self.dir_threshold and self.rv_rsi < 50:
+                elif self.from_coin_direction < self.dir_threshold and self.rv_rsi < 50 or self.volume[-1] / self.volume_sma >= 1.5:
                     print("")
                     self.logger.info("!!! Panic sell !!!")
                     self.active_threshold = self.rv_tema
@@ -222,12 +224,12 @@ class Strategy(AutoTrader):
 
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
             
-            if self.rv_pre_rsi < self.rv_rsi and self.from_coin_direction > 0 and self.from_coin_price > self.active_threshold or self.from_coin_direction > self.dir_threshold or self.rv_rsi < 20:
+            if self.rv_pre_rsi < self.rv_rsi and (self.from_coin_direction > 0 and self.from_coin_price > self.active_threshold or self.volume[-1] / self.volume_sma >= 1.5) or self.from_coin_direction > self.dir_threshold or self.rv_rsi < 20:
                 if self.rv_rsi < 20:
                     print("")
                     self.logger.info("!!! Target buy !!!")
                 
-                elif self.from_coin_direction > self.dir_threshold and self.rv_rsi > 50:
+                elif self.from_coin_direction > self.dir_threshold and self.rv_rsi > 50 or self.volume[-1] / self.volume_sma >= 1.5:
                     print("")
                     self.logger.info("!!! FOMO buy !!!")
                     self.active_threshold = self.rv_tema
@@ -510,7 +512,9 @@ class Strategy(AutoTrader):
             self.reverse_price_history = []
             for result in self.manager.binance_client.get_historical_klines(f"{current_coin_symbol}{self.config.BRIDGE_SYMBOL}", rsi_string, rsi_start_date_str, rsi_end_date_str, limit=init_rsi_length*5):                           
                 rsi_price = float(result[4])
+                volume = float(result[5])
                 self.reverse_price_history.append(rsi_price)
+                self.volume.append(volume)
                 
         else:
             self.reverse_price_history[-1] = float(self.from_coin_price)
@@ -521,12 +525,17 @@ class Strategy(AutoTrader):
             rv_tema = talib.TEMA(rv_closes, init_rsi_length)
             rv_short_slope = talib.LINEARREG_SLOPE(rv_closes, min(init_rsi_length, len(self.reverse_price_history)))
             rv_long_slope = talib.LINEARREG_SLOPE(rv_closes, len(self.reverse_price_history))
+        
+            volume = numpy.array(self.volume)
+            volume_sma = talib.SMA(volume, init_rsi_length)
 
             self.rv_slope = (rv_short_slope[-1] + rv_long_slope[-1]) / 2
             self.rv_rsi = rv_rsi[-1]
             self.rv_pre_rsi = rv_rsi[-2]
             self.rv_tema = rv_tema[-2] #round(rv_tema[-1], d)
             self.from_coin_direction = self.from_coin_price / self.rv_tema * 100 - 100
+                
+            self.volume_sma = volume_sma[-1]
 
         prev_close = self.reverse_price_history[0]
         for close in self.reverse_price_history[1:]:                           
