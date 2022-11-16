@@ -111,7 +111,7 @@ class Strategy(AutoTrader):
             f"Bottom: {Fore.CYAN}{round(self.active_threshold, self.d)}{Style.RESET_ALL} " if not self.panicked else f"Top: {Fore.CYAN}{round(self.active_threshold, self.d)}{Style.RESET_ALL} ",
             f"Ratio weight: {Fore.CYAN}{self.auto_weight}{Style.RESET_ALL} ",
             f"Current coin: {Fore.CYAN}{current_coin}{Style.RESET_ALL} with RSI: {Fore.CYAN}{round(self.rv_rsi, 1)}{Style.RESET_ALL} price direction: {Fore.CYAN}{round(self.from_coin_direction, 1)}%{Style.RESET_ALL} ",
-            f"Volume: {Fore.CYAN}{self.volume[-2]:.2E}{Style.RESET_ALL} ",
+            f"Volume: {Fore.CYAN}{self.volume[-1]:.2E}{Style.RESET_ALL} ",
             #f"{Fore.CYAN}bullish{Style.RESET_ALL} " if self.rv_slope >= 0 else f"{Fore.CYAN}bearish{Style.RESET_ALL} ",
             f"L: {Fore.MAGENTA}{round(self.Res_low, self.d)}{Style.RESET_ALL} M: {Fore.MAGENTA}{round(self.Res_mid, self.d)}{Style.RESET_ALL} H: {Fore.MAGENTA}{round(self.Res_high, self.d)}{Style.RESET_ALL} C: {Fore.MAGENTA}{round(self.Res_float, self.d)}{Style.RESET_ALL} ",
             f"Next coin: {Fore.YELLOW}{self.rsi_coin}{Style.RESET_ALL} with RSI: {Fore.YELLOW}{round(self.rsi, 1)}{Style.RESET_ALL} price direction: {Fore.YELLOW}{round(self.to_coin_direction, 1)}%{Style.RESET_ALL} " if self.rsi else f"",
@@ -169,7 +169,7 @@ class Strategy(AutoTrader):
 
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
             
-            if self.rv_pre_rsi > self.rv_rsi and (self.from_coin_direction < 0 and self.from_coin_price < self.active_threshold or self.volume[-2] / self.volume_sma >= 1.5) or self.from_coin_direction < self.dir_threshold or self.rv_rsi > 80:
+            if self.rv_pre_rsi > self.rv_rsi and (self.from_coin_direction < 0 and self.from_coin_price < self.active_threshold or self.volume[-1] / self.volume_sma >= 1.5) or self.from_coin_direction < self.dir_threshold or self.rv_rsi > 80:
                 if self.rv_rsi > 80:
                     print("")
                     self.logger.info("!!! Target sell !!!")
@@ -225,7 +225,7 @@ class Strategy(AutoTrader):
 
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
             
-            if self.rv_pre_rsi < self.rv_rsi and (self.from_coin_direction > 0 and self.from_coin_price > self.active_threshold or self.volume[-2] / self.volume_sma >= 1.5) or self.from_coin_direction > self.dir_threshold or self.rv_rsi < 20:
+            if self.rv_pre_rsi < self.rv_rsi and (self.from_coin_direction > 0 and self.from_coin_price > self.active_threshold or self.volume[-1] / self.volume_sma >= 1.5) or self.from_coin_direction > self.dir_threshold or self.rv_rsi < 20:
                 if self.rv_rsi < 20:
                     print("")
                     self.logger.info("!!! Target buy !!!")
@@ -527,7 +527,7 @@ class Strategy(AutoTrader):
             rv_short_slope = talib.LINEARREG_SLOPE(rv_closes, min(init_rsi_length, len(self.reverse_price_history)))
             rv_long_slope = talib.LINEARREG_SLOPE(rv_closes, len(self.reverse_price_history))
         
-            volume = numpy.array(self.volume[:-2])
+            volume = numpy.array(self.volume)
             volume_sma = talib.SMA(volume, init_rsi_length)
 
             self.rv_slope = (rv_short_slope[-1] + rv_long_slope[-1]) / 2
