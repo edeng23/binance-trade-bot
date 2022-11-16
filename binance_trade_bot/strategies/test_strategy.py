@@ -520,7 +520,7 @@ class Strategy(AutoTrader):
         else:
             self.reverse_price_history[-1] = float(self.from_coin_price)
             result = self.manager.binance_client.get_historical_klines(f"{current_coin_symbol}{self.config.BRIDGE_SYMBOL}", "1m")
-            self.volume[-1] = self.volume[-1] + result[5]
+            self.volume[-1] = self.volume[-1] + float(result[5])
         
         if len(self.reverse_price_history) >= init_rsi_length:
             rv_closes = numpy.array(self.reverse_price_history)
