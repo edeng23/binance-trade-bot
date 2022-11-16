@@ -42,8 +42,8 @@ class Strategy(AutoTrader):
         self.rv_tema = 1
         self.slope = 0
         self.rv_slope = 0
-        self.volume = 0
-        self.volume_sma = 0
+        self.volume = []
+        self.volume_sma = []
         self.from_coin_price = 0
         self.to_coin_price = 0
         self.from_coin_direction = 0
