@@ -42,6 +42,7 @@ class Strategy(AutoTrader):
         self.rv_tema = 1
         self.slope = 0
         self.rv_slope = 0
+        self.vector = []
         self.volume = []
         self.volume_sma = []
         self.from_coin_price = 0
@@ -169,8 +170,8 @@ class Strategy(AutoTrader):
 
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
             
-            if self.rv_pre_rsi > self.rv_rsi and (self.from_coin_direction < 0 and self.from_coin_price < self.active_threshold or self.volume[-1] / self.volume_sma >= 1.5) or self.from_coin_direction < self.dir_threshold or self.rv_rsi > 80:
-                if self.rv_rsi > 80:
+            if self.rv_pre_rsi > self.rv_rsi and (self.from_coin_direction < 0 and self.from_coin_price < self.active_threshold or self.volume[-1] / self.volume_sma >= 1.5) or self.from_coin_direction < self.dir_threshold or self.rv_rsi > 80 or max(self.vector[:-2] <= self.vector[-1]:
+                if self.rv_rsi > 80 or max(self.vector[:-2] <= self.vector[-1]:
                     print("")
                     self.logger.info("!!! Target sell !!!")
                 
@@ -225,8 +226,8 @@ class Strategy(AutoTrader):
 
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
             
-            if self.rv_pre_rsi < self.rv_rsi and (self.from_coin_direction > 0 and self.from_coin_price > self.active_threshold or self.volume[-1] / self.volume_sma >= 1.5) or self.from_coin_direction > self.dir_threshold or self.rv_rsi < 20:
-                if self.rv_rsi < 20:
+            if self.rv_pre_rsi < self.rv_rsi and (self.from_coin_direction > 0 and self.from_coin_price > self.active_threshold or self.volume[-1] / self.volume_sma >= 1.5) or self.from_coin_direction > self.dir_threshold or self.rv_rsi < 20 or min(self.vector[:-2] >= self.vector[-1]:
+                if self.rv_rsi < 20 or min(self.vector[:-2] >= self.vector[-1]:
                     print("")
                     self.logger.info("!!! Target buy !!!")
                 
@@ -514,13 +515,18 @@ class Strategy(AutoTrader):
             for result in self.manager.binance_client.get_historical_klines(f"{current_coin_symbol}{self.config.BRIDGE_SYMBOL}", rsi_string, rsi_start_date_str, rsi_end_date_str, limit=init_rsi_length*5):                           
                 rsi_price = float(result[4])
                 volume = float(result[5])
+		vector = (float(result[1])-rsi_price)*volume
                 self.reverse_price_history.append(rsi_price)
                 self.volume.append(volume)
+                self.vector.append(vector)
+		
                 
         else:
-            self.reverse_price_history[-1] = float(self.from_coin_price)
+            
             for result in self.manager.binance_client.get_historical_klines(f"{current_coin_symbol}{self.config.BRIDGE_SYMBOL}", rsi_string, limit=1):
                 self.volume[-1] = float(result[5])
+                self.reverse_price_history[-1] = float(result[4])
+                self.vector[-1] = float(result[1])
         
         if len(self.reverse_price_history) >= init_rsi_length:
             rv_closes = numpy.array(self.reverse_price_history)
