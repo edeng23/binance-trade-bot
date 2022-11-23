@@ -515,7 +515,7 @@ class Strategy(AutoTrader):
             for result in self.manager.binance_client.get_historical_klines(f"{current_coin_symbol}{self.config.BRIDGE_SYMBOL}", rsi_string, rsi_start_date_str, rsi_end_date_str, limit=init_rsi_length*5):                           
                 rsi_price = float(result[4])
                 volume = float(result[5])
-                vector = (float(result[1])-rsi_price)*volume
+                vector = (rsi_price - float(result[1])) * volume
                 self.reverse_price_history.append(rsi_price)
                 self.volume.append(volume)
                 self.vector.append(vector)
