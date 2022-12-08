@@ -1,6 +1,5 @@
 from collections import defaultdict, deque
-from colorama import Fore
-from colorama import Style
+from colorama import Fore, Style
 import math
 import random
 import sys
