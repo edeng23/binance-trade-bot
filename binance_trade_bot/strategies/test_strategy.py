@@ -158,7 +158,7 @@ class Strategy(AutoTrader):
                     print("")
                     self.logger.info("!!! Target sell !!!")
                 
-                elif self.from_coin_direction < self.dir_threshold or (self.volume[-1] / self.volume_sma >= 1.5 and self.vector[-1] < 0):
+                elif (self.from_coin_direction < self.dir_threshold and self.rv_rsi < 50) or (self.volume[-1] / self.volume_sma >= 1.5 and self.vector[-1] < 0):
                     print("")
                     self.logger.info("!!! Panic sell !!!")
                     self.active_threshold = self.rv_tema
@@ -212,7 +212,7 @@ class Strategy(AutoTrader):
                     print("")
                     self.logger.info("!!! Target buy !!!")
                 
-                elif self.from_coin_direction > self.dir_threshold or (self.volume[-1] / self.volume_sma >= 1.5 and self.vector[-1] > 0):
+                elif (self.from_coin_direction > self.dir_threshold and self.rv_rsi > 50) or (self.volume[-1] / self.volume_sma >= 1.5 and self.vector[-1] > 0):
                     print("")
                     self.logger.info("!!! FOMO buy !!!")
                     self.active_threshold = self.rv_tema
