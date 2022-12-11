@@ -433,7 +433,7 @@ class Strategy(AutoTrader):
             self.rv_tema = rv_tema[-1]
             self.rv_pre_tema = rv_tema[-2]
             self.from_coin_direction = self.from_coin_price / self.rv_tema * 100 - 100
-            self.sar = sar[-1]
+            self.sar = sar[-10:]
             self.volume_sma = volume_sma[-1]
 
         prev_close = self.reverse_price_history[0]
