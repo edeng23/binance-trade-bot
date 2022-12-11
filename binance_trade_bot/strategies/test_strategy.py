@@ -38,6 +38,9 @@ class Strategy(AutoTrader):
         self.vector = []
         self.volume = []
         self.volume_sma = []
+        self.highs = []
+        self.lows = []
+        self.sar = 0
         self.from_coin_price = 0
         self.to_coin_price = 0
         self.from_coin_direction = 0
@@ -99,6 +102,7 @@ class Strategy(AutoTrader):
             f"Bottom: {Fore.CYAN}{round(self.active_threshold, self.d)}{Style.RESET_ALL} " if not self.panicked else f"Top: {Fore.CYAN}{round(self.active_threshold, self.d)}{Style.RESET_ALL} ",
             f"Current coin: {Fore.CYAN}{current_coin}{Style.RESET_ALL} with RSI: {Fore.CYAN}{round(self.rv_rsi, 1)}{Style.RESET_ALL} price direction: {Fore.CYAN}{round(self.from_coin_direction, 1)}%{Style.RESET_ALL} ",
             f"rel. Volume: {Fore.CYAN}{round(self.volume[-1]/self.volume_sma, 2)}{Style.RESET_ALL} ",
+            f"{Fore.CYAN}bullish{Style.RESET_ALL} " if (self.sar or self.from_coin_price) > self.Res_mid else f"{Fore.CYAN}bearish{Style.RESET_ALL} ",
             f"L: {Fore.MAGENTA}{round(self.Res_low, self.d)}{Style.RESET_ALL} M: {Fore.MAGENTA}{round(self.Res_mid, self.d)}{Style.RESET_ALL} H: {Fore.MAGENTA}{round(self.Res_high, self.d)}{Style.RESET_ALL} C: {Fore.MAGENTA}{round(self.Res_float, self.d)}{Style.RESET_ALL} ",
             f"Next coin: {Fore.YELLOW}{self.rsi_coin}{Style.RESET_ALL} with RSI: {Fore.YELLOW}{round(self.rsi, 1)}{Style.RESET_ALL} price direction: {Fore.YELLOW}{round(self.to_coin_direction, 1)}%{Style.RESET_ALL} " if self.rsi else f"",
             end='\r',
@@ -159,7 +163,7 @@ class Strategy(AutoTrader):
                     print("")
                     self.logger.info("!!! Target sell !!!")
                 
-                elif (self.from_coin_direction < self.dir_threshold and self.rv_rsi < 50) or (self.volume[-1] / self.volume_sma >= 1.5 and self.vector[-1] < 0):
+                elif (self.from_coin_direction < self.dir_threshold and self.rv_rsi < 50 or self.sar < self.Res_mid) or (self.volume[-1] / self.volume_sma >= 1.5 and self.vector[-1] < 0):
                     print("")
                     self.logger.info("!!! Panic sell !!!")
                     self.active_threshold = self.rv_tema
@@ -213,7 +217,7 @@ class Strategy(AutoTrader):
                     print("")
                     self.logger.info("!!! Target buy !!!")
                 
-                elif (self.from_coin_direction > self.dir_threshold and self.rv_rsi > 50) or (self.volume[-1] / self.volume_sma >= 1.5 and self.vector[-1] > 0):
+                elif (self.from_coin_direction > self.dir_threshold and self.rv_rsi > 50 or self.sar > self.Res_mid) or (self.volume[-1] / self.volume_sma >= 1.5 and self.vector[-1] > 0):
                     print("")
                     self.logger.info("!!! FOMO buy !!!")
                     self.active_threshold = self.rv_tema
@@ -384,23 +388,31 @@ class Strategy(AutoTrader):
         if not self.reverse_price_history[0] == rev_prices[0]:  
             self.reverse_price_history = []
             for result in self.manager.binance_client.get_historical_klines(f"{current_coin_symbol}{self.config.BRIDGE_SYMBOL}", rsi_string, rsi_start_date_str, rsi_end_date_str, limit=init_rsi_length*5):                           
+                high = float(result[1])
+                low = float(result[2])
                 rsi_price = float(result[4])
                 volume = float(result[5])
                 vector = (rsi_price - float(result[1])) * volume
                 self.reverse_price_history.append(rsi_price)
                 self.volume.append(volume)
                 self.vector.append(vector)
+                self.highs.append(high)
+                self.lows.append(low)
 		
                 
         else:
             
             for result in self.manager.binance_client.get_historical_klines(f"{current_coin_symbol}{self.config.BRIDGE_SYMBOL}", rsi_string, limit=1):
+                high = float(result[1])
+                low = float(result[2])
                 close = float(result[4])
                 volume = float(result[5])
                 vector = (close - float(result[1])) * volume
                 self.volume[-1] = volume
                 self.reverse_price_history[-1] = close
                 self.vector[-1] = vector
+                self.highs[-1] = high
+                self.lows[-1] = low
         
         if len(self.reverse_price_history) >= init_rsi_length:
             rv_closes = numpy.array(self.reverse_price_history)
@@ -409,13 +421,17 @@ class Strategy(AutoTrader):
         
             volume = numpy.array(self.volume)
             volume_sma = talib.SMA(volume, init_rsi_length)
+        
+            highs = numpy.array(self.highs)
+            lows = numpy.array(self.lows)
+            sar = talib.SAR(highs, lows, 0.02, 0.2)
 
             self.rv_rsi = rv_rsi[-1]
             self.rv_pre_rsi = rv_rsi[-2]
             self.rv_tema = rv_tema[-1]
             self.rv_pre_tema = rv_tema[-2]
             self.from_coin_direction = self.from_coin_price / self.rv_tema * 100 - 100
-                
+            self.sar = sar[-1]
             self.volume_sma = volume_sma[-1]
 
         prev_close = self.reverse_price_history[0]
