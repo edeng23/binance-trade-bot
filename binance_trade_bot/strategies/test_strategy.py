@@ -363,7 +363,7 @@ class Strategy(AutoTrader):
 
                 self.rsi = rsi[-1]
                 self.pre_rsi = rsi[-2]
-                self.tema = tema[-1]
+                self.tema = tema[-2]
                 self.to_coin_direction = self.to_coin_price / self.tema * 100 - 100
 
         else:
@@ -427,7 +427,7 @@ class Strategy(AutoTrader):
 
             self.rv_rsi = rv_rsi[-1]
             self.rv_pre_rsi = rv_rsi[-2]
-            self.rv_tema = rv_tema[-1]
+            self.rv_tema = rv_tema[-2]
             self.rv_pre_tema = rv_tema[-2]
             self.from_coin_direction = self.from_coin_price / self.rv_tema * 100 - 100
             self.sar = sar[-1]
