@@ -134,8 +134,8 @@ class Strategy(AutoTrader):
             balance_in_bridge = max(balance * self.from_coin_price, 1) * 2
             m = min((1+self.win/balance_in_bridge)**(1/self.jumps)+0.001, 2**(1/self.jumps)+0.001)
             n = min(len(self.reverse_price_history), int(self.config.RSI_LENGTH))
-            stdev = st.stdev(numpy.array(self.reverse_price_history[-n:]))
-            self.dir_threshold = stdev / self.rv_pre_tema * -50
+            stdev = st.stdev(numpy.array(self.reverse_price_history[-n:])) * 0.73313783
+            self.dir_threshold = stdev / self.rv_pre_tema * -100
 
             if self.from_coin_price > self.Res_high > self.active_threshold:
                 self.active_threshold = self.Res_high * m
@@ -197,8 +197,8 @@ class Strategy(AutoTrader):
             balance = self.manager.get_currency_balance(self.config.BRIDGE.symbol) * 2
             m = max(2 - (1+self.win/balance)**(1/self.jumps)-0.001, 2 - 2**(1/self.jumps)-0.001)
             n = min(len(self.reverse_price_history), int(self.config.RSI_LENGTH))
-            stdev = st.stdev(numpy.array(self.reverse_price_history[-n:]))#, timeperiod=self.config.RSI_LENGTH, nbdev=1)
-            self.dir_threshold = stdev / self.rv_pre_tema * 50
+            stdev = st.stdev(numpy.array(self.reverse_price_history[-n:])) * 0.73313783
+            self.dir_threshold = stdev / self.rv_pre_tema * 100
 
             if self.from_coin_price < self.Res_low < self.active_threshold:
                 self.active_threshold = self.Res_low * m
