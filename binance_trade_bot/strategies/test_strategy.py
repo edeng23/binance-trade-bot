@@ -471,6 +471,7 @@ class Strategy(AutoTrader):
         accepted_bridge = {'USDT', 'BUSD', 'USD', 'AUD', 'BIDR', 'BRL', 'EUR', 'GBP', 'RUB', 'TRY', 'DAI', 'UAH', 'ZAR', 'VAI', 'IDRT', 'NGN', 'PLN', 'BNB', 'BTC', 'ETH', 'XRP', 'TRX', 'DOGE', 'DOT'}
         if self.manager.get_currency_balance(bridge) >= 10 and bridge in accepted_bridge:
             self.logger.info("Running in panic mode")
+            self.active_threshold = 10**10
             return True
         else:
             return False
