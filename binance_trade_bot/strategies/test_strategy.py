@@ -423,7 +423,7 @@ class Strategy(AutoTrader):
         
             highs = numpy.array(self.highs)
             lows = numpy.array(self.lows)
-            sar = talib.SAR(highs, lows, acceleration=0.02, maximum=0.2)
+            sar = talib.SAR(highs, lows, acceleration=0.02, maximum=20)
 
             self.rv_rsi = rv_rsi[-1]
             self.rv_pre_rsi = rv_rsi[-2]
