@@ -148,7 +148,7 @@ class Strategy(AutoTrader):
                     self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)#int(self.config.RSI_CANDLE_TYPE))
 
 
-        if base_time >= self.panic_time and not self.panickeda and self.from_coin_price >= self.fair_price:
+        if base_time >= self.panic_time and not self.panicked and self.from_coin_price >= self.fair_price:
             balance = self.manager.get_currency_balance(panic_pair.from_coin.symbol)
             balance_in_bridge = max(balance * self.from_coin_price, 1) * 2
             m = min((1+self.win/balance_in_bridge)**(1/self.jumps), 2**(1/self.jumps))+0.001
