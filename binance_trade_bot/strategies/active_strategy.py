@@ -44,6 +44,7 @@ class Strategy(AutoTrader):
         self.volume_sma = []
         self.highs = []
         self.lows = []
+        self.fair_price = 0
         self.sar = 0
         self.from_coin_price = 0
         self.to_coin_price = 0
@@ -113,7 +114,8 @@ class Strategy(AutoTrader):
             f"Ratio weight: {Fore.CYAN}{self.auto_weight}{Style.RESET_ALL} ",
             f"Current coin: {Fore.CYAN}{current_coin}{Style.RESET_ALL} with RSI: {Fore.CYAN}{round(self.rv_rsi, 1)}{Style.RESET_ALL} price direction: {Fore.CYAN}{round(self.from_coin_direction, 1)}%{Style.RESET_ALL} ",
             f"rel. Volume: {Fore.CYAN}{round(self.volume[-1]/self.volume_sma, 2)}{Style.RESET_ALL} ",
-            f"L: {Fore.MAGENTA}{round(self.Res_low, self.d)}{Style.RESET_ALL} M: {Fore.MAGENTA}{round(self.Res_mid, self.d)}{Style.RESET_ALL} H: {Fore.MAGENTA}{round(self.Res_high, self.d)}{Style.RESET_ALL} C: {Fore.MAGENTA}{round(self.Res_float, self.d)}{Style.RESET_ALL} ",
+            f"C: {Fore.MAGENTA}{round(self.Res_float, self.d)}{Style.RESET_ALL} FP: {Fore.MAGENTA}{round(self.fair_price, self.d)}{Style.RESET_ALL} ""
+            #f"L: {Fore.MAGENTA}{round(self.Res_low, self.d)}{Style.RESET_ALL} M: {Fore.MAGENTA}{round(self.Res_mid, self.d)}{Style.RESET_ALL} H: {Fore.MAGENTA}{round(self.Res_high, self.d)}{Style.RESET_ALL} C: {Fore.MAGENTA}{round(self.Res_float, self.d)}{Style.RESET_ALL} ",
             f"Next coin: {Fore.YELLOW}{self.rsi_coin}{Style.RESET_ALL} with RSI: {Fore.YELLOW}{round(self.rsi, 1)}{Style.RESET_ALL} price direction: {Fore.YELLOW}{round(self.to_coin_direction, 1)}%{Style.RESET_ALL} " if self.rsi else f"",
             end='\r',
         )
@@ -146,7 +148,7 @@ class Strategy(AutoTrader):
                     self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)#int(self.config.RSI_CANDLE_TYPE))
 
 
-        if base_time >= self.panic_time and not self.panicked:
+        if base_time >= self.panic_time and not self.panickeda and self.from_coin_price >= self.fair_price:
             balance = self.manager.get_currency_balance(panic_pair.from_coin.symbol)
             balance_in_bridge = max(balance * self.from_coin_price, 1) * 2
             m = min((1+self.win/balance_in_bridge)**(1/self.jumps), 2**(1/self.jumps))+0.001
@@ -210,7 +212,7 @@ class Strategy(AutoTrader):
                         self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
                 
 		
-        elif base_time >= self.panic_time and self.panicked:
+        elif base_time >= self.panic_time and self.panicked and self.from_coin_price <= self.fair_price:
             balance = self.manager.get_currency_balance(self.config.BRIDGE.symbol) * 2
             m = max(2 - (1+self.win/balance)**(1/self.jumps)-0.001, 2 - 2**(1/self.jumps)-0.001)
             n = min(len(self.reverse_price_history), int(self.config.RSI_LENGTH))
@@ -541,7 +543,24 @@ class Strategy(AutoTrader):
             highs = numpy.array(self.highs)
             lows = numpy.array(self.lows)
             sar = talib.SAR(highs, lows, acceleration=0.02, maximum=20)
-
+		
+            comb = zip(self.reverse_price_history, self.highs, self.lows)
+            hlc = []
+            for values in comb:
+                hlc.append(sum(values) / len(values))             
+            stdev = (max(self.highs) - min(self.lows)) / (st.stdev(numpy.array(hist[-1 * int(self.config.RSI_LENGTH):])))
+            count, bins = numpy.histogram(hist, bins=int(stdev))
+            allocs = numpy.digitize(hlc, bins) - 1
+        
+            hist = dict()
+            for a,vol in zip(allocs, volume):
+                if not bins[a] in hist:
+                    hist[bins[a]] = bins[a] * vol
+                else:
+                    hist[bins[a]] += bins[a] * vol
+            fair_price, max_value = max(hist.items(), key=lambda x: x[1])
+            
+            self.fair_price = float(fair_price)
             self.rv_rsi = rv_rsi[-1]
             self.rv_pre_rsi = rv_rsi[-2]
             self.rv_tema = rv_tema[-2]
