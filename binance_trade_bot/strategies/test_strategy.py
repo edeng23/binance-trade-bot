@@ -335,7 +335,7 @@ class Strategy(AutoTrader):
             to_coin_symbol = self.best_pair.to_coin_id
             check_prices = []
         
-            for checks in self.manager.binance_client.get_historical_klines(f"{to_coin_symbol}{self.config.BRIDGE_SYMBOL}", rsi_string, rsi_start_date_str, rsi_check_str, limit=1000):                           
+            for checks in self.manager.binance_client.get_historical_klines(f"{to_coin_symbol}{self.config.BRIDGE_SYMBOL}", rsi_string, rsi_start_date_str, rsi_check_str, limit=1):                           
                 check_price = float(checks[4])
                 check_prices.append(check_price)
                 
