@@ -44,6 +44,7 @@ class Strategy(AutoTrader):
         self.volume_sma = []
         self.highs = []
         self.lows = []
+        self.equi = False
         self.fair_price = 0
         self.sar = 0
         self.from_coin_price = 0
@@ -148,7 +149,7 @@ class Strategy(AutoTrader):
                     self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)#int(self.config.RSI_CANDLE_TYPE))
 
 
-        if base_time >= self.panic_time and not self.panicked and self.from_coin_price >= self.fair_price:
+        if base_time >= self.panic_time and not self.panicked and not self.equi:
             balance = self.manager.get_currency_balance(panic_pair.from_coin.symbol)
             balance_in_bridge = max(balance * self.from_coin_price, 1) * 2
             m = min((1+self.win/balance_in_bridge)**(1/self.jumps), 2**(1/self.jumps))+0.001
@@ -212,7 +213,7 @@ class Strategy(AutoTrader):
                         self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
                 
 		
-        elif base_time >= self.panic_time and self.panicked and self.from_coin_price <= self.fair_price:
+        elif base_time >= self.panic_time and self.panicked and self.equi:
             balance = self.manager.get_currency_balance(self.config.BRIDGE.symbol) * 2
             m = max(2 - (1+self.win/balance)**(1/self.jumps)-0.001, 2 - 2**(1/self.jumps)-0.001)
             n = min(len(self.reverse_price_history), int(self.config.RSI_LENGTH))
@@ -551,6 +552,7 @@ class Strategy(AutoTrader):
             stdev = (max(self.highs) - min(self.lows)) / (st.stdev(numpy.array(hlc[-1 * int(self.config.RSI_LENGTH):])))
             count, bins = numpy.histogram(hlc, bins=int(stdev))
             allocs = numpy.digitize(hlc, bins) - 1
+            position_now = numpy.digitize(self.from_coin_price, bins) - 1
         
             hist = dict()
             for a,vol in zip(allocs, volume):
@@ -558,7 +560,13 @@ class Strategy(AutoTrader):
                     hist[bins[a]] = bins[a] * vol
                 else:
                     hist[bins[a]] += bins[a] * vol
-            fair_price, max_value = max(hist.items(), key=lambda x: x[1])
+                
+            if hist[bins[max(position_now-1, 0)]] < hist[bins[position_now]] > hist[bins[min(position_now+1, len(hist)-1)]]:
+                self.equi = True
+            else:
+                self.equi = False
+                
+            fair_price, max_value = max(sorted_hist.items(), key=lambda x: x[1])
             
             self.fair_price = float(fair_price)
             self.rv_rsi = rv_rsi[-1]
