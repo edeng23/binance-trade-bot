@@ -172,7 +172,7 @@ class Strategy(AutoTrader):
             if self.rv_pre_rsi > self.rv_rsi and (self.from_coin_direction < 0 or self.volume[-1] / self.volume_sma >= 1.5) or self.from_coin_direction < self.dir_threshold or self.rv_rsi > 80 or max(self.vector[:-2]) <= self.vector[-1]:
                 if self.rsi:
                     print("")
-                    self.logger.info(f"{self.rsi_coin} exhausted, jumping to {self.best_pair.to_coin_id}")
+                    self.logger.info(f"{current_coin} exhausted, jumping to {self.best_pair.to_coin_id}")
                     self.panicked = False
                     self.transaction_through_bridge(self.best_pair, round(max(self.from_coin_price, self.rv_tema), self.d), round(min(self.to_coin_price, self.tema), self.v))
                     #self.active_threshold = 0
