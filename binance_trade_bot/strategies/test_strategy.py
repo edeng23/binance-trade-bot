@@ -18,10 +18,15 @@ from binance_trade_bot.database import Pair, Coin, CoinValue
 
 class Strategy(AutoTrader):
     def initialize(self):
-      
+	
+        if self.config.ACCEPT_LOSSES != True:
+            self.logger.error("You need to accept losses by setting accept_losses=true in the user.cfg or setting the enviroment variable ACCEPT_LOSSES to true in order to use this strategy!")
+            raise Exception()
+
         super().initialize()
         self.initialize_current_coin()
         self.rsi_coin = ""
+        self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
         self.d = 3
         self.v = 3
         self.jumps = int(self.config.JUMPS_PER_DAY)
@@ -34,12 +39,13 @@ class Strategy(AutoTrader):
         self.Res_float = 0
         self.tema = 1
         self.rv_tema = 1
-        self.rv_pre_tema = 1
         self.vector = []
         self.volume = []
         self.volume_sma = []
         self.highs = []
         self.lows = []
+        self.equi = False
+        self.fair_price = 0
         self.sar = 0
         self.from_coin_price = 0
         self.to_coin_price = 0
@@ -48,6 +54,7 @@ class Strategy(AutoTrader):
         self.reverse_price_history = [0]
         self.rsi_price_history = [0]
         self.panicked = self.check_panic()
+        self.jumpable_coins = 0
         self.pre_rsi = 0
         self.rv_pre_rsi = 0
         self.rv_rsi = 0
@@ -55,7 +62,9 @@ class Strategy(AutoTrader):
         self.rsi = self.rsi_calc()
         self.reinit_threshold = self.manager.now().replace(second=0, microsecond=0)
         self.reinit_rsi = self.manager.now().replace(second=0, microsecond=0)
-        self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
+        self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
+        self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)#int(self.config.RSI_CANDLE_TYPE))
+        self.logger.info(f"Ratio adjust weight: {self.config.RATIO_ADJUST_WEIGHT}")
         self.logger.info(f"RSI length: {self.config.RSI_LENGTH}")
         self.logger.info(f"RSI candle type: {self.config.RSI_CANDLE_TYPE}")
     
@@ -71,6 +80,7 @@ class Strategy(AutoTrader):
         base_time: datetime = self.manager.now()
         allowed_idle_time = self.reinit_threshold
         allowed_rsi_time = self.reinit_rsi
+        allowed_rsi_idle_time = self.reinit_idle
         
         if self.panicked:
             self.from_coin_price = self.manager.get_buy_price(current_coin + self.config.BRIDGE)
@@ -84,6 +94,8 @@ class Strategy(AutoTrader):
         
         if base_time >= allowed_idle_time:
             print("")
+            self.auto_weight = max(1, self.auto_weight + self.jumpable_coins - 1)
+            self.re_initialize_trade_thresholds()
             self.reinit_threshold = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
 		
         if base_time >= allowed_rsi_time:
@@ -100,9 +112,11 @@ class Strategy(AutoTrader):
             f"{Fore.CYAN}Long{Style.RESET_ALL} " if not self.panicked else f"{Fore.CYAN}Short{Style.RESET_ALL} ",
             f"Threshold: {Fore.CYAN}{round(self.from_coin_direction - self.dir_threshold, 3)}%{Style.RESET_ALL} " if self.dir_threshold != 0 else f"",
             f"Bottom: {Fore.CYAN}{round(self.active_threshold, self.d)}{Style.RESET_ALL} " if not self.panicked else f"Top: {Fore.CYAN}{round(self.active_threshold, self.d)}{Style.RESET_ALL} ",
+            f"Ratio weight: {Fore.CYAN}{self.auto_weight}{Style.RESET_ALL} ",
             f"Current coin: {Fore.CYAN}{current_coin}{Style.RESET_ALL} with RSI: {Fore.CYAN}{round(self.rv_rsi, 1)}{Style.RESET_ALL} price direction: {Fore.CYAN}{round(self.from_coin_direction, 1)}%{Style.RESET_ALL} ",
             f"rel. Volume: {Fore.CYAN}{round(self.volume[-1]/self.volume_sma, 2)}{Style.RESET_ALL} ",
-            f"L: {Fore.MAGENTA}{round(self.Res_low, self.d)}{Style.RESET_ALL} M: {Fore.MAGENTA}{round(self.Res_mid, self.d)}{Style.RESET_ALL} H: {Fore.MAGENTA}{round(self.Res_high, self.d)}{Style.RESET_ALL} C: {Fore.MAGENTA}{round(self.Res_float, self.d)}{Style.RESET_ALL} ",
+            f"C: {Fore.MAGENTA}{round(self.Res_float, self.d)}{Style.RESET_ALL} FP: {Fore.MAGENTA}{round(self.fair_price, self.d)}{Style.RESET_ALL} ",
+            #f"L: {Fore.MAGENTA}{round(self.Res_low, self.d)}{Style.RESET_ALL} M: {Fore.MAGENTA}{round(self.Res_mid, self.d)}{Style.RESET_ALL} H: {Fore.MAGENTA}{round(self.Res_high, self.d)}{Style.RESET_ALL} C: {Fore.MAGENTA}{round(self.Res_float, self.d)}{Style.RESET_ALL} ",
             f"Next coin: {Fore.YELLOW}{self.rsi_coin}{Style.RESET_ALL} with RSI: {Fore.YELLOW}{round(self.rsi, 1)}{Style.RESET_ALL} price direction: {Fore.YELLOW}{round(self.to_coin_direction, 1)}%{Style.RESET_ALL} " if self.rsi else f"",
             end='\r',
         )
@@ -114,28 +128,34 @@ class Strategy(AutoTrader):
                 if self.to_coin_direction >= 0 and (self.rsi > self.pre_rsi <= 30 or self.pre_rsi < self.rsi > 50) or self.rsi < 20:
                     print("")
                     self.logger.info(f"Will be jumping from {self.rsi_coin} to {self.best_pair.to_coin_id}")
+                    self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
                     self.panicked = False
                     self.transaction_through_bridge(self.best_pair, round(max(self.from_coin_price, self.rv_tema), self.d), round(min(self.to_coin_price, self.tema), self.v))
                     self.active_threshold = 0
                     self.dir_threshold = 0
-                    self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
+                    self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
+                    self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)#int(self.config.RSI_CANDLE_TYPE))
 
             else:
                 if self.from_coin_direction <= self.to_coin_direction >= 0 and (self.pre_rsi < self.rsi <= 30 or 50 <= self.pre_rsi < self.rsi) or self.rsi < 20:
                     print("")
+                    self.logger.info(f"Will be jumping from {self.rsi_coin} to {self.best_pair.to_coin_id}")
+                    self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
                     self.panicked = False
                     self.transaction_through_bridge(self.best_pair, round(max(self.from_coin_price, self.rv_tema, self.active_threshold), self.d), round(min(self.to_coin_price, self.tema), self.v))
                     self.active_threshold = 0
                     self.dir_threshold = 0
-                    self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
-                                
-        if base_time >= self.panic_time and not self.panicked:
+                    self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
+                    self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)#int(self.config.RSI_CANDLE_TYPE))
+
+
+        if base_time >= self.panic_time and not self.panicked and not self.equi:
             balance = self.manager.get_currency_balance(panic_pair.from_coin.symbol)
             balance_in_bridge = max(balance * self.from_coin_price, 1) * 2
-            m = min((1+self.win/balance_in_bridge)**(1/self.jumps)+0.001, 2**(1/self.jumps)+0.001)
+            m = min((1+self.win/balance_in_bridge)**(1/self.jumps), 2**(1/self.jumps))+0.001
             n = min(len(self.reverse_price_history), int(self.config.RSI_LENGTH))
             stdev = st.stdev(numpy.array(self.reverse_price_history[-n:])) * 0.73313783
-            self.dir_threshold = stdev / self.rv_pre_tema * -100
+            self.dir_threshold = stdev / self.rv_tema * -100
 
             if self.from_coin_price > self.Res_high > self.active_threshold:
                 self.active_threshold = self.Res_high * m
@@ -193,12 +213,12 @@ class Strategy(AutoTrader):
                         self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
                 
 		
-        elif base_time >= self.panic_time and self.panicked:
+        elif base_time >= self.panic_time and self.panicked and self.equi:
             balance = self.manager.get_currency_balance(self.config.BRIDGE.symbol) * 2
             m = max(2 - (1+self.win/balance)**(1/self.jumps)-0.001, 2 - 2**(1/self.jumps)-0.001)
             n = min(len(self.reverse_price_history), int(self.config.RSI_LENGTH))
             stdev = st.stdev(numpy.array(self.reverse_price_history[-n:])) * 0.73313783
-            self.dir_threshold = stdev / self.rv_pre_tema * 100
+            self.dir_threshold = stdev / self.rv_tema * 100
 
             if self.from_coin_price < self.Res_low < self.active_threshold:
                 self.active_threshold = self.Res_low * m
@@ -285,7 +305,107 @@ class Strategy(AutoTrader):
                     )
                     self.logger.info("Ready to start trading")
 
-    
+    def re_initialize_trade_thresholds(self):
+        """
+        Re-initialize all the thresholds ( hard reset - as deleting db )
+        """
+        #updates all ratios
+        #print('************INITIALIZING RATIOS**********')
+        session: Session
+        with self.db.db_session() as session:
+            c1 = aliased(Coin)
+            c2 = aliased(Coin)
+            for pair in session.query(Pair).all():
+                if not pair.from_coin.enabled or not pair.to_coin.enabled:
+                    continue
+                #self.logger.debug(f"Initializing {pair.from_coin} vs {pair.to_coin}", False)
+
+                from_coin_price = self.manager.get_sell_price(pair.from_coin + self.config.BRIDGE)
+                if from_coin_price is None:
+                    # self.logger.debug(
+                    #     "Skipping initializing {}, symbol not found".format(pair.from_coin + self.config.BRIDGE),
+                    #     False
+                    # )
+                    continue
+
+                to_coin_price = self.manager.get_buy_price(pair.to_coin + self.config.BRIDGE)
+                if to_coin_price is None:
+                    # self.logger.debug(
+                    #     "Skipping initializing {}, symbol not found".format(pair.to_coin + self.config.BRIDGE),
+                    #     False
+                    # )
+                    continue
+
+                pair.ratio = (pair.ratio *self.auto_weight + from_coin_price / to_coin_price)  / (self.auto_weight + 1)
+		
+    def initialize_trade_thresholds(self):
+        """
+        Initialize the buying threshold of all the coins for trading between them
+        """
+        session: Session
+        with self.db.db_session() as session:
+            pairs = session.query(Pair).filter(Pair.ratio.is_(None)).all()
+            grouped_pairs = defaultdict(list)
+            for pair in pairs:
+                if pair.from_coin.enabled and pair.to_coin.enabled:
+                    grouped_pairs[pair.from_coin.symbol].append(pair)
+
+            price_history = {}
+
+            init_weight = self.config.RATIO_ADJUST_WEIGHT
+            
+            #Binance api allows retrieving max 1000 candles
+            if init_weight > 500:
+                init_weight = 500
+
+            self.logger.info(f"Using last {init_weight} candles to initialize ratios")
+
+            base_date = self.manager.now().replace(second=0, microsecond=0)
+            start_date = base_date - timedelta(minutes=init_weight*2)
+            end_date = base_date - timedelta(minutes=1)
+
+            start_date_str = start_date.strftime('%Y-%m-%d %H:%M')
+            end_date_str = end_date.strftime('%Y-%m-%d %H:%M')
+
+            self.logger.info(f"Starting ratio init: Start Date: {start_date}, End Date {end_date}")
+            for from_coin_symbol, group in grouped_pairs.items():
+
+                if from_coin_symbol not in price_history.keys():
+                    price_history[from_coin_symbol] = []
+                    for result in  self.manager.binance_client.get_historical_klines(f"{from_coin_symbol}{self.config.BRIDGE_SYMBOL}", "1m", start_date_str, end_date_str, limit=1000):
+                        price = float(result[4])
+                        price_history[from_coin_symbol].append(price)
+
+                for pair in group:                  
+                    to_coin_symbol = pair.to_coin.symbol
+                    if to_coin_symbol not in price_history.keys():
+                        price_history[to_coin_symbol] = []
+                        for result in self.manager.binance_client.get_historical_klines(f"{to_coin_symbol}{self.config.BRIDGE_SYMBOL}", "1m", start_date_str, end_date_str, limit=1000):                           
+                           price = float(result[4])
+                           price_history[to_coin_symbol].append(price)
+
+                    if len(price_history[from_coin_symbol]) != init_weight*2:
+                        self.logger.info(len(price_history[from_coin_symbol]))
+                        self.logger.info(f"Skip initialization. Could not fetch last {init_weight * 2} prices for {from_coin_symbol}")
+                        continue
+                    if len(price_history[to_coin_symbol]) != init_weight*2:
+                        self.logger.info(f"Skip initialization. Could not fetch last {init_weight * 2} prices for {to_coin_symbol}")
+                        continue
+                    
+                    sma_ratio = 0.0
+                    for i in range(init_weight):
+                        sma_ratio += price_history[from_coin_symbol][i] / price_history[to_coin_symbol][i]
+                    sma_ratio = sma_ratio / init_weight
+
+                    cumulative_ratio = sma_ratio
+                    for i in range(init_weight, init_weight * 2):
+                        cumulative_ratio = (cumulative_ratio * init_weight + price_history[from_coin_symbol][i] / price_history[to_coin_symbol][i]) / (init_weight + 1)
+
+                    pair.ratio = cumulative_ratio
+
+            self.logger.info(f"Finished ratio init...")
+
+	
     def rsi_calc(self):
         """
         Calculate the RSI for the next best coin.
@@ -316,6 +436,7 @@ class Strategy(AutoTrader):
         ratio_dict, prices = self._get_ratios(current_coin, current_coin_price)
         ratio_dict = {k: v for k, v in ratio_dict.items() if v > 0}
         
+        self.jumpable_coins = len(ratio_dict)
         self.d = abs(decimal.Decimal(str(self.reverse_price_history[-1])).as_tuple().exponent)
         self.v = abs(decimal.Decimal(str(self.rsi_price_history[-1])).as_tuple().exponent)
         
@@ -363,7 +484,7 @@ class Strategy(AutoTrader):
 
                 self.rsi = rsi[-1]
                 self.pre_rsi = rsi[-2]
-                self.tema = tema[-2]
+                self.tema = tema[-2] #round(tema[-1], d)
                 self.to_coin_direction = self.to_coin_price / self.tema * 100 - 100
 
         else:
@@ -380,7 +501,7 @@ class Strategy(AutoTrader):
         ADC = 1
         rev_prices = []
 
-        for reverse in self.manager.binance_client.get_historical_klines(f"{current_coin_symbol}{self.config.BRIDGE_SYMBOL}", rsi_string, rsi_start_date_str, rsi_check_str, limit=1):                           
+        for reverse in self.manager.binance_client.get_historical_klines(f"{current_coin_symbol}{self.config.BRIDGE_SYMBOL}", rsi_string, rsi_start_date_str, rsi_check_str, limit=init_rsi_length*5):                           
             rev_price = float(reverse[4])
             rev_prices.append(rev_price)
                 
@@ -397,8 +518,7 @@ class Strategy(AutoTrader):
                 self.vector.append(vector)
                 self.highs.append(high)
                 self.lows.append(low)
-		
-                
+
         else:
             
             for result in self.manager.binance_client.get_historical_klines(f"{current_coin_symbol}{self.config.BRIDGE_SYMBOL}", rsi_string, limit=1):
@@ -420,15 +540,38 @@ class Strategy(AutoTrader):
         
             volume = numpy.array(self.volume)
             volume_sma = talib.SMA(volume, init_rsi_length)
-        
+
             highs = numpy.array(self.highs)
             lows = numpy.array(self.lows)
             sar = talib.SAR(highs, lows, acceleration=0.02, maximum=20)
-
+		
+            comb = zip(self.reverse_price_history, self.highs, self.lows)
+            hlc = []
+            for values in comb:
+                hlc.append(sum(values) / len(values))             
+            stdev = (max(self.highs) - min(self.lows)) / (st.stdev(numpy.array(hlc[-1 * int(self.config.RSI_LENGTH):])))
+            count, bins = numpy.histogram(hlc, bins=int(stdev))
+            allocs = numpy.digitize(hlc, bins) - 1
+            position_now = numpy.digitize(self.from_coin_price, bins) - 1
+        
+            hist = dict()
+            for a,vol in zip(allocs, volume):
+                if not bins[a] in hist:
+                    hist[bins[a]] = bins[a] * vol
+                else:
+                    hist[bins[a]] += bins[a] * vol
+                
+            if hist[bins[max(position_now-1, 0)]] <= hist[bins[position_now]] >= hist[bins[min(position_now+1, len(hist)-1)]]:
+                self.equi = True
+            else:
+                self.equi = False
+                
+            fair_price, max_value = max(sorted_hist.items(), key=lambda x: x[1])
+            
+            self.fair_price = float(fair_price)
             self.rv_rsi = rv_rsi[-1]
             self.rv_pre_rsi = rv_rsi[-2]
             self.rv_tema = rv_tema[-2]
-            self.rv_pre_tema = rv_tema[-2]
             self.from_coin_direction = self.from_coin_price / self.rv_tema * 100 - 100
             self.sar = sar[-1]
             self.volume_sma = volume_sma[-1]
@@ -466,6 +609,7 @@ class Strategy(AutoTrader):
         else:
             self.Res_float = self.reverse_price_history[-1] + (Val_float * (100/self.rv_rsi - 1))
         
+
     def check_panic(self):
         bridge = self.config.BRIDGE.symbol.upper()
         accepted_bridge = {'USDT', 'BUSD', 'USD', 'AUD', 'BIDR', 'BRL', 'EUR', 'GBP', 'RUB', 'TRY', 'DAI', 'UAH', 'ZAR', 'VAI', 'IDRT', 'NGN', 'PLN', 'BNB', 'BTC', 'ETH', 'XRP', 'TRX', 'DOGE', 'DOT'}
@@ -475,5 +619,3 @@ class Strategy(AutoTrader):
             return True
         else:
             return False
-                
-                
