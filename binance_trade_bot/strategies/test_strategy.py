@@ -569,7 +569,7 @@ class Strategy(AutoTrader):
             else:
                 self.equi = False
 
-            fair_price, max_value = max(sorted_hist.items(), key=lambda x: x[1])
+            fair_price, max_value = max(hist.items(), key=lambda x: x[1])
 
             self.fair_price = float(fair_price)
             self.rv_rsi = rv_rsi[-1]
