@@ -555,7 +555,7 @@ class Strategy(AutoTrader):
             stdev = max((max(self.highs) - min(self.lows)) / (st.stdev(numpy.array(hlc[-1 * int(self.config.RSI_LENGTH):]))), 100)
             count, bins = numpy.histogram(hlc, bins=int(stdev))
             allocs = numpy.digitize(hlc, bins) - 1
-            position_now = numpy.digitize(self.from_coin_price, bins) - 1
+            position_now = max(numpy.digitize(self.from_coin_price, bins) - 1, 0)
 
             hist = dict()
             for a,vol in zip(allocs, volume):
