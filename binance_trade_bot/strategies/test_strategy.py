@@ -564,7 +564,7 @@ class Strategy(AutoTrader):
                 else:
                     hist[a] += bins[a] * vol
 
-            if hist[max(position_now-1, 0)] <= hist[position_now] >= hist[position_now+1]:
+            if hist[max(position_now-1, 0)] <= hist[max(position_now, 0)] >= hist[position_now+1]:
                 self.equi = True
             else:
                 self.equi = False
