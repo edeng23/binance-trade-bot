@@ -555,14 +555,14 @@ class Strategy(AutoTrader):
             stdev = max((max(self.highs) - min(self.lows)) / (st.stdev(numpy.array(hlc[-1 * int(self.config.RSI_LENGTH):]))), 100)
             count, bins = numpy.histogram(hlc, bins=int(stdev))
             allocs = numpy.digitize(hlc, bins) - 1
-            position_now = max(numpy.digitize(self.from_coin_price, bins) - 1, 0)
+            position_now = numpy.digitize(self.from_coin_price, bins) - 1
 
-            hist = dict()
+            hist = {i: 0 for i in range(len(bins))}
             for a,vol in zip(allocs, volume):
-                if not a in hist:
-                    hist[a] = bins[a] * vol
-                else:
-                    hist[a] += bins[a] * vol
+                #if not a in hist:
+                hist[a] = bins[a] * vol
+                #else:
+                    #hist[a] += bins[a] * vol
 
             if hist[max(position_now-1, 0)] <= hist[position_now] >= hist[min(position_now+1, len(hist)-1)]:
                 self.equi = True
