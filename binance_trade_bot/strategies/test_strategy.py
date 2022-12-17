@@ -557,14 +557,14 @@ class Strategy(AutoTrader):
             allocs = numpy.digitize(hlc, bins) - 1
             position_now = numpy.digitize(self.from_coin_price, bins) - 1
 
-            hist = {i: 0 for i in range(len(bins))}
+            hist = {i: 0 for i in range(len(bins)+1)}
             for a,vol in zip(allocs, volume):
                 if not a in hist:
                     hist[a] = bins[a] * vol
                 else:
                     hist[a] += bins[a] * vol
 
-            if hist[max(position_now-1, 0)] <= hist[position_now] >= hist[min(position_now+1, len(hist)-1)]:
+            if hist[max(position_now-1, 0)] <= hist[position_now] >= hist[position_now+1]:
                 self.equi = True
             else:
                 self.equi = False
