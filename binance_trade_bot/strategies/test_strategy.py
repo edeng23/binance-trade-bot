@@ -128,7 +128,7 @@ class Strategy(AutoTrader):
             if self.panicked:
                 if self.to_coin_direction >= 0 and (self.rsi > self.pre_rsi <= 30 or self.pre_rsi < self.rsi > 50) or self.rsi < 20:
                     print("")
-                    self.logger.info(f"Will be jumping from {self.rsi_coin} to {self.best_pair.to_coin_id}")
+                    self.logger.info(f"Will be jumping from {current_coin} to {self.best_pair.to_coin_id}")
                     self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
                     self.panicked = False
                     self.transaction_through_bridge(self.best_pair, round(max(self.from_coin_price, self.rv_tema), self.d), round(min(self.to_coin_price, self.tema), self.v))
@@ -140,7 +140,7 @@ class Strategy(AutoTrader):
             else:
                 if self.from_coin_direction <= self.to_coin_direction >= 0 and (self.pre_rsi < self.rsi <= 30 or 50 <= self.pre_rsi < self.rsi) or self.rsi < 20:
                     print("")
-                    self.logger.info(f"Will be jumping from {self.rsi_coin} to {self.best_pair.to_coin_id}")
+                    self.logger.info(f"Will be jumping from {current_coin} to {self.best_pair.to_coin_id}")
                     self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
                     self.panicked = False
                     self.transaction_through_bridge(self.best_pair, round(max(self.from_coin_price, self.rv_tema), self.d), round(min(self.to_coin_price, self.tema), self.v))
