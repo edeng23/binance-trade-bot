@@ -559,12 +559,12 @@ class Strategy(AutoTrader):
 
             hist = dict()
             for a,vol in zip(allocs, volume):
-                if not bins[a] in hist:
-                    hist[bins[a]] = bins[a] * vol
+                if not a in hist:
+                    hist[a] = bins[a] * vol
                 else:
-                    hist[bins[a]] += bins[a] * vol
+                    hist[a] += bins[a] * vol
 
-            if hist[bins[max(position_now-1, 0)]] <= hist[bins[position_now]] >= hist[bins[min(position_now+1, len(hist)-1)]]:
+            if hist[max(position_now-1, 0)] <= hist[position_now] >= hist[min(position_now+1, len(hist)-1)]:
                 self.equi = True
             else:
                 self.equi = False
