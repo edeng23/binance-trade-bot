@@ -557,7 +557,7 @@ class Strategy(AutoTrader):
             allocs = numpy.digitize(hlc, bins) - 1
             position_now = numpy.digitize(self.from_coin_price, bins) - 1
 
-            hist = dict()
+            hist = {}
             hist = {i: 0 for i in range(len(bins)+1)}
             for a,vol in zip(allocs, volume):
                 if not a in hist:
