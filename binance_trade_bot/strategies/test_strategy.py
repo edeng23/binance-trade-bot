@@ -110,8 +110,8 @@ class Strategy(AutoTrader):
         print(
             f"{self.manager.now().strftime('%Y-%m-%d %H:%M:%S')} - " ,
             f"{Fore.CYAN}Holding{Style.RESET_ALL} " if not self.panicked else f"{Fore.CYAN}Not holding{Style.RESET_ALL} ",
-            f"Threshold: {Fore.CYAN}{round(self.from_coin_direction - self.dir_threshold, 3)}%{Style.RESET_ALL} " if self.dir_threshold != 0 else f"",
             f"{Fore.CYAN}Pivot point{Style.RESET_ALL} " if self.equi else f"{Fore.CYAN}Moving{Style.RESET_ALL} ",
+            f"Threshold: {Fore.CYAN}{round(self.from_coin_direction - self.dir_threshold, 3)}%{Style.RESET_ALL} " if self.dir_threshold != 0 else f"",
             f"Bottom: {Fore.CYAN}{round(self.active_threshold, self.d)}{Style.RESET_ALL} " if not self.panicked else f"Top: {Fore.CYAN}{round(self.active_threshold, self.d)}{Style.RESET_ALL} ",
             f"Ratio weight: {Fore.CYAN}{self.auto_weight}{Style.RESET_ALL} ",
             f"Current coin: {Fore.CYAN}{current_coin}{Style.RESET_ALL} with RSI: {Fore.CYAN}{round(self.rv_rsi, 1)}{Style.RESET_ALL} price direction: {Fore.CYAN}{round(self.from_coin_direction, 1)}%{Style.RESET_ALL} ",
