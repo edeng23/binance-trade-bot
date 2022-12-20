@@ -518,6 +518,10 @@ class Strategy(AutoTrader):
 
         if not self.reverse_price_history[0] == rev_prices[0]:
             self.reverse_price_history = []
+            self.volume = []
+            self.vector =[]
+            self.highs = []
+            self.lows = []
             for result in self.manager.binance_client.get_historical_klines(f"{current_coin_symbol}{self.config.BRIDGE_SYMBOL}", rsi_string, rsi_start_date_str, rsi_end_date_str, limit=init_rsi_length*5):
                 high = float(result[1])
                 low = float(result[2])
