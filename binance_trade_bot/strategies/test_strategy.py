@@ -177,6 +177,7 @@ class Strategy(AutoTrader):
                 if self.rsi:
                     print("")
                     self.logger.info(f"{current_coin} exhausted, jumping to {self.best_pair.to_coin_id}")
+                    self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
                     self.panicked = False
                     self.transaction_through_bridge(self.best_pair, round(max(self.from_coin_price, self.rv_tema), self.d), round(min(self.to_coin_price, self.tema), self.v))
                     self.active_threshold = 0
