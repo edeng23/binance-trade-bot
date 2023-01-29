@@ -8,6 +8,7 @@ import numpy
 import decimal
 import statistics as st
 from datetime import datetime, timedelta
+from scipy.interpolate import UnivariateSpline
 
 from sqlalchemy.orm import Session, aliased
 from sqlalchemy.sql.expression import and_
@@ -46,6 +47,7 @@ class Strategy(AutoTrader):
         self.lows = []
         self.equi = False
         self.fair_price = 0
+        self.next_price = 0
         self.sar = 0
         self.from_coin_price = 0
         self.to_coin_price = 0
@@ -116,7 +118,7 @@ class Strategy(AutoTrader):
             f"Ratio weight: {Fore.CYAN}{self.auto_weight}{Style.RESET_ALL} ",
             f"Current coin: {Fore.CYAN}{current_coin}{Style.RESET_ALL} with RSI: {Fore.CYAN}{round(self.rv_rsi, 1)}{Style.RESET_ALL} price direction: {Fore.CYAN}{round(self.from_coin_direction, 1)}%{Style.RESET_ALL} ",
             f"rel. Volume: {Fore.CYAN}{round(self.volume[-1]/self.volume_sma, 2)}{Style.RESET_ALL} ",
-            f"C: {Fore.MAGENTA}{round(self.Res_float, self.d)}{Style.RESET_ALL} FP: {Fore.MAGENTA}{round(self.fair_price, self.d)}{Style.RESET_ALL} ",
+            f"C: {Fore.MAGENTA}{round(self.Res_float, self.d)}{Style.RESET_ALL} FP: {Fore.MAGENTA}{round(self.fair_price, self.d)}{Style.RESET_ALL} NP: {Fore.MAGENTA}{round(self.next_price, self.d)}{Style.RESET_ALL} ",
             #f"L: {Fore.MAGENTA}{round(self.Res_low, self.d)}{Style.RESET_ALL} M: {Fore.MAGENTA}{round(self.Res_mid, self.d)}{Style.RESET_ALL} H: {Fore.MAGENTA}{round(self.Res_high, self.d)}{Style.RESET_ALL} C: {Fore.MAGENTA}{round(self.Res_float, self.d)}{Style.RESET_ALL} ",
             f"Next coin: {Fore.YELLOW}{self.rsi_coin}{Style.RESET_ALL} with RSI: {Fore.YELLOW}{round(self.rsi, 1)}{Style.RESET_ALL} price direction: {Fore.YELLOW}{round(self.to_coin_direction, 1)}%{Style.RESET_ALL} " if self.rsi else f"",
             end='\r',
@@ -154,7 +156,7 @@ class Strategy(AutoTrader):
                     self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
 
 
-        if base_time >= self.panic_time and not self.panicked and not self.equi:
+        if base_time >= self.panic_time and not self.panicked:
             balance = self.manager.get_currency_balance(panic_pair.from_coin.symbol)
             balance_in_bridge = max(balance * self.from_coin_price, 1) * 2
             #m = min((1+self.win/balance_in_bridge)**(1/self.jumps), 2**(1/self.jumps))+0.001
@@ -173,7 +175,7 @@ class Strategy(AutoTrader):
 
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
 
-            if self.rv_pre_rsi > self.rv_rsi and (self.from_coin_direction < 0 and self.from_coin_price < self.active_threshold or self.volume[-1] / self.volume_sma >= 1.5) or self.from_coin_direction < self.dir_threshold or self.rv_rsi > 80 or max(self.vector[:-2]) <= self.vector[-1]:
+            if self.rv_pre_rsi > self.rv_rsi and (self.from_coin_direction < 0 and (self.from_coin_price > self.next_price or self.from_coin_price < self.active_threshold) or self.volume[-1] / self.volume_sma >= 1.5) or self.from_coin_direction < self.dir_threshold or self.rv_rsi > 80 or max(self.vector[:-2]) <= self.vector[-1]:
                 if self.rsi:
                     print("")
                     self.logger.info(f"{current_coin} exhausted, jumping to {self.best_pair.to_coin_id}")
@@ -223,7 +225,7 @@ class Strategy(AutoTrader):
                         self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)#int(self.config.RSI_CANDLE_TYPE))
 
 
-        elif base_time >= self.panic_time and self.panicked and self.equi:
+        elif base_time >= self.panic_time and self.panicked:
             balance = self.manager.get_currency_balance(self.config.BRIDGE.symbol) * 2
             #m = max(2 - (1+self.win/balance)**(1/self.jumps)-0.001, 2 - 2**(1/self.jumps)-0.001)
             n = min(len(self.reverse_price_history), int(self.config.RSI_LENGTH))
@@ -241,7 +243,7 @@ class Strategy(AutoTrader):
 
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
 
-            if self.rv_pre_rsi < self.rv_rsi and (self.from_coin_direction > 0 and self.from_coin_price > self.active_threshold or self.volume[-1] / self.volume_sma >= 1.5) or self.from_coin_direction > self.dir_threshold or self.rv_rsi < 20 or min(self.vector[:-2]) >= self.vector[-1]:
+            if self.rv_pre_rsi < self.rv_rsi and (self.from_coin_direction > 0 and (self.from_coin_price < self.next_price or self.from_coin_price > self.active_threshold) or self.volume[-1] / self.volume_sma >= 1.5) or self.from_coin_direction > self.dir_threshold or self.rv_rsi < 20 or min(self.vector[:-2]) >= self.vector[-1]:
                 if self.rv_rsi < 20 or min(self.vector[:-2]) >= self.vector[-1]:
                     print("")
                     self.logger.info("!!! Target buy !!!")
@@ -564,27 +566,49 @@ class Strategy(AutoTrader):
             comb = zip(self.reverse_price_history, self.highs, self.lows)
             hlc = []
             for values in comb:
-                hlc.append(sum(values) / len(values))
-            stdev = max((max(self.highs) - min(self.lows)) / (st.stdev(numpy.array(self.reverse_price_history[-1 * int(self.config.RSI_LENGTH):]))), 100)
+                hlc.append(sum(values) / 3)
+            stdev = max((max(self.highs) - min(self.lows)) / (st.stdev(numpy.array(self.reverse_price_history[-1 * int(self.config.RSI_LENGTH):]))), 101)
             count, bins = numpy.histogram(hlc, bins=int(stdev))
             allocs = numpy.digitize(hlc, bins) - 1
             position_now = numpy.digitize(self.from_coin_price, bins) - 1
 
             hist = {}
             hist = {i: 0 for i in range(len(bins)+1)}
+
             for a,vol in zip(allocs, volume):
                 if not a in hist:
                     hist[a] = bins[a] * vol
                 else:
                     hist[a] += bins[a] * vol
 
-            if hist[max(position_now-1, 0)] <= hist[max(position_now, 0)] >= hist[position_now+1]:
+            hist_d=[]
+
+            for i in hist:
+                if hist[max(i-1, 0)] <= hist[max(i, 0)] >= hist[min(i+1, len(hist)-1)]:
+                    hist_d.append(i)
+
+            k = 0
+            ps_x = []
+            ps_y = []
+            for i in range(len(hlc)):
+                if allocs[i] in hist_d:
+                    ps_x.append(k)
+                    ps_y.append(hlc[i])
+                k += 1
+
+            ps_x[-1] = len(hlc)-1
+            spline = UnivariateSpline(ps_x,ps_y, k=3, s=0.50)
+            xx= numpy.linspace(len(hlc)-1, len(hlc), 10)
+            yy=spline(xx)
+
+            if hist[max(position_now-1, 0)] <= hist[max(position_now, 0)] >= hist[min(position_now+1,len(hist)-1)]:
                 self.equi = True
             else:
                 self.equi = False
 
             fair_price, max_value = max(hist.items(), key=lambda x: x[1])
             
+            self.next_price = yy[-1]
             self.fair_price = bins[fair_price]
             self.rv_rsi = rv_rsi[-1]
             self.rv_pre_rsi = rv_rsi[-2]
