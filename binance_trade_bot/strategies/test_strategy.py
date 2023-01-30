@@ -165,13 +165,13 @@ class Strategy(AutoTrader):
             self.dir_threshold = stdev / self.rv_tema * -100
 
             if self.from_coin_price > self.Res_high > self.active_threshold:
-                self.active_threshold = self.Res_high + stdev
+                self.active_threshold = self.Res_high
 
             if self.from_coin_price > self.Res_mid > self.active_threshold:
-                self.active_threshold = self.Res_mid + stdev
+                self.active_threshold = self.Res_mid
 
             if self.from_coin_price > self.Res_low > self.active_threshold:
-                self.active_threshold = self.Res_low + stdev
+                self.active_threshold = self.Res_low
 
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
 
@@ -233,13 +233,13 @@ class Strategy(AutoTrader):
             self.dir_threshold = stdev / self.rv_tema * 100
 
             if self.from_coin_price < self.Res_low < self.active_threshold:
-                self.active_threshold = self.Res_low - stdev
+                self.active_threshold = self.Res_low
 
             if self.from_coin_price < self.Res_mid < self.active_threshold:
-                self.active_threshold = self.Res_mid - stdev
+                self.active_threshold = self.Res_mid
 
             if self.from_coin_price < self.Res_high < self.active_threshold:
-                self.active_threshold = self.Res_high - stdev
+                self.active_threshold = self.Res_high
 
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
 
