@@ -8,7 +8,7 @@ import numpy
 import decimal
 import statistics as st
 from datetime import datetime, timedelta
-from scipy.interpolate import UnivariateSpline
+from scipy.interpolate import BSpline
 
 from sqlalchemy.orm import Session, aliased
 from sqlalchemy.sql.expression import and_
@@ -596,8 +596,8 @@ class Strategy(AutoTrader):
                     ps_y.append(hlc[i])
                 k += 1
 
-            ps_x[-1] = len(hlc)-1
-            spline = UnivariateSpline(ps_x,ps_y, k=3, s=0.50)
+            #ps_x[-1] = len(hlc)-1
+            spline = BSpline(ps_x,ps_y, k=2)
             xx= numpy.linspace(len(hlc)-1, len(hlc), 10)
             yy=spline(xx)
 
