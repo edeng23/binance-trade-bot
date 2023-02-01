@@ -546,7 +546,7 @@ class Strategy(AutoTrader):
                 volume = float(result[5])
                 vector = (close - float(result[1])) * volume
                 self.volume[-1] = volume
-                self.reverse_price_history[-1] = close
+                self.reverse_price_history[-1] = self.from_coin_price
                 self.vector[-1] = vector
                 self.highs[-1] = high
                 self.lows[-1] = low
