@@ -598,7 +598,7 @@ class Strategy(AutoTrader):
                     ps_y.append(hlc[i])
                 k += 1
 
-            ps_x[-1] = len(hlc)-1
+            #ps_x[-1] = len(hlc)-1
             spline = BSpline(ps_x,ps_y, k=2)
             xx= numpy.linspace(len(hlc)-1, len(hlc), 10)
             yy=spline(xx)
