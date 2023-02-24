@@ -589,21 +589,30 @@ class Strategy(AutoTrader):
                 if hist[max(i-1, 0)] <= hist[max(i, 0)] >= hist[min(i+1, len(hist)-1)]:
                     hist_d.append(i)
 
-            k = 0
+            #k = []
+            s = self.config_RSI_LENGTH
             ps_x = []
             ps_y = []
+            ps_w = []
             for i in range(len(hlc)):
-                if allocs[i] in hist_d:
-                    ps_x.append(k)
-                    ps_y.append(hlc[i])
-                k += 1
+                #if allocs[i] in hist_d:
+                ps_w.append(1/(st.stdev(numpy.array(hlc[-1*min(i,s):]))
+                ps_x.append(i)
+                ps_y.append(hlc[i])
+                #k += 1
 
             #ps_x[-1] = len(hlc)-1
-            if not ps_x[-1] == len(hlc)-1:
-                ps_x.append(len(hlc)-1)
-                ps_y.append(hlc[-1])
+            #if not ps_x[-1] == len(hlc)-1:
+                #ps_x.append(len(hlc)-1)
+                #ps_y.append(hlc[-1])
             
-            spline = BSpline(ps_x,ps_y, k=2)
+            # find the index of the minimum value in y
+            min_y_idx = np.argmin(y)
+
+            # obtain the corresponding x value
+            min_x_val = x[min_y_idx]
+                               
+            spline = BSpline(ps_x, ps_y, w=ps_w, bbox=[ps_x[min_y_idx],ps_x[-1]], k=3, s=s)
             xx= numpy.linspace(len(hlc)-1, len(hlc), 10)
             yy=spline(xx)
 
