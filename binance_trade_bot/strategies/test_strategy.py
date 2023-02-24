@@ -8,7 +8,7 @@ import numpy
 import decimal
 import statistics as st
 from datetime import datetime, timedelta
-from scipy.interpolate import BSpline
+from scipy.interpolate import UnivariateSpline
 
 from sqlalchemy.orm import Session, aliased
 from sqlalchemy.sql.expression import and_
@@ -607,12 +607,9 @@ class Strategy(AutoTrader):
                 #ps_y.append(hlc[-1])
             
             # find the index of the minimum value in y
-            min_y_idx = np.argmin(y)
-
-            # obtain the corresponding x value
-            min_x_val = x[min_y_idx]
+            min_y_idx = np.argmin(self.lows)
                                
-            spline = BSpline(ps_x, ps_y, w=ps_w, bbox=[ps_x[min_y_idx],ps_x[-1]], k=3, s=s)
+            spline = UnivariateSpline(ps_x, ps_y, w=ps_w, bbox=[ps_x[min_y_idx],ps_x[-1]], k=3, s=s)
             xx= numpy.linspace(len(hlc)-1, len(hlc), 10)
             yy=spline(xx)
 
