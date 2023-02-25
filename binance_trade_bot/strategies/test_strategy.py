@@ -590,7 +590,7 @@ class Strategy(AutoTrader):
                     hist_d.append(i)
 
             #k = []
-            s = self.config_RSI_LENGTH
+            s = self.config.RSI_LENGTH
             ps_x = []
             ps_y = []
             ps_w = []
