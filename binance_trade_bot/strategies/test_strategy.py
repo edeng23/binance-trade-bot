@@ -594,7 +594,7 @@ class Strategy(AutoTrader):
             ps_x = []
             ps_y = []
             ps_w = []
-            for i in range(1,len(hlc)):
+            for i in range(2,len(hlc)):
                 #if allocs[i] in hist_d:
                 ps_w.append(1/(st.stdev(numpy.array(hlc[(-1*max(i-s,0)):i]))))
                 ps_x.append(i)
