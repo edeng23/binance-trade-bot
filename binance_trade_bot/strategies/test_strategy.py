@@ -594,9 +594,12 @@ class Strategy(AutoTrader):
             ps_x = []
             ps_y = []
             ps_w = []
-            for i in range(2,len(hlc)):
+            for i in range(len(hlc)):
                 #if allocs[i] in hist_d:
-                ps_w.append(1/(st.stdev(numpy.array(hlc[(-1*max(i-s,0)):i]))))
+                if len(self.reverse_price_history[-1 * max(i-s,0):i] >= 2:
+                    ps_w.append(1/(st.stdev(numpy.array(self.reverse_price_history[-1 * max(i-s,0):i]))))
+                else:
+                    ps_w.append(1)
                 ps_x.append(i)
                 ps_y.append(hlc[i])
                 #k += 1
