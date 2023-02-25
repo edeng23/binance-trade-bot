@@ -590,13 +590,13 @@ class Strategy(AutoTrader):
                     hist_d.append(i)
 
             #k = []
-            s = self.config.RSI_LENGTH
+            s = int(self.config.RSI_LENGTH)
             ps_x = []
             ps_y = []
             ps_w = []
             for i in range(1,len(hlc)):
                 #if allocs[i] in hist_d:
-                ps_w.append(1/(st.stdev(numpy.array(hlc[-1*max(i-s,0):i]))))
+                ps_w.append(1/(st.stdev(numpy.array(hlc[(-1*max(i-s,0)):i]))))
                 ps_x.append(i)
                 ps_y.append(hlc[i])
                 #k += 1
