@@ -610,7 +610,7 @@ class Strategy(AutoTrader):
                 #ps_y.append(hlc[-1])
             
             # find the index of the minimum value in y
-            min_y_idx = np.argmin(self.lows)
+            min_y_idx = numpy.argmin(self.lows)
                                
             spline = UnivariateSpline(ps_x, ps_y, w=ps_w, bbox=[ps_x[min_y_idx],ps_x[-1]], k=3, s=s)
             xx= numpy.linspace(len(hlc)-1, len(hlc), 10)
