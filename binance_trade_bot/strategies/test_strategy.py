@@ -597,7 +597,7 @@ class Strategy(AutoTrader):
             for i in range(len(hlc)):
                 #if allocs[i] in hist_d:
                 if len(self.reverse_price_history[max(i-s,0):i]) >= 2:
-                    ps_w.append(1/(st.stdev(numpy.array(self.reverse_price_history[max(i-s,0):i]))))
+                    ps_w.append(1/(1+st.stdev(numpy.array(self.reverse_price_history[max(i-s,0):i]))))
                 else:
                     ps_w.append(1)
                 ps_x.append(i)
@@ -610,7 +610,7 @@ class Strategy(AutoTrader):
                 #ps_y.append(hlc[-1])
             
             # find the index of the minimum value in y
-            min_y_idx = numpy.argmin(self.lows)
+            #min_y_idx = numpy.argmin(self.lows)
             #bbox=[ps_x[min_y_idx], ps_x[-1]],
             spline = UnivariateSpline(ps_x, ps_y, w=ps_w, k=3, s=s)
             xx= numpy.linspace(len(hlc)-1, len(hlc), 10)
