@@ -589,26 +589,21 @@ class Strategy(AutoTrader):
                 if hist[max(i-1, 0)] <= hist[max(i, 0)] >= hist[min(i+1, len(hist)-1)]:
                     hist_d.append(i)
 
-            #k = []
             s = int(self.config.RSI_LENGTH)
             ps_x = []
             ps_y = []
             ps_w = []
             for i in range(len(hlc)):
-                #if allocs[i] in hist_d:
-                weight = self.reverse_price_history[i]/(self.reverse_price_history[i]+st.stdev(numpy.array(self.reverse_price_history[max(i-s,0):i])))
-                if len(self.reverse_price_history[max(i-s,0):i]) >= 2 and not allocs[i] in hist_d:
-                    ps_w.append(weight)
+                if len(self.reverse_price_history[max(i-s,0):i]) >= 2:
+                    weight = self.reverse_price_history[i]/(self.reverse_price_history[i]+st.stdev(numpy.array(self.reverse_price_history[max(i-s,0):i])))
+                    if not allocs[i] in hist_d:
+                        ps_w.append(weight)
+                    else:
+                        ps_w.append(1/weight)
                 else:
-                    ps_w.append(1/weight)
+                    ps_w.append(1)
                 ps_x.append(i)
                 ps_y.append(hlc[i])
-                #k += 1
-
-            #ps_x[-1] = len(hlc)-1
-            #if not ps_x[-1] == len(hlc)-1:
-                #ps_x.append(len(hlc)-1)
-                #ps_y.append(hlc[-1])
             
             # find the index of the minimum value in y
             #min_y_idx = numpy.argmin(self.lows)
