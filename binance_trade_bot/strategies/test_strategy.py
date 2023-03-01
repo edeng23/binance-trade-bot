@@ -590,7 +590,7 @@ class Strategy(AutoTrader):
                 if hist[max(i-1, 0)] <= hist[max(i, 0)] >= hist[min(i+1, len(hist)-1)]:
                     hist_d.append(i)
 
-            #s = int(self.config.RSI_LENGTH)
+            s = int(self.config.RSI_LENGTH)
             ps_x = []
             ps_y = []
             ps_w = []
