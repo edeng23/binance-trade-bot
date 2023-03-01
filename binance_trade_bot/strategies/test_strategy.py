@@ -610,7 +610,7 @@ class Strategy(AutoTrader):
                 if allocs[i] in hist_d:
                     ps_t.append(i)
             
-            spline = LSQUnivariateSpline(ps_x, ps_y, ps_t, w=ps_w, k=3, s=s)
+            spline = LSQUnivariateSpline(ps_x, ps_y, ps_t, w=ps_w, k=3)#, s=s)
             xx= numpy.linspace(len(hlc)-1, len(hlc), 10)
             yy=spline(xx)
 
