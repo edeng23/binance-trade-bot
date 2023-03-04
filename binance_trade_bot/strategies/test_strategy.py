@@ -597,7 +597,7 @@ class Strategy(AutoTrader):
             for i in range(len(hlc)):
                 if len(self.reverse_price_history[max(i-s,0):i]) >= 2:
                     weight = self.reverse_price_history[i]/(self.reverse_price_history[i]+st.stdev(numpy.array(self.reverse_price_history[max(i-s,0):i])))
-                    if not allocs[i] in hist_d:
+                    if allocs[i] in hist_d:
                         ps_w.append(weight)
                     else:
                         ps_w.append(1/weight)        
