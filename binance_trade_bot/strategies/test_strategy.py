@@ -113,14 +113,14 @@ class Strategy(AutoTrader):
             f"{self.manager.now().strftime('%Y-%m-%d %H:%M:%S')} - " ,
             f"{Fore.CYAN}Holding{Style.RESET_ALL} " if not self.panicked else f"{Fore.CYAN}Awaiting{Style.RESET_ALL} ",
             f"{Fore.CYAN}Pivot{Style.RESET_ALL} " if self.equi else f"{Fore.CYAN}Moving{Style.RESET_ALL} ",
-            "Threshold: {Fore.CYAN}{round(self.from_coin_direction - self.dir_threshold, 3)}%{Style.RESET_ALL} " if self.dir_threshold != 0 else "",
+            f"Threshold: {Fore.CYAN}{round(self.from_coin_direction - self.dir_threshold, 3)}%{Style.RESET_ALL} " if self.dir_threshold != 0 else "",
             f"Bottom: {Fore.CYAN}{round(self.active_threshold, self.d)}{Style.RESET_ALL} " if not self.panicked else f"Top: {Fore.CYAN}{round(self.active_threshold, self.d)}{Style.RESET_ALL} ",
             f"Ratio weight: {Fore.CYAN}{self.auto_weight}{Style.RESET_ALL} ",
             f"Current coin: {Fore.CYAN}{current_coin}{Style.RESET_ALL} with RSI: {Fore.CYAN}{round(self.rv_rsi, 1)}{Style.RESET_ALL} price direction: {Fore.CYAN}{round(self.from_coin_direction, 1)}%{Style.RESET_ALL} ",
             f"rel. Volume: {Fore.CYAN}{round(self.volume[-1]/self.volume_sma, 2)}{Style.RESET_ALL} ",
             f"C: {Fore.MAGENTA}{round(self.Res_float, self.d)}{Style.RESET_ALL} FP: {Fore.MAGENTA}{round(self.fair_price, self.d)}{Style.RESET_ALL} NP: {Fore.MAGENTA}{round(self.next_price, self.d)}{Style.RESET_ALL} ",
             #f"L: {Fore.MAGENTA}{round(self.Res_low, self.d)}{Style.RESET_ALL} M: {Fore.MAGENTA}{round(self.Res_mid, self.d)}{Style.RESET_ALL} H: {Fore.MAGENTA}{round(self.Res_high, self.d)}{Style.RESET_ALL} C: {Fore.MAGENTA}{round(self.Res_float, self.d)}{Style.RESET_ALL} ",
-            "Next coin: {Fore.YELLOW}{self.rsi_coin}{Style.RESET_ALL} with RSI: {Fore.YELLOW}{round(self.rsi, 1)}{Style.RESET_ALL} price direction: {Fore.YELLOW}{round(self.to_coin_direction, 1)}%{Style.RESET_ALL} " if self.rsi else "",
+            f"Next coin: {Fore.YELLOW}{self.rsi_coin}{Style.RESET_ALL} with RSI: {Fore.YELLOW}{round(self.rsi, 1)}{Style.RESET_ALL} price direction: {Fore.YELLOW}{round(self.to_coin_direction, 1)}%{Style.RESET_ALL} " if self.rsi else "",
             end='\r',
         )
 
