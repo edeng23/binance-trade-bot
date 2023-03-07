@@ -1,6 +1,6 @@
-from collections import defaultdict, deque
+from collections import defaultdict#, deque
 from colorama import Fore, Style
-import math
+#import math
 import random
 import sys
 import talib
@@ -10,11 +10,11 @@ import statistics as st
 from datetime import datetime, timedelta
 from scipy.interpolate import LSQUnivariateSpline
 
-from sqlalchemy.orm import Session, aliased
-from sqlalchemy.sql.expression import and_
+from sqlalchemy.orm import Session#, aliased
+#from sqlalchemy.sql.expression import and_
 
 from binance_trade_bot.auto_trader import AutoTrader
-from binance_trade_bot.database import Pair, Coin, CoinValue
+from binance_trade_bot.database import Pair#, Coin, CoinValue
 
 
 class Strategy(AutoTrader):
@@ -82,7 +82,7 @@ class Strategy(AutoTrader):
         base_time: datetime = self.manager.now()
         allowed_idle_time = self.reinit_threshold
         allowed_rsi_time = self.reinit_rsi
-        allowed_rsi_idle_time = self.reinit_idle
+        #allowed_rsi_idle_time = self.reinit_idle
 
         if self.panicked:
             self.from_coin_price = self.manager.get_buy_price(current_coin + self.config.BRIDGE)
@@ -113,14 +113,14 @@ class Strategy(AutoTrader):
             f"{self.manager.now().strftime('%Y-%m-%d %H:%M:%S')} - " ,
             f"{Fore.CYAN}Holding{Style.RESET_ALL} " if not self.panicked else f"{Fore.CYAN}Awaiting{Style.RESET_ALL} ",
             f"{Fore.CYAN}Pivot{Style.RESET_ALL} " if self.equi else f"{Fore.CYAN}Moving{Style.RESET_ALL} ",
-            f"Threshold: {Fore.CYAN}{round(self.from_coin_direction - self.dir_threshold, 3)}%{Style.RESET_ALL} " if self.dir_threshold != 0 else f"",
+            "Threshold: {Fore.CYAN}{round(self.from_coin_direction - self.dir_threshold, 3)}%{Style.RESET_ALL} " if self.dir_threshold != 0 else "",
             f"Bottom: {Fore.CYAN}{round(self.active_threshold, self.d)}{Style.RESET_ALL} " if not self.panicked else f"Top: {Fore.CYAN}{round(self.active_threshold, self.d)}{Style.RESET_ALL} ",
             f"Ratio weight: {Fore.CYAN}{self.auto_weight}{Style.RESET_ALL} ",
             f"Current coin: {Fore.CYAN}{current_coin}{Style.RESET_ALL} with RSI: {Fore.CYAN}{round(self.rv_rsi, 1)}{Style.RESET_ALL} price direction: {Fore.CYAN}{round(self.from_coin_direction, 1)}%{Style.RESET_ALL} ",
             f"rel. Volume: {Fore.CYAN}{round(self.volume[-1]/self.volume_sma, 2)}{Style.RESET_ALL} ",
             f"C: {Fore.MAGENTA}{round(self.Res_float, self.d)}{Style.RESET_ALL} FP: {Fore.MAGENTA}{round(self.fair_price, self.d)}{Style.RESET_ALL} NP: {Fore.MAGENTA}{round(self.next_price, self.d)}{Style.RESET_ALL} ",
             #f"L: {Fore.MAGENTA}{round(self.Res_low, self.d)}{Style.RESET_ALL} M: {Fore.MAGENTA}{round(self.Res_mid, self.d)}{Style.RESET_ALL} H: {Fore.MAGENTA}{round(self.Res_high, self.d)}{Style.RESET_ALL} C: {Fore.MAGENTA}{round(self.Res_float, self.d)}{Style.RESET_ALL} ",
-            f"Next coin: {Fore.YELLOW}{self.rsi_coin}{Style.RESET_ALL} with RSI: {Fore.YELLOW}{round(self.rsi, 1)}{Style.RESET_ALL} price direction: {Fore.YELLOW}{round(self.to_coin_direction, 1)}%{Style.RESET_ALL} " if self.rsi else f"",
+            "Next coin: {Fore.YELLOW}{self.rsi_coin}{Style.RESET_ALL} with RSI: {Fore.YELLOW}{round(self.rsi, 1)}{Style.RESET_ALL} price direction: {Fore.YELLOW}{round(self.to_coin_direction, 1)}%{Style.RESET_ALL} " if self.rsi else "",
             end='\r',
         )
 
@@ -158,7 +158,7 @@ class Strategy(AutoTrader):
 
         if base_time >= self.panic_time and not self.panicked:
             balance = self.manager.get_currency_balance(panic_pair.from_coin.symbol)
-            balance_in_bridge = max(balance * self.from_coin_price, 1) * 2
+            #balance_in_bridge = max(balance * self.from_coin_price, 1) * 2
             #m = min((1+self.win/balance_in_bridge)**(1/self.jumps), 2**(1/self.jumps))+0.001
             n = min(len(self.reverse_price_history), int(self.config.RSI_LENGTH))
             stdev = st.stdev(numpy.array(self.reverse_price_history[-n:]))# * 0.73313783
@@ -329,8 +329,8 @@ class Strategy(AutoTrader):
         #print('************INITIALIZING RATIOS**********')
         session: Session
         with self.db.db_session() as session:
-            c1 = aliased(Coin)
-            c2 = aliased(Coin)
+            #c1 = aliased(Coin)
+            #c2 = aliased(Coin)
             for pair in session.query(Pair).all():
                 if not pair.from_coin.enabled or not pair.to_coin.enabled:
                     continue
@@ -419,7 +419,7 @@ class Strategy(AutoTrader):
 
                     pair.ratio = cumulative_ratio
 
-            self.logger.info(f"Finished ratio init...")
+            self.logger.info("Finished ratio init...")
 
 
     def rsi_calc(self):
