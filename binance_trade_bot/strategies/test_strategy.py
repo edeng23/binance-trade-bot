@@ -460,14 +460,14 @@ class Strategy(AutoTrader):
             di = abs(decimal.Decimal(str(self.reverse_price_history[i])).as_tuple().exponent)
             if di > self.d:
                 self.d = di
-                if self.d = 1 and str(self.d % 1)[2] == '0':
+                if self.d == 1 and str(self.d % 1)[2] == '0':
                     self.d = 0
 
         for k in range(1, len(self.rsi_price_history)-1):
             vi = abs(decimal.Decimal(str(self.rsi_price_history[i])).as_tuple().exponent)
             if vi > self.v:
                 self.v = vi
-                if self.v = 1 and str(self.v % 1)[2] == '0':
+                if self.v == 1 and str(self.v % 1)[2] == '0':
                     self.v = 0
 
 
