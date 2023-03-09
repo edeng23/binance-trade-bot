@@ -456,12 +456,12 @@ class Strategy(AutoTrader):
         self.d = abs(decimal.Decimal(str(self.reverse_price_history[-1])).as_tuple().exponent)
         self.v = abs(decimal.Decimal(str(self.rsi_price_history[-1])).as_tuple().exponent)
 
-        for i in range(1, len(self.reverse_price_history)-1):
+        for i in range(len(self.reverse_price_history)-10, len(self.reverse_price_history)-1):
             di = abs(decimal.Decimal(str(self.reverse_price_history[i])).as_tuple().exponent)
             if di > self.d:
                 self.d = di
 
-        for k in range(1, len(self.rsi_price_history)-1):
+        for k in range(len(self.reverse_price_history)-10, len(self.rsi_price_history)-1):
             vi = abs(decimal.Decimal(str(self.rsi_price_history[i])).as_tuple().exponent)
             if vi > self.v:
                 self.v = vi
