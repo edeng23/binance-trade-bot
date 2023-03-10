@@ -465,7 +465,7 @@ class Strategy(AutoTrader):
                     self.d = 0
 
         for k in range(1, len(self.rsi_price_history)-1):
-            vi = abs(decimal.Decimal(str(self.rsi_price_history[i])).as_tuple().exponent)
+            vi = abs(decimal.Decimal(str(self.rsi_price_history[k])).as_tuple().exponent)
             if vi >= self.v:
                 self.v = vi
                 if self.v == 1 and str(self.rsi_price_history[-1] % 1)[2] == '0':
