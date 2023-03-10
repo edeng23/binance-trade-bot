@@ -668,9 +668,9 @@ class Strategy(AutoTrader):
         else:
             self.Res_float = self.reverse_price_history[-1] + (Val_float * (100/self.rv_rsi - 1))
             
-        if len(hist_d) < self.calcval:
+        if self.calcval-len(hist_d) > 1:
             self.calcval = self.calcval - 1
-        elif len(hist_d) > self.calcval:
+        elif len(hist_d)-self.calcval > 1:
             self.calcval = self.calcval + 1
 
 
