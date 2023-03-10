@@ -670,7 +670,7 @@ class Strategy(AutoTrader):
             
         if len(hist_d) < self.calcval:
             self.calcval = self.calcval - 1
-        elif len(hist_d > self.calcval:
+        elif len(hist_d) > self.calcval:
             self.calcval = self.calcval + 1
 
 
