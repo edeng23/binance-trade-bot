@@ -378,8 +378,8 @@ class Strategy(AutoTrader):
             self.logger.info(f"Using last {init_weight} candles to initialize ratios")
 
             base_date = self.manager.now().replace(second=0, microsecond=0)
-            start_date = base_date - timedelta(minutes=init_weight*2)
-            end_date = base_date - timedelta(minutes=1)
+            start_date = base_date - timedelta(hours=init_weight*2)
+            end_date = base_date - timedelta(hours=1)
 
             start_date_str = start_date.strftime('%Y-%m-%d %H:%M')
             end_date_str = end_date.strftime('%Y-%m-%d %H:%M')
