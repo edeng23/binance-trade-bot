@@ -430,7 +430,7 @@ class Strategy(AutoTrader):
 
         init_rsi_length = self.calcval
         rsi_type = self.config.RSI_CANDLE_TYPE
-        rsi_string = str(self.config.RSI_CANDLE_TYPE) + 'm'
+        rsi_string = str(self.config.RSI_CANDLE_TYPE) + 'h'
 
         #Binance api allows retrieving max 1000 candles
         if init_rsi_length > 20:
