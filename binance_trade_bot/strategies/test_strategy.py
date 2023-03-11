@@ -389,7 +389,7 @@ class Strategy(AutoTrader):
 
                 if from_coin_symbol not in price_history.keys():
                     price_history[from_coin_symbol] = []
-                    for result in  self.manager.binance_client.get_historical_klines(f"{from_coin_symbol}{self.config.BRIDGE_SYMBOL}", "1m", start_date_str, end_date_str, limit=1000):
+                    for result in  self.manager.binance_client.get_historical_klines(f"{from_coin_symbol}{self.config.BRIDGE_SYMBOL}", "1h", start_date_str, end_date_str, limit=1000):
                         price = float(result[4])
                         price_history[from_coin_symbol].append(price)
 
@@ -397,7 +397,7 @@ class Strategy(AutoTrader):
                     to_coin_symbol = pair.to_coin.symbol
                     if to_coin_symbol not in price_history.keys():
                         price_history[to_coin_symbol] = []
-                        for result in self.manager.binance_client.get_historical_klines(f"{to_coin_symbol}{self.config.BRIDGE_SYMBOL}", "1m", start_date_str, end_date_str, limit=1000):
+                        for result in self.manager.binance_client.get_historical_klines(f"{to_coin_symbol}{self.config.BRIDGE_SYMBOL}", "1h", start_date_str, end_date_str, limit=1000):
                            price = float(result[4])
                            price_history[to_coin_symbol].append(price)
 
