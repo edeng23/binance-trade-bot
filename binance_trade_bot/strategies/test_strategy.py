@@ -579,7 +579,7 @@ class Strategy(AutoTrader):
             bins_a = stdev
             count, bins = numpy.histogram(hlc, bins=bins_a)
             allocs = numpy.digitize(hlc, bins) - 1
-            position_now = numpy.digitize(self.from_coin_price, bins) - 1
+            position_now = numpy.digitize(hlc[-1], bins) - 1
 
             hist = {}
             hist = {i: 0 for i in range(len(bins)+1)}
