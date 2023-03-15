@@ -611,9 +611,20 @@ class Strategy(AutoTrader):
                 ps_y.append(hlc[i])
             
             ps_t = []
+            ps_h = []
             for i in range(1, len(hlc)-1):
                 if allocs[i] not in hist_d:
-                    ps_t.append(i)
+                    if allocs[i] == allocs[i+1]:
+                        ps_h.append(i)
+                    elif ps_h:
+                        ps_h.append(i)
+                        ps_t.append(sum(ps_h)/len(ps_h))
+                        ps_h = []
+                    else:
+                        ps_t.append(i)
+            if ps_h:
+                ps_t.append(sum(ps_h)/len(ps_h))
+                ps_h = []
             
             spline = LSQUnivariateSpline(ps_x, ps_y, ps_t, w=ps_w, k=3)#, s=s)
             xx= numpy.linspace(len(hlc)-1, len(hlc), 10)
