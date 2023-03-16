@@ -160,7 +160,7 @@ class Strategy(AutoTrader):
         if base_time >= self.panic_time and not self.panicked:
             balance = self.manager.get_currency_balance(panic_pair.from_coin.symbol)
             balance_in_bridge = max(balance * self.from_coin_price, 1) * 2
-            m = min((1+self.win/balance_in_bridge)**(1/self.jumps), 2**(1/self.jumps))+0.001
+            m = min((1+self.win/balance_in_bridge)**(1/(30*self.jumps)), 2**(1/(30*self.jumps)))+0.001
             n = min(len(self.reverse_price_history), self.calcval)
             stdev = st.stdev(numpy.array(self.reverse_price_history[-n:]))# * 0.73313783
             self.dir_threshold = stdev / self.rv_tema * -100
@@ -229,7 +229,7 @@ class Strategy(AutoTrader):
 
         elif base_time >= self.panic_time and self.panicked:
             balance = self.manager.get_currency_balance(self.config.BRIDGE.symbol) * 2
-            m = max(2 - (1+self.win/balance)**(1/self.jumps)-0.001, 2 - 2**(1/self.jumps)-0.001)
+            m = max(2 - (1+self.win/balance)**(1/(30*self.jumps)), 2 - 2**(1/(30*self.jumps)))-0.001
             n = min(len(self.reverse_price_history), self.calcval)
             stdev = st.stdev(numpy.array(self.reverse_price_history[-n:]))# * 0.73313783
             self.dir_threshold = stdev / self.rv_tema * 100
