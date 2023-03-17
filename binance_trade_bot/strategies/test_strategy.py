@@ -140,7 +140,7 @@ class Strategy(AutoTrader):
                     self.equi = False
                     self.fair_price = 0
                     self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
-                    self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
+                    self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)#int(self.config.RSI_CANDLE_TYPE))
 
             else:
                 if self.from_coin_direction <= self.to_coin_direction >= 0 and (self.pre_rsi < self.rsi <= 30 or 50 <= self.pre_rsi < self.rsi) or self.rsi < 20:
@@ -154,13 +154,13 @@ class Strategy(AutoTrader):
                     self.equi = False
                     self.fair_price = 0
                     self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
-                    self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
+                    self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)#int(self.config.RSI_CANDLE_TYPE))
 
 
         if base_time >= self.panic_time and not self.panicked:
             balance = self.manager.get_currency_balance(panic_pair.from_coin.symbol)
             balance_in_bridge = max(balance * self.from_coin_price, 1) * 2
-            m = min((1+self.win/balance_in_bridge)**(1/(30*self.jumps)), 2**(1/(30*self.jumps)))+0.001
+            m = min((1+self.win/balance_in_bridge)**(1/(self.jumps)), 2**(1/(self.jumps)))+0.001
             n = min(len(self.reverse_price_history), self.calcval)
             stdev = st.stdev(numpy.array(self.reverse_price_history[-n:]))# * 0.73313783
             self.dir_threshold = stdev / self.rv_tema * -100
@@ -187,14 +187,14 @@ class Strategy(AutoTrader):
                     self.dir_threshold = 0
                     self.equi = False
                     self.fair_price = 0
-                    self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
+                    self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)#int(self.config.RSI_CANDLE_TYPE))
 
                 elif self.rv_rsi > 80 or max(self.vector[:-2]) <= self.vector[-1] or self.from_coin_price > self.next_price and not self.equi:
                     print("")
                     self.logger.info("!!! Target sell !!!")
                     self.from_coin_price = round(min(self.from_coin_price, self.rv_tema)+stdev, self.d)
 
-                elif (self.from_coin_direction < self.dir_threshold and (self.rv_rsi < 50 or self.sar < self.Res_mid)) or (self.volume[-1] / self.volume_sma >= 1.5 and self.vector[-1] > 0):
+                elif (self.from_coin_direction < self.dir_threshold and (self.rv_rsi < 50 or self.sar < self.Res_mid)) or (self.volume[-1] / self.volume_sma >= 1.5 and self.vector[-1] < 0):
                     print("")
                     self.logger.info("!!! Panic sell !!!")
                     self.active_threshold = self.rv_tema
@@ -224,12 +224,12 @@ class Strategy(AutoTrader):
                         self.dir_threshold = 0
                         self.equi = False
                         self.fair_price = 0
-                        self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
+                        self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)#int(self.config.RSI_CANDLE_TYPE))
 
 
         elif base_time >= self.panic_time and self.panicked:
             balance = self.manager.get_currency_balance(self.config.BRIDGE.symbol) * 2
-            m = max(2 - (1+self.win/balance)**(1/(30*self.jumps)), 2 - 2**(1/(30*self.jumps)))-0.001
+            m = max(2 - (1+self.win/balance)**(1/(self.jumps)), 2 - 2**(1/(self.jumps)))-0.001
             n = min(len(self.reverse_price_history), self.calcval)
             stdev = st.stdev(numpy.array(self.reverse_price_history[-n:]))# * 0.73313783
             self.dir_threshold = stdev / self.rv_tema * 100
@@ -251,7 +251,7 @@ class Strategy(AutoTrader):
                     self.logger.info("!!! Target buy !!!")
                     self.from_coin_price = round(max(self.from_coin_price, self.rv_tema)-stdev, self.d)
 
-                elif (self.from_coin_direction > self.dir_threshold and (self.rv_rsi > 50 or self.sar > self.Res_mid)) or (self.volume[-1] / self.volume_sma >= 1.5 and self.vector[-1] < 0):
+                elif (self.from_coin_direction > self.dir_threshold and (self.rv_rsi > 50 or self.sar > self.Res_mid)) or (self.volume[-1] / self.volume_sma >= 1.5 and self.vector[-1] > 0):
                     print("")
                     self.logger.info("!!! FOMO buy !!!")
                     self.active_threshold = self.rv_tema
@@ -274,7 +274,7 @@ class Strategy(AutoTrader):
                     self.dir_threshold = 0
                     self.equi = False
                     self.fair_price = 0
-                    self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=int(self.config.RSI_CANDLE_TYPE))
+                    self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)#int(self.config.RSI_CANDLE_TYPE))
 
 
     def bridge_scout(self):
