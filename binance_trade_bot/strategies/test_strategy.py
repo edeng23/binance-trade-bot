@@ -575,7 +575,7 @@ class Strategy(AutoTrader):
             hlc = []
             for values in comb:
                 hlc.append(sum(values) / 3)
-            stdev = int((max(self.highs) - min(self.lows)) / (3*st.stdev(numpy.array(self.reverse_price_history[-1 * self.calcval:]))))
+            stdev = int((max(self.highs) - min(self.lows)) / (2*st.stdev(numpy.array(self.reverse_price_history[-1 * self.calcval:]))))
             bins_a = stdev
             count, bins = numpy.histogram(hlc, bins=bins_a)
             allocs = numpy.digitize(hlc, bins) - 1
@@ -679,9 +679,9 @@ class Strategy(AutoTrader):
         else:
             self.Res_float = self.reverse_price_history[-1] + (Val_float * (100/self.rv_rsi - 1))
             
-        if self.calcval-3*len(hist_d) > 1:
+        if self.calcval-2*len(hist_d) > 2:
             self.calcval = self.calcval - 1
-        elif 3*len(hist_d)-self.calcval > 1:
+        elif 2*len(hist_d)-self.calcval > 2:
             self.calcval = self.calcval + 1
 
 
