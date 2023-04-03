@@ -163,20 +163,20 @@ class Strategy(AutoTrader):
 
         if base_time >= self.panic_time and not self.panicked:
             balance = self.manager.get_currency_balance(panic_pair.from_coin.symbol)
-            balance_in_bridge = max(balance * self.from_coin_price, 1) * 2
+            #balance_in_bridge = max(balance * self.from_coin_price, 1) * 2
             #m = min((1+self.win/balance_in_bridge)**(1/(self.jumps)), 2**(1/(self.jumps)))
             n = min(len(self.reverse_price_history), self.calcval)
             stdev = st.stdev(numpy.array(self.reverse_price_history[-n:]))# * 0.73313783
             self.dir_threshold = stdev / self.rv_tema * -100
 
             if self.from_coin_price > self.Res_high > self.active_threshold:
-                self.active_threshold = self.Res_high 
+                self.active_threshold = self.Res_high * 1.001
 
             if self.from_coin_price > self.Res_mid > self.active_threshold:
-                self.active_threshold = self.Res_mid
+                self.active_threshold = self.Res_mid * 1.001
 
             if self.from_coin_price > self.Res_low > self.active_threshold:
-                self.active_threshold = self.Res_low
+                self.active_threshold = self.Res_low * 1.001
                 
 
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
@@ -240,13 +240,13 @@ class Strategy(AutoTrader):
             self.dir_threshold = stdev / self.rv_tema * 100
 
             if self.from_coin_price < self.Res_low < self.active_threshold:
-                self.active_threshold = self.Res_low
+                self.active_threshold = self.Res_low * 0.999
 
             if self.from_coin_price < self.Res_mid < self.active_threshold:
-                self.active_threshold = self.Res_mid
+                self.active_threshold = self.Res_mid * 0.999
 
             if self.from_coin_price < self.Res_high < self.active_threshold:
-                self.active_threshold = self.Res_high
+                self.active_threshold = self.Res_high * 0.999
 
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
 
