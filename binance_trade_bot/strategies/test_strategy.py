@@ -208,7 +208,7 @@ class Strategy(AutoTrader):
                 elif self.rv_rsi > 80 or max(self.vector[:-2]) <= self.vector[-1] or self.from_coin_price > self.active_threshold > self.next_price and self.equi:
                     print("")
                     self.logger.info("!!! Target sell !!!")
-                    self.from_coin_price = round(max(self.from_coin_price, self.active_threshold), self.d)
+                    self.from_coin_price = round(max(self.from_coin_price, self.active_threshold+stdev), self.d)
 
                 elif (self.from_coin_direction < self.dir_threshold and (self.rv_rsi < 50 or self.sar < self.Res_mid)) or (self.volume[-1] / self.volume_sma >= 1.5 and self.vector[-1] < 0):
                     print("")
@@ -256,7 +256,7 @@ class Strategy(AutoTrader):
                 if self.rv_rsi < 20 or min(self.vector[:-2]) >= self.vector[-1] or self.from_coin_price < self.active_threshold < self.next_price and self.equi:
                     print("")
                     self.logger.info("!!! Target buy !!!")
-                    self.from_coin_price = round(max(self.from_coin_price, self.active_threshold), self.d)
+                    self.from_coin_price = round(max(self.from_coin_price, self.active_threshold-stdev), self.d)
 
                 elif (self.from_coin_direction > self.dir_threshold and (self.rv_rsi > 50 or self.sar > self.Res_mid)) or (self.volume[-1] / self.volume_sma >= 1.5 and self.vector[-1] > 0):
                     print("")
