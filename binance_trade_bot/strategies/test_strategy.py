@@ -233,7 +233,7 @@ class Strategy(AutoTrader):
                     elif self.manager.sell_alt(panic_pair.from_coin, self.config.BRIDGE, self.from_coin_price) is None:
                         self.logger.info("Couldn't sell, going back to scouting mode...")
                         self.panicked = False
-                        self.active_threshold = 0
+                        #self.active_threshold = 0
 
                     else:
                         self.active_threshold = self.from_coin_price #max(self.reverse_price_history) * 3
@@ -274,7 +274,7 @@ class Strategy(AutoTrader):
                 if self.manager.buy_alt(panic_pair.from_coin, self.config.BRIDGE, self.from_coin_price) is None:
                     self.logger.info("Couldn't buy, going back to panic mode...")
                     self.panicked = True
-                    self.active_threshold = max(self.reverse_price_history) * 3
+                    #self.active_threshold = max(self.reverse_price_history) * 3
 
                 else:
                     self.active_threshold = self.from_coin_price
