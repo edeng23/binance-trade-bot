@@ -244,7 +244,7 @@ class Strategy(AutoTrader):
 
 
         elif base_time >= self.panic_time and self.panicked:
-            balance = self.manager.get_currency_balance(self.config.BRIDGE.symbol) * 2
+            #balance = self.manager.get_currency_balance(self.config.BRIDGE.symbol) * 2
             #m = max(2 - (1+self.win/balance)**(1/(self.jumps)), 2 - 2**(1/(self.jumps)))-0.001
             n = min(len(self.reverse_price_history), self.calcval)
             stdev = st.stdev(numpy.array(self.reverse_price_history[-n:]))# * 0.73313783
