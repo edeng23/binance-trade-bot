@@ -1,4 +1,5 @@
 import os
+import binance
 from typing import List, Dict
 from re import search
 from binance.client import Client
@@ -142,6 +143,7 @@ def warmup_database(coin_list: List[str] = None, db_path = "data/crypto_trading.
     manager.stream_manager.close()
 
 def get_all_bridge_coins(client: Client, config: Config):
+    blient = binance.Client()
     #fetch all tickers
     all_symbols = client.get_symbol_ticker()
 
@@ -157,10 +159,12 @@ def get_all_bridge_coins(client: Client, config: Config):
         :
             
             try:
-                quoteVolume = float(pair['quoteVolume'])
-                weightedAvgPrice = float(ticker_info['weightedAvgPrice'])
-                market_cap = quoteVolume * weightedAvgPrice
+                # Get the ticker24hr data for a specific symbol
+                ticker_info = blient.ticker24hr(symbol=symbol)
                 
+                # Extract the market capitalization from the returned data
+                market_cap = float(ticker_info['quoteVolume']) * float(ticker_info['weightedAvgPrice'])
+
             except:
                 continue
                 
