@@ -117,16 +117,12 @@ def warmup_database(coin_list: List[str] = None, db_path = "data/crypto_trading.
     logger.info(f'Going to warm up the following coins: {warmup_coin_list}')
     
     # prompt the user to confirm before proceeding
-    response = input("Do you want to update the supported coin list with ALL the coins? (y/n)")
+    response = input("Do you want to update the supported coin list with ALL the coins? (y/n) \nWarning: This will lead to issues due to delisted coins and other weirdness. Cleanup is necessary!")
 
     # check if the user wants to proceed
     if response.lower() == "y" or response.lower() == "yes":
-        # get the path of the directory one level up from the current directory
-        parent_dir = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
-        # create the file path by joining the parent directory path and filename
-        file_path = os.path.join(parent_dir, "supported_coin_list")
         # open the file for writing
-        with open(file_path, 'w') as file:
+        with open("supported_coin_list, 'w') as file:
             # iterate over the list and write each item to a new line in the file
             for item in warmup_coin_list:
                 file.write("%s\n" % item)
