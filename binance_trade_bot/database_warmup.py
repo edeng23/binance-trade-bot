@@ -113,7 +113,7 @@ def warmup_database(coin_list: List[str] = None, db_path = "data/crypto_trading.
     logger.info("Done creating database schema")
 
     warmup_coin_list = coin_list or get_all_bridge_coins(manager.binance_client, config)
-    logger.info(f'Going to warm up the following coins: {warmup_coin_list}')
+    logger.info(f'Going to warm up the following coins: \n{warmup_coin_list}')
     
     # prompt the user to confirm before proceeding
     response = input("Do you want to update the supported coin list? (y/n) ")
