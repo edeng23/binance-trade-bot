@@ -317,9 +317,9 @@ class BinanceAPIManager:
             return filter
         except StopIteration:
             # Handle the case where no filter matches the specified filter_type
-            print(f"No {filter_type} filter found for {origin_symbol}/{target_symbol}")
+            all_filters = [f["filterType"] for f in filters]
+            print(f"No {filter_type} filter found for {origin_symbol}/{target_symbol}. Available filters: {all_filters}")
             return None
-
 
     @cached(cache=TTLCache(maxsize=2000, ttl=43200))
     def get_alt_tick(self, origin_symbol: str, target_symbol: str):
