@@ -1,6 +1,4 @@
-import os
-import binance
-from typing import List, Dict
+from typing import List
 from re import search
 from binance.client import Client
 
@@ -116,20 +114,6 @@ def warmup_database(coin_list: List[str] = None, db_path = "data/crypto_trading.
 
     warmup_coin_list = coin_list or get_all_bridge_coins(manager.binance_client, config)
     logger.info(f'Going to warm up the following coins: {warmup_coin_list}')
-    
-    # prompt the user to confirm before proceeding
-    response = input("Do you want to update the supported coin list with ALL the coins? (y/n) \nWarning: This will lead to issues due to delisted coins and other weirdness. Cleanup is necessary!")
-
-    # check if the user wants to proceed
-    if response.lower() == "y" or response.lower() == "yes":
-        # open the file for writing
-        with open("supported_coin_list", 'w') as file:
-            # iterate over the list and write each item to a new line in the file
-            for item in warmup_coin_list:
-                file.write("%s\n" % item)
-        print("Supported coin list updated successfully!")
-    else:
-        print("Supported coin list stays as it was.")
 
     logger.info("Adding coins and pairs to database for warm up")
     db.set_coins_to_warmup(config.SUPPORTED_COIN_LIST, warmup_coin_list)
@@ -143,32 +127,17 @@ def warmup_database(coin_list: List[str] = None, db_path = "data/crypto_trading.
     manager.stream_manager.close()
 
 def get_all_bridge_coins(client: Client, config: Config):
-    blient = binance.Client()
     #fetch all tickers
     all_symbols = client.get_symbol_ticker()
 
-    all_bridge_coins: Dict[float, str] = {}
+    all_bridge_coins: List[str] = []
     for pair in all_symbols:
         symbol = pair["symbol"]
-
         #search for coins tradeable via bridge. exlude UP DOWN BEAR BULL stuff
-        if search(f"^\w*(?<!BULL){config.BRIDGE_SYMBOL}$", symbol) \
+        if search(f"^\w*(?<!UP){config.BRIDGE_SYMBOL}$", symbol) \
             and search(f"^\w*(?<!DOWN){config.BRIDGE_SYMBOL}$", symbol)\
             and search(f"^\w*(?<!BEAR){config.BRIDGE_SYMBOL}$", symbol)\
-            and search(f"^\w*(?<!UP){config.BRIDGE_SYMBOL}$", symbol)\
+            and search(f"^\w*(?<!BULL){config.BRIDGE_SYMBOL}$", symbol)\
         :
-            
-            try:
-                # Get the ticker24hr data for a specific symbol
-                ticker_info = blient.ticker24hr(symbol=symbol)
-                
-                # Extract the market capitalization from the returned data
-                market_cap = float(ticker_info['quoteVolume']) * float(ticker_info['weightedAvgPrice'])
-
-            except:
-                continue
-                
-            all_bridge_coins[market_cap]=symbol.replace(config.BRIDGE_SYMBOL, "")
-            
-    all_bridge_coins = sorted(all_bridge_coins.items())
-    return all_bridge_coins.values()
+            all_bridge_coins.append(symbol.replace(config.BRIDGE_SYMBOL, ""))
+    return all_bridge_coins
