@@ -148,24 +148,23 @@ def get_all_bridge_coins(client: Client, config: Config):
     all_bridge_coins: Dict[float, str] = {}
     for pair in all_symbols:
         symbol = pair["symbol"]
-        
-        try:
-            # Get the ticker24hr data for a specific symbol (e.g. BTCUSDT)
-            ticker_info = client.ticker24hr(symbol=symbol)
 
-            # Extract the market capitalization from the returned data
-            market_cap = float(ticker_info['quoteVolume']) * float(ticker_info['weightedAvgPrice'])
-        
-        except:
-            continue
-        
         #search for coins tradeable via bridge. exlude UP DOWN BEAR BULL stuff
         if search(f"^\w*(?<!BULL){config.BRIDGE_SYMBOL}$", symbol) \
             and search(f"^\w*(?<!DOWN){config.BRIDGE_SYMBOL}$", symbol)\
             and search(f"^\w*(?<!BEAR){config.BRIDGE_SYMBOL}$", symbol)\
             and search(f"^\w*(?<!UP){config.BRIDGE_SYMBOL}$", symbol)\
         :
+            
+            try:
+                quoteVolume = float(pair['quoteVolume'])
+                weightedAvgPrice = float(ticker_info['weightedAvgPrice'])
+                market_cap = quoteVolume * weightedAvgPrice
+                
+            except:
+                continue
+                
             all_bridge_coins[market_cap]=symbol.replace(config.BRIDGE_SYMBOL, "")
             
     all_bridge_coins = sorted(all_bridge_coins.items())
-    return all_bridge_coins
+    return list(all_bridge_coins.values())
