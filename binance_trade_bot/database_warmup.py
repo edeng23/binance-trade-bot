@@ -142,7 +142,7 @@ def warmup_database(coin_list: List[str] = None, db_path = "data/crypto_trading.
 
 def get_all_bridge_coins(client: Client, config: Config):
     #fetch all tickers
-    all_symbols = client.get_all_tickers()
+    all_symbols = client.get_ticker()
 
     all_bridge_coins = {}
     for pair in all_symbols:
