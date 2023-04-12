@@ -120,9 +120,10 @@ def warmup_database(coin_list: List[str] = None, db_path = "data/crypto_trading.
 
     # check if the user wants to proceed
     if response.lower() == "y" or response.lower() == "yes":
+        i = 0
         end_list = 0
         while True:
-            user_input = input(f"The above list is sorted by market capitalization. Choose until where the list should go. Example: from BTC to ADA - type ADA: ")
+            user_input = input(f"The above list is sorted by market capitalization. Choose until where the list should go. Example: from BTC to ADA - type 'ADA': ")
             try:
                 user_input = str(user_input).upper()
                 end_list = user_input
@@ -138,9 +139,10 @@ def warmup_database(coin_list: List[str] = None, db_path = "data/crypto_trading.
             # iterate over the list and write each item to a new line in the file
             for item in warmup_coin_list:
                 file.write("%s\n" % item)
+                i += 1
                 if end_list == item:
                     break
-        print("Supported coin list updated successfully!")
+        print(f"Supported coin list updated successfully! You are trading with {i} coins.")
     else:
         print("Supported coin list stays as it was.")
 
