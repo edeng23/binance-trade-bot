@@ -122,7 +122,7 @@ def warmup_database(coin_list: List[str] = None, db_path = "data/crypto_trading.
     # check if the user wants to proceed
     if response.lower() == "y" or response.lower() == "yes":
         # open the file for writing
-        with open("supported_coin_list, 'w') as file:
+        with open("supported_coin_list", 'w') as file:
             # iterate over the list and write each item to a new line in the file
             for item in warmup_coin_list:
                 file.write("%s\n" % item)
