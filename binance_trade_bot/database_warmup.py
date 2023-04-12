@@ -122,12 +122,13 @@ def warmup_database(coin_list: List[str] = None, db_path = "data/crypto_trading.
     if response.lower() == "y" or response.lower() == "yes":
         i = 0
         end_list = 0
+        
         while True:
-            user_input = input(f"The above list is sorted by market capitalization. Choose until where the list should go. Example: from BTC to ADA - type 'ADA': ")
+            user_input = input(f"The above list is sorted by market capitalization. Choose until where the list should go. Example: from BTC to ADA - type ADA: ")
             try:
                 user_input = str(user_input).upper()
                 end_list = user_input
-                if isinstance(user_input, str) and user_input in warmup_coin_list:
+                if not isinstance(user_input, str) or user_input not in warmup_coin_list:
                     print(f"Invalid input. Please enter a valid coin.")
                 else:
                     break
