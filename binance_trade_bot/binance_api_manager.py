@@ -305,11 +305,21 @@ class BinanceAPIManager:
         return None
 
     def get_symbol_filter(self, origin_symbol: str, target_symbol: str, filter_type: str):
-        return next(
-            _filter
-            for _filter in self.binance_client.get_symbol_info(origin_symbol + target_symbol)["filters"]
-            if _filter["filterType"] == filter_type
-        )
+        try:
+            filters = self.binance_client.get_symbol_info(origin_symbol + target_symbol)["filters"]
+        except Exception as e:
+            # Handle the exception here
+            print(f"Error: {e}")
+            return None
+
+        try:
+            filter = next(_filter for _filter in filters if _filter["filterType"] == filter_type)
+            return filter
+        except StopIteration:
+            # Handle the case where no filter matches the specified filter_type
+            print(f"No {filter_type} filter found for {origin_symbol}/{target_symbol}")
+            return None
+
 
     @cached(cache=TTLCache(maxsize=2000, ttl=43200))
     def get_alt_tick(self, origin_symbol: str, target_symbol: str):
