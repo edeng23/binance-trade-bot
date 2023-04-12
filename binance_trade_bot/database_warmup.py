@@ -1,3 +1,4 @@
+import os
 from typing import List
 from re import search
 from binance.client import Client
@@ -114,6 +115,24 @@ def warmup_database(coin_list: List[str] = None, db_path = "data/crypto_trading.
 
     warmup_coin_list = coin_list or get_all_bridge_coins(manager.binance_client, config)
     logger.info(f'Going to warm up the following coins: {warmup_coin_list}')
+    
+    # prompt the user to confirm before proceeding
+    response = input("Do you want to update the supported coin list with ALL the coins? (y/n)")
+
+    # check if the user wants to proceed
+    if response.lower() == "y" or response.lower() == "yes":
+        # get the path of the directory one level up from the current directory
+        parent_dir = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
+        # create the file path by joining the parent directory path and filename
+        file_path = os.path.join(parent_dir, "supported_coin_list")
+        # open the file for writing
+        with open(file_path, 'w') as file:
+            # iterate over the list and write each item to a new line in the file
+            for item in warmup_coin_list:
+                file.write("%s\n" % item)
+        print("Supported coin list updated successfully!")
+    else:
+        print("Supported coin list stays as it was.")
 
     logger.info("Adding coins and pairs to database for warm up")
     db.set_coins_to_warmup(config.SUPPORTED_COIN_LIST, warmup_coin_list)
@@ -134,10 +153,10 @@ def get_all_bridge_coins(client: Client, config: Config):
     for pair in all_symbols:
         symbol = pair["symbol"]
         #search for coins tradeable via bridge. exlude UP DOWN BEAR BULL stuff
-        if search(f"^\w*(?<!UP){config.BRIDGE_SYMBOL}$", symbol) \
+        if search(f"^\w*(?<!BULL){config.BRIDGE_SYMBOL}$", symbol) \
             and search(f"^\w*(?<!DOWN){config.BRIDGE_SYMBOL}$", symbol)\
             and search(f"^\w*(?<!BEAR){config.BRIDGE_SYMBOL}$", symbol)\
-            and search(f"^\w*(?<!BULL){config.BRIDGE_SYMBOL}$", symbol)\
+            and search(f"^\w*(?<!UP){config.BRIDGE_SYMBOL}$", symbol)\
         :
             all_bridge_coins.append(symbol.replace(config.BRIDGE_SYMBOL, ""))
     return all_bridge_coins
