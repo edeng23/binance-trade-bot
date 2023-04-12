@@ -1,5 +1,5 @@
 import os
-from typing import List
+from typing import List, Dict
 from re import search
 from binance.client import Client
 
@@ -145,14 +145,27 @@ def get_all_bridge_coins(client: Client, config: Config):
     #fetch all tickers
     all_symbols = client.get_symbol_ticker()
 
-    all_bridge_coins: List[str] = []
+    all_bridge_coins: Dict[float, str] = {}
     for pair in all_symbols:
         symbol = pair["symbol"]
+        
+        try:
+            # Get the ticker24hr data for a specific symbol (e.g. BTCUSDT)
+            ticker_info = client.ticker24hr(symbol=symbol)
+
+            # Extract the market capitalization from the returned data
+            market_cap = float(ticker_info['quoteVolume']) * float(ticker_info['weightedAvgPrice'])
+        
+        except:
+            continue
+        
         #search for coins tradeable via bridge. exlude UP DOWN BEAR BULL stuff
         if search(f"^\w*(?<!BULL){config.BRIDGE_SYMBOL}$", symbol) \
             and search(f"^\w*(?<!DOWN){config.BRIDGE_SYMBOL}$", symbol)\
             and search(f"^\w*(?<!BEAR){config.BRIDGE_SYMBOL}$", symbol)\
             and search(f"^\w*(?<!UP){config.BRIDGE_SYMBOL}$", symbol)\
         :
-            all_bridge_coins.append(symbol.replace(config.BRIDGE_SYMBOL, ""))
+            all_bridge_coins[market_cap]=symbol.replace(config.BRIDGE_SYMBOL, "")
+            
+    all_bridge_coins = sorted(all_bridge_coins.items())
     return all_bridge_coins
