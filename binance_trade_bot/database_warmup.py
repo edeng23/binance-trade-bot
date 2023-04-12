@@ -136,7 +136,7 @@ def warmup_database(coin_list: List[str] = None, db_path = "data/crypto_trading.
         # open the file for writing
         with open("supported_coin_list", 'w') as file:
             # iterate over the list and write each item to a new line in the file
-            for item in warmup_coin_list[0:amount_coins-1]:
+            for item in warmup_coin_list[0:amount_coins]:
                 file.write("%s\n" % item)
         print("Supported coin list updated successfully!")
     else:
@@ -160,7 +160,6 @@ def get_all_bridge_coins(client: Client, config: Config):
     all_bridge_coins = {}
     for pair in all_symbols:
         symbol = pair["symbol"]
-        print(pair)
         quoteVolume = float(pair["quoteVolume"])
         weightedAvgPrice = float(pair["weightedAvgPrice"])
         market_cap = quoteVolume * weightedAvgPrice
