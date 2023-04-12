@@ -120,24 +120,26 @@ def warmup_database(coin_list: List[str] = None, db_path = "data/crypto_trading.
 
     # check if the user wants to proceed
     if response.lower() == "y" or response.lower() == "yes":
-        amount_coins = 0
+        end_list = 0
         while True:
-            user_input = input(f"The list ist sorted by market capitalization. Choose how many coins you wish to trade. Enter an integer value between 2 and {len(warmup_coin_list)}: ")
+            user_input = input(f"The above list is sorted by market capitalization. Choose until where the list should go. Example: from BTC to ADA - type ADA: ")
             try:
-                user_input = int(user_input)
-                amount_coins = user_input
-                if user_input < 2 or user_input > len(warmup_coin_list):
-                    print(f"Invalid input. Please enter an integer value between 2 and {len(warmup_coin_list)}.")
+                user_input = str(user_input).upper()
+                end_list = user_input
+                if isinstance(user_input, str) and user_input in warmup_coin_list:
+                    print(f"Invalid input. Please enter a valid coin.")
                 else:
                     break
             except ValueError:
-                print(f"Invalid input. Please enter an integer value between 2 and {len(warmup_coin_list)}.")
+                print(f"Invalid input. Please enter a valid coin.")
        
         # open the file for writing
         with open("supported_coin_list", 'w') as file:
             # iterate over the list and write each item to a new line in the file
-            for item in warmup_coin_list[0:amount_coins]:
+            for item in warmup_coin_list:
                 file.write("%s\n" % item)
+                if end_list == item:
+                    break
         print("Supported coin list updated successfully!")
     else:
         print("Supported coin list stays as it was.")
