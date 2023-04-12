@@ -148,9 +148,9 @@ def get_all_bridge_coins(client: Client, config: Config):
     for pair in all_symbols:
         symbol = pair["symbol"]
         print(pair)
-        #quoteVolume = pair["quoteVolume"]
-        #weightedAvgPrice = pair["weightedAvgPrice"]
-        #market_cap = quoteVolume * weightedAvgPrice
+        quoteVolume = pair["quoteVolume"]
+        weightedAvgPrice = pair["weightedAvgPrice"]
+        market_cap = quoteVolume * weightedAvgPrice
         #search for coins tradeable via bridge. exlude UP DOWN BEAR BULL stuff
         if search(f"^\w*(?<!BULL){config.BRIDGE_SYMBOL}$", symbol) \
             and search(f"^\w*(?<!DOWN){config.BRIDGE_SYMBOL}$", symbol)\
