@@ -154,8 +154,9 @@ def get_all_bridge_coins(client: Client, config: Config):
         if search(f"^\w*(?<!BULL){config.BRIDGE_SYMBOL}$", symbol) \
             and search(f"^\w*(?<!DOWN){config.BRIDGE_SYMBOL}$", symbol)\
             and search(f"^\w*(?<!BEAR){config.BRIDGE_SYMBOL}$", symbol)\
-            #and search(f"^\w*(?<!UP){config.BRIDGE_SYMBOL}$", symbol)\
         :
+            #and search(f"^\w*(?<!UP){config.BRIDGE_SYMBOL}$", symbol)\
+        
             all_bridge_coins[market_cap] = symbol.replace(config.BRIDGE_SYMBOL, "")
     all_bridge_coins = dict(sorted(all_bridge_coins.items(), key=None, reverse=True))
     all_bridge_coins = list(all_bridge_coins.values())
