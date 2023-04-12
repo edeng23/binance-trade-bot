@@ -171,4 +171,4 @@ def get_all_bridge_coins(client: Client, config: Config):
             all_bridge_coins[market_cap]=symbol.replace(config.BRIDGE_SYMBOL, "")
             
     all_bridge_coins = sorted(all_bridge_coins.items())
-    return list(all_bridge_coins.values())
+    return all_bridge_coins.values()
