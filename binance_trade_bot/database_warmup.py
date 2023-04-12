@@ -116,7 +116,7 @@ def warmup_database(coin_list: List[str] = None, db_path = "data/crypto_trading.
     logger.info(f'Going to warm up the following coins: {warmup_coin_list}')
     
     # prompt the user to confirm before proceeding
-    response = input("Do you want to update the supported coin list with ALL the coins? (y/n) \nWarning: This will lead to issues due to delisted coins and other weirdness. Cleanup is necessary!")
+    response = input("Do you want to update the supported coin list with ALL the coins? (y/n) ")
 
     # check if the user wants to proceed
     if response.lower() == "y" or response.lower() == "yes":
