@@ -124,7 +124,7 @@ def warmup_database(coin_list: List[str] = None, db_path = "data/crypto_trading.
         end_list = 0
         
         while True:
-            user_input = input(f"The above list is sorted by market capitalization. Choose until where the list should go. Example: from BTC to ADA - type ADA: ")
+            user_input = input(f"The above list is sorted by traded volume in the past 24h. Choose until where the list should go. Example: from BTC to ADA - type ADA: ")
             try:
                 user_input = str(user_input).upper()
                 end_list = user_input
