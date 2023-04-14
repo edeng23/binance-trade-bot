@@ -582,8 +582,12 @@ class Strategy(AutoTrader):
             hlc = []
             for values in comb:
                 hlc.append(sum(values) / 3)
-            stdev = int((max(self.highs) - min(self.lows)) / (st.stdev(numpy.array(self.reverse_price_history[-1 * self.calcval:]))))
-            bins_a = stdev + 1
+                
+            try:
+                bins_a = int((max(self.highs) - min(self.lows)) / (st.stdev(numpy.array(self.reverse_price_history[-1 * self.calcval:])))) + 1
+            except:
+                bins_a = self.config.RSI_LENGTH + 1
+            
             count, bins = numpy.histogram(hlc, bins=bins_a)
             allocs = numpy.digitize(hlc, bins) - 1
             position_now = numpy.digitize(hlc[-1], bins) - 1
