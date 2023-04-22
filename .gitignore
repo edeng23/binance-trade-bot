@@ -12,3 +12,8 @@ venv/
 crypto_trading.db
 apprise.yml
 .DS_Store
+Scripts/
+Lib/
+Procfile
+pyvenv.cfg
+include/
