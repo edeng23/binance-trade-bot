@@ -219,7 +219,7 @@ class Strategy(AutoTrader):
                 else:
                     print("")
                     self.logger.info("!!! Selling high !!!")
-                    self.from_coin_price = round(max(self.rv_tema, self.active_threshold), self.d)
+                    self.from_coin_price = round(max(self.rv_tema, self.active_threshold, self.next_price), self.d)
 
                 if not self.rsi:
                     self.panicked = True
@@ -267,7 +267,7 @@ class Strategy(AutoTrader):
                 else:
                     print("")
                     self.logger.info("!!! Buying low !!!")
-                    self.from_coin_price = round(min(self.rv_tema, self.active_threshold), self.d)
+                    self.from_coin_price = round(min(self.rv_tema, self.active_threshold, self.next_price), self.d)
 
                 self.panicked = False
 
