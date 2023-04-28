@@ -154,7 +154,7 @@ class Strategy(AutoTrader):
 
         if self.rsi:
             if self.panicked:
-                if self.to_coin_direction >= 0 and (self.rsi > self.pre_rsi <= 30 or self.pre_rsi < self.rsi > 50) or self.rsi < 20:
+                if self.to_coin_direction >= 0 and (self.rsi > self.pre_rsi <= 30 or self.pre_rsi < self.rsi > 50) or self.rsi < 20 or base_time >= self.reinit_idle:
                     print("")
                     self.logger.info(f"Will be jumping from {current_coin} to {self.best_pair.to_coin_id}")
                     self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
