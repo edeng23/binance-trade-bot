@@ -323,7 +323,7 @@ class BinanceAPIManager:
                     return filter
                 except StopIteration:
                     # Handle the case where there is no minimum limit for trading
-                    return {"minNotional":0}
+                    return {"minNotional":10}
             else:            
                 # Handle the case where no filter matches the specified filter_type
                 all_filters = [f["filterType"] for f in filters]
