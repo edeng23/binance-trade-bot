@@ -236,7 +236,7 @@ class Strategy(AutoTrader):
                         #self.active_threshold = 0
 
                     else:
-                        self.active_threshold = self.from_coin_price * 0.999 #max(self.reverse_price_history) * 3
+                        self.active_threshold = self.from_coin_price - stdev #max(self.reverse_price_history) * 3
                         self.dir_threshold = 0
                         self.equi = False
                         self.fair_price = 0
@@ -277,7 +277,7 @@ class Strategy(AutoTrader):
                     #self.active_threshold = max(self.reverse_price_history) * 3
 
                 else:
-                    self.active_threshold = self.from_coin_price * 1.001
+                    self.active_threshold = self.from_coin_price + stdev
                     self.dir_threshold = 0
                     self.equi = False
                     self.fair_price = 0
