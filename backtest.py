@@ -14,5 +14,7 @@ if __name__ == "__main__":
         print("TIME:", manager.datetime)
         print("BALANCES:", manager.balances)
         print("BTC VALUE:", btc_value, f"({btc_diff}%)")
-        print(f"{manager.config.BRIDGE.symbol} VALUE:", bridge_value, f"({bridge_diff}%)")
+        print(
+            f"{manager.config.BRIDGE.symbol} VALUE:", bridge_value, f"({bridge_diff}%)"
+        )
         print("------")

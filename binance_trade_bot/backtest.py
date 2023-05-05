@@ -51,11 +51,15 @@ class MockBinanceManager(BinanceAPIManager):
             if end_date > datetime.now():
                 end_date = datetime.now()
             end_date = end_date.strftime("%d %b %Y %H:%M:%S")
-            self.logger.info(f"Fetching prices for {ticker_symbol} between {self.datetime} and {end_date}")
+            self.logger.info(
+                f"Fetching prices for {ticker_symbol} between {self.datetime} and {end_date}"
+            )
             for result in self.binance_client.get_historical_klines(
                 ticker_symbol, "1m", target_date, end_date, limit=1000
             ):
-                date = datetime.utcfromtimestamp(result[0] / 1000).strftime("%d %b %Y %H:%M:%S")
+                date = datetime.utcfromtimestamp(result[0] / 1000).strftime(
+                    "%d %b %Y %H:%M:%S"
+                )
                 price = float(result[1])
                 cache[f"{ticker_symbol} - {date}"] = price
             cache.commit()
@@ -75,18 +79,24 @@ class MockBinanceManager(BinanceAPIManager):
         target_balance = self.get_currency_balance(target_symbol)
         from_coin_price = self.get_ticker_price(origin_symbol + target_symbol)
 
-        order_quantity = self._buy_quantity(origin_symbol, target_symbol, target_balance, from_coin_price)
+        order_quantity = self._buy_quantity(
+            origin_symbol, target_symbol, target_balance, from_coin_price
+        )
         target_quantity = order_quantity * from_coin_price
         self.balances[target_symbol] -= target_quantity
-        self.balances[origin_symbol] = self.balances.get(origin_symbol, 0) + order_quantity * (
-            1 - self.get_fee(origin_coin, target_coin, False)
-        )
+        self.balances[origin_symbol] = self.balances.get(
+            origin_symbol, 0
+        ) + order_quantity * (1 - self.get_fee(origin_coin, target_coin, False))
         self.logger.info(
             f"Bought {origin_symbol}, balance now: {self.balances[origin_symbol]} - bridge: "
             f"{self.balances[target_symbol]}"
         )
 
-        event = defaultdict(lambda: None, order_price=from_coin_price, cumulative_quote_asset_transacted_quantity=0)
+        event = defaultdict(
+            lambda: None,
+            order_price=from_coin_price,
+            cumulative_quote_asset_transacted_quantity=0,
+        )
 
         return BinanceOrder(event)
 
@@ -97,11 +107,13 @@ class MockBinanceManager(BinanceAPIManager):
         origin_balance = self.get_currency_balance(origin_symbol)
         from_coin_price = self.get_ticker_price(origin_symbol + target_symbol)
 
-        order_quantity = self._sell_quantity(origin_symbol, target_symbol, origin_balance)
-        target_quantity = order_quantity * from_coin_price
-        self.balances[target_symbol] = self.balances.get(target_symbol, 0) + target_quantity * (
-            1 - self.get_fee(origin_coin, target_coin, True)
+        order_quantity = self._sell_quantity(
+            origin_symbol, target_symbol, origin_balance
         )
+        target_quantity = order_quantity * from_coin_price
+        self.balances[target_symbol] = self.balances.get(
+            target_symbol, 0
+        ) + target_quantity * (1 - self.get_fee(origin_coin, target_coin, True))
         self.balances[origin_symbol] -= order_quantity
         self.logger.info(
             f"Sold {origin_symbol}, balance now: {self.balances[origin_symbol]} - bridge: "
@@ -132,7 +144,13 @@ class MockDatabase(Database):
     def __init__(self, logger: Logger, config: Config):
         super().__init__(logger, config, "sqlite:///")
 
-    def log_scout(self, pair: Pair, target_ratio: float, current_coin_price: float, other_coin_price: float):
+    def log_scout(
+        self,
+        pair: Pair,
+        target_ratio: float,
+        current_coin_price: float,
+        other_coin_price: float,
+    ):
         pass
 
 

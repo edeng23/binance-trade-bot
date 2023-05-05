@@ -20,7 +20,9 @@ def main():
     try:
         _ = manager.get_account()
     except Exception as e:  # pylint: disable=broad-except
-        logger.error("Couldn't access Binance API - API keys may be wrong or lack sufficient permissions")
+        logger.error(
+            "Couldn't access Binance API - API keys may be wrong or lack sufficient permissions"
+        )
         logger.error(e)
         return
     strategy = get_strategy(config.STRATEGY)
