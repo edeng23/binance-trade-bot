@@ -2,7 +2,7 @@
 minimum_pre_commit_version: 1.15.2
 repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v2.1.0
+  rev: v4.1.0
   hooks:
   - id: check-merge-conflict      # Check for files that contain merge conflict strings.
   - id: trailing-whitespace       # Trims trailing whitespace.
@@ -22,26 +22,26 @@ repos:
     files: ^supported_coin_list$
 
 - repo: https://github.com/asottile/pyupgrade
-  rev: v2.10.0
+  rev: v2.29.1
   hooks:
   - id: pyupgrade
     name: Rewrite Code to be Py3.6+
     args: [--py36-plus]
 
 - repo: https://github.com/pycqa/isort
-  rev: 5.6.3
+  rev: 5.11.5
   hooks:
   - id: isort
     args: [--profile, black, --line-length, '120']
 
 - repo: https://github.com/psf/black
-  rev: 20.8b1
+  rev: 23.3.0
   hooks:
   - id: black
     args: [-l, '120']
 
 - repo: https://github.com/asottile/blacken-docs
-  rev: v1.7.0
+  rev: v1.11.0
   hooks:
   - id: blacken-docs
     args: [--skip-errors]
@@ -56,7 +56,7 @@ repos:
     args: [requirements.txt, dev-requirements.txt]
 
 - repo: https://github.com/pre-commit/mirrors-pylint
-  rev: v2.4.4
+  rev: v3.0.0a5
   hooks:
   - id: pylint
     name: PyLint

@@ -23,25 +23,17 @@ class Strategy(AutoTrader):
             end="\r",
         )
 
-        current_coin_price = self.manager.get_ticker_price(
-            current_coin + self.config.BRIDGE
-        )
+        current_coin_price = self.manager.get_ticker_price(current_coin + self.config.BRIDGE)
 
         if current_coin_price is None:
-            self.logger.info(
-                "Skipping scouting... current coin {} not found".format(
-                    current_coin + self.config.BRIDGE
-                )
-            )
+            self.logger.info(f"Skipping scouting... current coin {current_coin + self.config.BRIDGE} not found")
             return
 
         self._jump_to_best_coin(current_coin, current_coin_price)
 
     def bridge_scout(self):
         current_coin = self.db.get_current_coin()
-        if self.manager.get_currency_balance(
-            current_coin.symbol
-        ) > self.manager.get_min_notional(
+        if self.manager.get_currency_balance(current_coin.symbol) > self.manager.get_min_notional(
             current_coin.symbol, self.config.BRIDGE.symbol
         ):
             # Only scout if we don't have enough of the current coin
@@ -62,9 +54,7 @@ class Strategy(AutoTrader):
             self.logger.info(f"Setting initial coin to {current_coin_symbol}")
 
             if current_coin_symbol not in self.config.SUPPORTED_COIN_LIST:
-                sys.exit(
-                    "***\nERROR!\nSince there is no backup file, a proper coin name must be provided at init\n***"
-                )
+                sys.exit("***\nERROR!\nSince there is no backup file, a proper coin name must be provided at init\n***")
             self.db.set_current_coin(current_coin_symbol)
 
             # if we don't have a configuration, we selected a coin at random... Buy it so we can start trading.

@@ -19,9 +19,7 @@ class BinanceOrder:  # pylint: disable=too-few-public-methods
         self.side = report["side"]
         self.order_type = report["order_type"]
         self.id = report["order_id"]
-        self.cumulative_quote_qty = float(
-            report["cumulative_quote_asset_transacted_quantity"]
-        )
+        self.cumulative_quote_qty = float(report["cumulative_quote_asset_transacted_quantity"])
         self.status = report["current_order_status"]
         self.price = float(report["order_price"])
         self.time = report["transaction_time"]
@@ -111,13 +109,9 @@ class BinanceStreamManager:
             order = None
             while True:
                 try:
-                    order = self.binance_client.get_order(
-                        symbol=symbol, orderId=order_id
-                    )
+                    order = self.binance_client.get_order(symbol=symbol, orderId=order_id)
                 except (BinanceRequestException, BinanceAPIException) as e:
-                    self.logger.error(
-                        f"Got exception during fetching pending order: {e}"
-                    )
+                    self.logger.error(f"Got exception during fetching pending order: {e}")
                 if order is not None:
                     break
                 time.sleep(1)
@@ -126,9 +120,7 @@ class BinanceStreamManager:
                 "side": order["side"],
                 "order_type": order["type"],
                 "order_id": order["orderId"],
-                "cumulative_quote_asset_transacted_quantity": float(
-                    order["cummulativeQuoteQty"]
-                ),
+                "cumulative_quote_asset_transacted_quantity": float(order["cummulativeQuoteQty"]),
                 "current_order_status": order["status"],
                 "order_price": float(order["price"]),
                 "transaction_time": order["time"],
@@ -148,9 +140,7 @@ class BinanceStreamManager:
             if self.bw_api_manager.is_manager_stopping():
                 sys.exit()
 
-            stream_signal = (
-                self.bw_api_manager.pop_stream_signal_from_stream_signal_buffer()
-            )
+            stream_signal = self.bw_api_manager.pop_stream_signal_from_stream_signal_buffer()
             stream_data = self.bw_api_manager.pop_stream_data_from_stream_buffer()
 
             if stream_signal is not False:

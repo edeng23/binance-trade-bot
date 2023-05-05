@@ -16,9 +16,7 @@ from .models import *  # pylint: disable=wildcard-import
 
 
 class Database:
-    def __init__(
-        self, logger: Logger, config: Config, uri="sqlite:///data/crypto_trading.db"
-    ):
+    def __init__(self, logger: Logger, config: Config, uri="sqlite:///data/crypto_trading.db"):
         self.logger = logger
         self.config = config
         self.engine = create_engine(uri)
@@ -31,10 +29,7 @@ class Database:
         try:
             if not self.socketio_client.connected:
                 self.socketio_client.connect("http://api:5123", namespaces=["/backend"])
-            while (
-                not self.socketio_client.connected
-                or not self.socketio_client.namespaces
-            ):
+            while not self.socketio_client.connected or not self.socketio_client.namespaces:
                 time.sleep(0.1)
             return True
         except SocketIOConnectionError:
@@ -77,13 +72,7 @@ class Database:
             for from_coin in coins:
                 for to_coin in coins:
                     if from_coin != to_coin:
-                        pair = (
-                            session.query(Pair)
-                            .filter(
-                                Pair.from_coin == from_coin, Pair.to_coin == to_coin
-                            )
-                            .first()
-                        )
+                        pair = session.query(Pair).filter(Pair.from_coin == from_coin, Pair.to_coin == to_coin).first()
                         if pair is None:
                             session.add(Pair(from_coin, to_coin))
 
@@ -119,9 +108,7 @@ class Database:
     def get_current_coin(self) -> Optional[Coin]:
         session: Session
         with self.db_session() as session:
-            current_coin = (
-                session.query(CurrentCoin).order_by(CurrentCoin.datetime.desc()).first()
-            )
+            current_coin = session.query(CurrentCoin).order_by(CurrentCoin.datetime.desc()).first()
             if current_coin is None:
                 return None
             coin = current_coin.coin
@@ -133,17 +120,11 @@ class Database:
         to_coin = self.get_coin(to_coin)
         session: Session
         with self.db_session() as session:
-            pair: Pair = (
-                session.query(Pair)
-                .filter(Pair.from_coin == from_coin, Pair.to_coin == to_coin)
-                .first()
-            )
+            pair: Pair = session.query(Pair).filter(Pair.from_coin == from_coin, Pair.to_coin == to_coin).first()
             session.expunge(pair)
             return pair
 
-    def get_pairs_from(
-        self, from_coin: Union[Coin, str], only_enabled=True
-    ) -> List[Pair]:
+    def get_pairs_from(self, from_coin: Union[Coin, str], only_enabled=True) -> List[Pair]:
         from_coin = self.get_coin(from_coin)
         session: Session
         with self.db_session() as session:
@@ -179,32 +160,24 @@ class Database:
             self.send_update(sh)
 
     def prune_scout_history(self):
-        time_diff = datetime.now() - timedelta(
-            hours=self.config.SCOUT_HISTORY_PRUNE_TIME
-        )
+        time_diff = datetime.now() - timedelta(hours=self.config.SCOUT_HISTORY_PRUNE_TIME)
         session: Session
         with self.db_session() as session:
-            session.query(ScoutHistory).filter(
-                ScoutHistory.datetime < time_diff
-            ).delete()
+            session.query(ScoutHistory).filter(ScoutHistory.datetime < time_diff).delete()
 
     def prune_value_history(self):
         session: Session
         with self.db_session() as session:
             # Sets the first entry for each coin for each hour as 'hourly'
             hourly_entries: List[CoinValue] = (
-                session.query(CoinValue)
-                .group_by(CoinValue.coin_id, func.strftime("%H", CoinValue.datetime))
-                .all()
+                session.query(CoinValue).group_by(CoinValue.coin_id, func.strftime("%H", CoinValue.datetime)).all()
             )
             for entry in hourly_entries:
                 entry.interval = Interval.HOURLY
 
             # Sets the first entry for each coin for each day as 'daily'
             daily_entries: List[CoinValue] = (
-                session.query(CoinValue)
-                .group_by(CoinValue.coin_id, func.date(CoinValue.datetime))
-                .all()
+                session.query(CoinValue).group_by(CoinValue.coin_id, func.date(CoinValue.datetime)).all()
             )
             for entry in daily_entries:
                 entry.interval = Interval.DAILY
@@ -212,9 +185,7 @@ class Database:
             # Sets the first entry for each coin for each month as 'weekly'
             # (Sunday is the start of the week)
             weekly_entries: List[CoinValue] = (
-                session.query(CoinValue)
-                .group_by(CoinValue.coin_id, func.strftime("%Y-%W", CoinValue.datetime))
-                .all()
+                session.query(CoinValue).group_by(CoinValue.coin_id, func.strftime("%Y-%W", CoinValue.datetime)).all()
             )
             for entry in weekly_entries:
                 entry.interval = Interval.WEEKLY
@@ -264,20 +235,14 @@ class Database:
         if os.path.isfile(".current_coin"):
             with open(".current_coin") as f:
                 coin = f.read().strip()
-                self.logger.info(
-                    f".current_coin file found, loading current coin {coin}"
-                )
+                self.logger.info(f".current_coin file found, loading current coin {coin}")
                 self.set_current_coin(coin)
             os.rename(".current_coin", ".current_coin.old")
-            self.logger.info(
-                f".current_coin renamed to .current_coin.old - You can now delete this file"
-            )
+            self.logger.info(f".current_coin renamed to .current_coin.old - You can now delete this file")
 
         if os.path.isfile(".current_coin_table"):
             with open(".current_coin_table") as f:
-                self.logger.info(
-                    f".current_coin_table file found, loading into database"
-                )
+                self.logger.info(f".current_coin_table file found, loading into database")
                 table: dict = json.load(f)
                 session: Session
                 with self.db_session() as session:
@@ -290,10 +255,7 @@ class Database:
                             session.add(pair)
 
             os.rename(".current_coin_table", ".current_coin_table.old")
-            self.logger.info(
-                ".current_coin_table renamed to .current_coin_table.old - "
-                "You can now delete this file"
-            )
+            self.logger.info(".current_coin_table renamed to .current_coin_table.old - " "You can now delete this file")
 
 
 class TradeLog:
@@ -309,9 +271,7 @@ class TradeLog:
             session.flush()
             self.db.send_update(self.trade)
 
-    def set_ordered(
-        self, alt_starting_balance, crypto_starting_balance, alt_trade_amount
-    ):
+    def set_ordered(self, alt_starting_balance, crypto_starting_balance, alt_trade_amount):
         session: Session
         with self.db.db_session() as session:
             trade: Trade = session.merge(self.trade)

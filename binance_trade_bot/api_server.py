@@ -50,9 +50,7 @@ def filter_period(query, model):  # pylint: disable=inconsistent-return-statemen
 def value_history(coin: str = None):
     session: Session
     with db.db_session() as session:
-        query = session.query(CoinValue).order_by(
-            CoinValue.coin_id.asc(), CoinValue.datetime.asc()
-        )
+        query = session.query(CoinValue).order_by(CoinValue.coin_id.asc(), CoinValue.datetime.asc())
 
         query = filter_period(query, CoinValue)
 
@@ -61,12 +59,7 @@ def value_history(coin: str = None):
             return jsonify([entry.info() for entry in values])
 
         coin_values = groupby(query.all(), key=lambda cv: cv.coin)
-        return jsonify(
-            {
-                coin.symbol: [entry.info() for entry in history]
-                for coin, history in coin_values
-            }
-        )
+        return jsonify({coin.symbol: [entry.info() for entry in history] for coin, history in coin_values})
 
 
 @app.route("/api/total_value_history")
@@ -82,9 +75,7 @@ def total_value_history():
         query = filter_period(query, CoinValue)
 
         total_values: List[Tuple[datetime, float, float]] = query.all()
-        return jsonify(
-            [{"datetime": tv[0], "btc": tv[1], "usd": tv[2]} for tv in total_values]
-        )
+        return jsonify([{"datetime": tv[0], "btc": tv[1], "usd": tv[2]} for tv in total_values])
 
 
 @app.route("/api/trade_history")
@@ -142,9 +133,7 @@ def coins():
     with db.db_session() as session:
         _current_coin = session.merge(db.get_current_coin())
         _coins: List[Coin] = session.query(Coin).all()
-        return jsonify(
-            [{**coin.info(), "is_current": coin == _current_coin} for coin in _coins]
-        )
+        return jsonify([{**coin.info(), "is_current": coin == _current_coin} for coin in _coins])
 
 
 @app.route("/api/pairs")

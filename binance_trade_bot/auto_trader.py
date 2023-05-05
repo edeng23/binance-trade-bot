@@ -32,9 +32,7 @@ class AutoTrader:
         """
         can_sell = False
         balance = self.manager.get_currency_balance(pair.from_coin.symbol)
-        from_coin_price = self.manager.get_ticker_price(
-            pair.from_coin + self.config.BRIDGE
-        )
+        from_coin_price = self.manager.get_ticker_price(pair.from_coin + self.config.BRIDGE)
 
         if balance and balance * from_coin_price > self.manager.get_min_notional(
             pair.from_coin.symbol, self.config.BRIDGE.symbol
@@ -43,10 +41,7 @@ class AutoTrader:
         else:
             self.logger.info("Skipping sell")
 
-        if (
-            can_sell
-            and self.manager.sell_alt(pair.from_coin, self.config.BRIDGE) is None
-        ):
+        if can_sell and self.manager.sell_alt(pair.from_coin, self.config.BRIDGE) is None:
             self.logger.info("Couldn't sell, going back to scouting mode...")
             return None
 
@@ -65,26 +60,16 @@ class AutoTrader:
         """
 
         if coin_price is None:
-            self.logger.info(
-                "Skipping update... current coin {} not found".format(
-                    coin + self.config.BRIDGE
-                )
-            )
+            self.logger.info(f"Skipping update... current coin {coin + self.config.BRIDGE} not found")
             return
 
         session: Session
         with self.db.db_session() as session:
             for pair in session.query(Pair).filter(Pair.to_coin == coin):
-                from_coin_price = self.manager.get_ticker_price(
-                    pair.from_coin + self.config.BRIDGE
-                )
+                from_coin_price = self.manager.get_ticker_price(pair.from_coin + self.config.BRIDGE)
 
                 if from_coin_price is None:
-                    self.logger.info(
-                        "Skipping update for coin {} not found".format(
-                            pair.from_coin + self.config.BRIDGE
-                        )
-                    )
+                    self.logger.info(f"Skipping update for coin {pair.from_coin + self.config.BRIDGE} not found")
                     continue
 
                 pair.ratio = from_coin_price / coin_price
@@ -100,26 +85,14 @@ class AutoTrader:
                     continue
                 self.logger.info(f"Initializing {pair.from_coin} vs {pair.to_coin}")
 
-                from_coin_price = self.manager.get_ticker_price(
-                    pair.from_coin + self.config.BRIDGE
-                )
+                from_coin_price = self.manager.get_ticker_price(pair.from_coin + self.config.BRIDGE)
                 if from_coin_price is None:
-                    self.logger.info(
-                        "Skipping initializing {}, symbol not found".format(
-                            pair.from_coin + self.config.BRIDGE
-                        )
-                    )
+                    self.logger.info(f"Skipping initializing {pair.from_coin + self.config.BRIDGE}, symbol not found")
                     continue
 
-                to_coin_price = self.manager.get_ticker_price(
-                    pair.to_coin + self.config.BRIDGE
-                )
+                to_coin_price = self.manager.get_ticker_price(pair.to_coin + self.config.BRIDGE)
                 if to_coin_price is None:
-                    self.logger.info(
-                        "Skipping initializing {}, symbol not found".format(
-                            pair.to_coin + self.config.BRIDGE
-                        )
-                    )
+                    self.logger.info(f"Skipping initializing {pair.to_coin + self.config.BRIDGE}, symbol not found")
                     continue
 
                 pair.ratio = from_coin_price / to_coin_price
@@ -137,16 +110,10 @@ class AutoTrader:
         ratio_dict: Dict[Pair, float] = {}
 
         for pair in self.db.get_pairs_from(coin):
-            optional_coin_price = self.manager.get_ticker_price(
-                pair.to_coin + self.config.BRIDGE
-            )
+            optional_coin_price = self.manager.get_ticker_price(pair.to_coin + self.config.BRIDGE)
 
             if optional_coin_price is None:
-                self.logger.info(
-                    "Skipping scouting... optional coin {} not found".format(
-                        pair.to_coin + self.config.BRIDGE
-                    )
-                )
+                self.logger.info(f"Skipping scouting... optional coin {pair.to_coin + self.config.BRIDGE} not found")
                 continue
 
             self.db.log_scout(pair, pair.ratio, coin_price, optional_coin_price)
@@ -161,16 +128,11 @@ class AutoTrader:
 
             if self.config.USE_MARGIN == "yes":
                 ratio_dict[pair] = (
-                    (1 - transaction_fee) * coin_opt_coin_ratio / pair.ratio
-                    - 1
-                    - self.config.SCOUT_MARGIN / 100
+                    (1 - transaction_fee) * coin_opt_coin_ratio / pair.ratio - 1 - self.config.SCOUT_MARGIN / 100
                 )
             else:
                 ratio_dict[pair] = (
-                    coin_opt_coin_ratio
-                    - transaction_fee
-                    * self.config.SCOUT_MULTIPLIER
-                    * coin_opt_coin_ratio
+                    coin_opt_coin_ratio - transaction_fee * self.config.SCOUT_MULTIPLIER * coin_opt_coin_ratio
                 ) - pair.ratio
         return ratio_dict
 
@@ -196,9 +158,7 @@ class AutoTrader:
         bridge_balance = self.manager.get_currency_balance(self.config.BRIDGE.symbol)
 
         for coin in self.db.get_coins():
-            current_coin_price = self.manager.get_ticker_price(
-                coin + self.config.BRIDGE
-            )
+            current_coin_price = self.manager.get_ticker_price(coin + self.config.BRIDGE)
 
             if current_coin_price is None:
                 continue
@@ -206,9 +166,7 @@ class AutoTrader:
             ratio_dict = self._get_ratios(coin, current_coin_price)
             if not any(v > 0 for v in ratio_dict.values()):
                 # There will only be one coin where all the ratios are negative. When we find it, buy it if we can
-                if bridge_balance > self.manager.get_min_notional(
-                    coin.symbol, self.config.BRIDGE.symbol
-                ):
+                if bridge_balance > self.manager.get_min_notional(coin.symbol, self.config.BRIDGE.symbol):
                     self.logger.info(f"Will be purchasing {coin} using bridge coin")
                     self.manager.buy_alt(coin, self.config.BRIDGE)
                     return coin

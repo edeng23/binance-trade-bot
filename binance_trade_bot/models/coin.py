@@ -17,9 +17,7 @@ class Coin(Base):
             return self.symbol + other
         if isinstance(other, Coin):
             return self.symbol + other.symbol
-        raise TypeError(
-            f"unsupported operand type(s) for +: 'Coin' and '{type(other)}'"
-        )
+        raise TypeError(f"unsupported operand type(s) for +: 'Coin' and '{type(other)}'")
 
     def __repr__(self):
         return f"[{self.symbol}]"
