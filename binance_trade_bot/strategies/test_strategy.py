@@ -574,9 +574,9 @@ class Strategy(AutoTrader):
             
             macd, macdsignal, macdhist = talib.MACD(rv_closes, fastperiod=12, slowperiod=26, signalperiod=9)
                 
-            if macd[-1] - macdsignal[-1] > 0:
+            if macd[-1] - macdsignal[-1] > macd[-2] - macdsignal[-2]:
                 self.macd = True
-            elif macd[-1] - macdsignal[-1] < 0:
+            elif macd[-1] - macdsignal[-1] < macd[-2] - macdsignal[-2]:
                 self.macd = False
 
             volume = numpy.array(self.volume)
