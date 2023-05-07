@@ -705,3 +705,6 @@ class Strategy(AutoTrader):
             return True
         else:
             return False
+
+    #def macd_calc(self):
+     #   macd, macdsignal, macdhist = talib.MACD(source, fastperiod=fastperiod, signalperiod=signalperiod)
