@@ -31,8 +31,9 @@ class Strategy(AutoTrader):
         self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
         self.d = 3
         self.v = 3
-        self.jumps = int(self.config.JUMPS_PER_DAY)
-        self.win = int(self.config.TARGET_WIN)
+        self.macd = True
+        #self.jumps = int(self.config.JUMPS_PER_DAY)
+        #self.win = int(self.config.TARGET_WIN)
         self.active_threshold = 0
         self.dir_threshold = 0
         self.Res_high = 0
@@ -157,9 +158,9 @@ class Strategy(AutoTrader):
                 if self.to_coin_direction >= 0 and (self.rsi > self.pre_rsi <= 30 or self.pre_rsi < self.rsi > 50) or self.rsi < 20 or base_time >= self.reinit_idle:
                     print("")
                     self.logger.info(f"Will be jumping from {current_coin} to {self.best_pair.to_coin_id}")
+                    self.transaction_through_bridge(self.best_pair, round(max(self.from_coin_price, self.rv_tema), self.d), round(min(self.to_coin_price, self.tema), self.v))
                     self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
                     self.panicked = False
-                    self.transaction_through_bridge(self.best_pair, round(max(self.from_coin_price, self.rv_tema), self.d), round(min(self.to_coin_price, self.tema), self.v))
                     self.active_threshold = 0
                     self.dir_threshold = 0
                     self.equi = False
@@ -171,9 +172,9 @@ class Strategy(AutoTrader):
                 if self.from_coin_direction <= self.to_coin_direction >= 0 and (self.pre_rsi < self.rsi <= 30 or 50 <= self.pre_rsi < self.rsi) or self.rsi < 20:
                     print("")
                     self.logger.info(f"Will be jumping from {current_coin} to {self.best_pair.to_coin_id}")
+                    self.transaction_through_bridge(self.best_pair, round(max(self.from_coin_price, self.rv_tema), self.d), round(min(self.to_coin_price, self.tema), self.v))
                     self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
                     self.panicked = False
-                    self.transaction_through_bridge(self.best_pair, round(max(self.from_coin_price, self.rv_tema), self.d), round(min(self.to_coin_price, self.tema), self.v))
                     self.active_threshold = 0
                     self.dir_threshold = 0
                     self.equi = False
@@ -192,7 +193,7 @@ class Strategy(AutoTrader):
 
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
 
-            if self.rv_pre_rsi > self.rv_rsi and ((self.from_coin_direction < 0 and self.from_coin_price < self.active_threshold) or self.volume[-1] / self.volume_sma >= 1.5) or self.from_coin_direction < self.dir_threshold or self.rv_rsi > 80 or max(self.vector[:-2]) <= self.vector[-1] or self.from_coin_price > self.active_threshold > self.next_price and self.equi:
+            if not self.macd and (self.rv_pre_rsi > self.rv_rsi and ((self.from_coin_direction < 0 and self.from_coin_price < self.active_threshold) or self.volume[-1] / self.volume_sma >= 1.5) or self.from_coin_direction < self.dir_threshold or self.from_coin_price > self.active_threshold > self.next_price and self.equi) or self.rv_rsi > 80 or max(self.vector[:-2]) <= self.vector[-1]:
                 if self.rsi:
                     print("")
                     self.logger.info(f"{current_coin} exhausted, jumping to {self.best_pair.to_coin_id}")
@@ -252,7 +253,7 @@ class Strategy(AutoTrader):
 
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
 
-            if self.rv_pre_rsi < self.rv_rsi and ((self.from_coin_direction > 0 and self.from_coin_price > self.active_threshold) or self.volume[-1] / self.volume_sma >= 1.5) or self.from_coin_direction > self.dir_threshold or self.rv_rsi < 20 or min(self.vector[:-2]) >= self.vector[-1] or self.from_coin_price < self.active_threshold < self.next_price and self.equi:
+            if self.macd and (self.rv_pre_rsi < self.rv_rsi and ((self.from_coin_direction > 0 and self.from_coin_price > self.active_threshold) or self.volume[-1] / self.volume_sma >= 1.5) or self.from_coin_direction > self.dir_threshold or self.from_coin_price < self.active_threshold < self.next_price and self.equi) or self.rv_rsi < 20 or min(self.vector[:-2]) >= self.vector[-1]:
                 if self.rv_rsi < 20 or min(self.vector[:-2]) >= self.vector[-1] or self.from_coin_price < self.active_threshold < self.next_price and self.equi:
                     print("")
                     self.logger.info("!!! Target buy !!!")
@@ -566,10 +567,17 @@ class Strategy(AutoTrader):
                 self.lows[-1] = low
                 
         hist_d=[]
-        if len(self.reverse_price_history) >= init_rsi_length:
+        if len(self.reverse_price_history) >= 26: #init_rsi_length:
             rv_closes = numpy.array(self.reverse_price_history)
             rv_rsi = talib.RSI(rv_closes, init_rsi_length)
             rv_tema = talib.TEMA(rv_closes, init_rsi_length)
+            
+            macd, macdsignal, macdhist = talib.MACD(np_closes, fastperiod=12, slowperiod=26, signalperiod=9)
+                
+            if macd - macdsignal > 0:
+                self.macd = True
+            elif macd - macdsignal < 0:
+                self.macd = False
 
             volume = numpy.array(self.volume)
             volume_sma = talib.SMA(volume, init_rsi_length)
@@ -705,6 +713,3 @@ class Strategy(AutoTrader):
             return True
         else:
             return False
-
-    #def macd_calc(self):
-     #   macd, macdsignal, macdhist = talib.MACD(source, fastperiod=fastperiod, signalperiod=signalperiod)
