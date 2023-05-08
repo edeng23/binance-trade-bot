@@ -317,9 +317,9 @@ class BinanceAPIManager:
             return filter
         except StopIteration:
             # Handle the case first checking if there's a "NOTIONAL" filter instead of "minNotional"
-            if filter_type == "MIN_NOTIONAL":
+            if filter_type == "NOTIONAL":
                 try:
-                    filter = next(_filter for _filter in filters if _filter["filterType"] == "NOTIONAL")
+                    filter = next(_filter for _filter in filters if _filter["filterType"] == "MIN_NOTIONAL")
                     return filter
                 except StopIteration:
                     # Handle the case where there is no minimum limit for trading
