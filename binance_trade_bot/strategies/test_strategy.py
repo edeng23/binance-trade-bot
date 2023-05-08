@@ -704,11 +704,14 @@ class Strategy(AutoTrader):
             self.Res_float = self.reverse_price_history[-1] + Val_float
         else:
             self.Res_float = self.reverse_price_history[-1] + (Val_float * (100/self.rv_rsi - 1))
-            
-        if self.calcval-len(hist_d) > 1:
-            self.calcval = self.calcval - 1
-        elif len(hist_d)-self.calcval > 1:
-            self.calcval = self.calcval + 1
+        
+        time_now: datetime = self.manager.now()
+        idle_time = self.reinit_threshold
+        if time_now >= idle_time:
+            if self.calcval-len(hist_d) > 1:
+                self.calcval = self.calcval - 1
+            elif len(hist_d)-self.calcval > 1:
+                self.calcval = self.calcval + 1
 
 
     def check_panic(self):
