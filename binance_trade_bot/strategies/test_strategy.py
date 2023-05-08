@@ -29,6 +29,10 @@ class Strategy(AutoTrader):
         self.rsi_coin = ""
         self.calcval = int(self.config.RSI_LENGTH)
         self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
+        self.reinit_threshold = self.manager.now().replace(second=0, microsecond=0)
+        self.reinit_rsi = self.manager.now().replace(second=0, microsecond=0)
+        self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
+        self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)#int(self.config.RSI_CANDLE_TYPE))
         self.d = 3
         self.v = 3
         self.macd = False
@@ -65,10 +69,6 @@ class Strategy(AutoTrader):
         self.rv_rsi = 0
         self.best_pair = ""
         self.rsi = self.rsi_calc()
-        self.reinit_threshold = self.manager.now().replace(second=0, microsecond=0)
-        self.reinit_rsi = self.manager.now().replace(second=0, microsecond=0)
-        self.reinit_idle = self.manager.now().replace(second=0, microsecond=0) + timedelta(hours=int(self.config.MAX_IDLE_HOURS))
-        self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)#int(self.config.RSI_CANDLE_TYPE))
         self.logger.info(f"Ratio adjust weight: {self.config.RATIO_ADJUST_WEIGHT}")
         self.logger.info(f"RSI starting length: {self.config.RSI_LENGTH}")
         self.logger.info(f"RSI candle type: {self.config.RSI_CANDLE_TYPE}")
