@@ -45,6 +45,7 @@ class Strategy(AutoTrader):
         self.vector = []
         self.volume = []
         self.volume_sma = []
+        self.opens = []
         self.highs = []
         self.lows = []
         self.equi = False
@@ -540,9 +541,11 @@ class Strategy(AutoTrader):
             self.vector =[]
             self.highs = []
             self.lows = []
+            self.opens = []
             for result in self.manager.binance_client.get_historical_klines(f"{current_coin_symbol}{self.config.BRIDGE_SYMBOL}", rsi_string, rsi_start_date_str, rsi_end_date_str, limit=init_rsi_length*5):
-                high = float(result[1])
-                low = float(result[2])
+                opens = float(result[1])
+                high = float(result[2])
+                low = float(result[3])
                 rsi_price = float(result[4])
                 volume = float(result[5])
                 vector = (rsi_price - float(result[1])) * volume
@@ -551,12 +554,14 @@ class Strategy(AutoTrader):
                 self.vector.append(vector)
                 self.highs.append(high)
                 self.lows.append(low)
+                self.opens.append(opens)
 
         else:
 
             for result in self.manager.binance_client.get_historical_klines(f"{current_coin_symbol}{self.config.BRIDGE_SYMBOL}", rsi_string, limit=1):
-                high = float(result[1])
-                low = float(result[2])
+                opens = float(result[1])
+                high = float(result[2])
+                low = float(result[3])
                 close = float(result[4])
                 volume = float(result[5])
                 vector = (close - float(result[1])) * volume
@@ -565,6 +570,7 @@ class Strategy(AutoTrader):
                 self.vector[-1] = vector
                 self.highs[-1] = high
                 self.lows[-1] = low
+                self.opens[-1] = opens
                 
         hist_d=[]
         if len(self.reverse_price_history) >= 26: #init_rsi_length:
@@ -584,12 +590,13 @@ class Strategy(AutoTrader):
 
             highs = numpy.array(self.highs)
             lows = numpy.array(self.lows)
+            opens = numpy.array(self.opens)
             sar = talib.SAR(highs, lows, acceleration=0.02, maximum=20)
 
-            comb = zip(self.reverse_price_history, self.highs, self.lows)
+            comb = zip(self.reverse_price_history, self.highs, self.lows, self.opens)
             hlc = []
             for values in comb:
-                hlc.append(sum(values) / 3)
+                hlc.append(sum(values) / 4)
                 
             try:
                 bins_a = int((max(self.highs) - min(self.lows)) / (st.stdev(numpy.array(self.reverse_price_history[-1-self.calcval:-2])))) + 1
