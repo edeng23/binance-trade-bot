@@ -707,7 +707,7 @@ class Strategy(AutoTrader):
         
         time_now: datetime = self.manager.now()
         idle_time = self.reinit_threshold
-        if time_now >= idle_time:
+        if time_now >= idle_time or abs(self.calcval-len(hist_d)) > 2:
             if self.calcval-len(hist_d) > 1:
                 self.calcval = self.calcval - 1
             elif len(hist_d)-self.calcval > 1:
