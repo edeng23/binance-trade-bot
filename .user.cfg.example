@@ -19,7 +19,7 @@ tld=com
 hourToKeepScoutHistory=1
 
 #Defines to use either scout_margin or scout_multiplier
-use_margin=no
+use_margin=true
 
 # It's recommended to use something between 3-7 as scout_multiplier
 scout_multiplier=5

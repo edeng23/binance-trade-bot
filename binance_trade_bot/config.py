@@ -14,7 +14,7 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
         config = configparser.ConfigParser()
         config["DEFAULT"] = {
             "bridge": "USDT",
-            "use_margin": "no",
+            "use_margin": "true",
             "scout_multiplier": "5",
             "scout_margin": "0.8",
             "scout_sleep_time": "5",
@@ -73,5 +73,6 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
         self.SELL_TIMEOUT = os.environ.get("SELL_TIMEOUT") or config.get(USER_CFG_SECTION, "sell_timeout")
         self.BUY_TIMEOUT = os.environ.get("BUY_TIMEOUT") or config.get(USER_CFG_SECTION, "buy_timeout")
 
-        self.USE_MARGIN = os.environ.get("USE_MARGIN") or config.get(USER_CFG_SECTION, "use_margin")
+        use_margin = os.environ.get("USE_MARGIN") or config.get(USER_CFG_SECTION, "use_margin")
+        self.USE_MARGIN = str(use_margin).lower() == 'true'
         self.SCOUT_MARGIN = float(os.environ.get("SCOUT_MARGIN") or config.get(USER_CFG_SECTION, "scout_margin"))
