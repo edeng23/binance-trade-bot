@@ -31,7 +31,7 @@ class Strategy(AutoTrader):
         self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
         self.d = 3
         self.v = 3
-        self.macd = True
+        self.macd = False
         #self.jumps = int(self.config.JUMPS_PER_DAY)
         #self.win = int(self.config.TARGET_WIN)
         self.active_threshold = 0
