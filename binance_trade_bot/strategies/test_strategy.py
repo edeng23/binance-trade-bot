@@ -100,9 +100,9 @@ class Strategy(AutoTrader):
         if base_time >= allowed_idle_time:
             print("")
             self.auto_weight = max(1, self.auto_weight + self.jumpable_coins - 1)
-            if not self.panicked:
+            if not self.panicked and self.from_coin_price >= self.active_threshold:
                 self.active_threshold = self.active_threshold * 1.001**(1/self.config.RSI_CANDLE_TYPE)
-            else:
+            elif self.panicked and self.from_coin_price <= self.active_threshold:
                 self.active_threshold = self.active_threshold * (2 - 1.001**(1/self.config.RSI_CANDLE_TYPE))
             self.re_initialize_trade_thresholds()
             self.reinit_threshold = self.manager.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
