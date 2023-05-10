@@ -422,7 +422,7 @@ class BinanceAPIManager:
         if timeout and minutes < 0 and order_status.status == "NEW":
             return True
 
-        if timeout and minutes < 0 timeout and order_status.status == "PARTIALLY_FILLED":
+        if timeout and minutes < 0 and order_status.status == "PARTIALLY_FILLED":
             if order_status.side == "SELL":
                 return True
 
