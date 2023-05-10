@@ -111,6 +111,9 @@ class Strategy(AutoTrader):
             self.rsi_calc()
             
             if not self.panicked:
+                if not self.macd and self.from_coin_price > self.active_threshold:
+                    self.active_threshold = self.from_coin_price
+                
                 if self.from_coin_price > self.Res_high > self.active_threshold:
                     self.active_threshold = self.Res_high
 
@@ -121,6 +124,9 @@ class Strategy(AutoTrader):
                     self.active_threshold = self.Res_low
                 
             elif self.panicked:
+                if self.macd and self.from_coin_price < self.active_threshold:
+                    self.active_threshold = self.from_coin_price
+                    
                 if self.from_coin_price < self.Res_low < self.active_threshold:
                     self.active_threshold = self.Res_low
 
