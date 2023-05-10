@@ -618,7 +618,7 @@ class Strategy(AutoTrader):
             opens = numpy.array(self.opens)
             sar = talib.SAR(highs, lows, acceleration=0.02, maximum=20)
 
-            comb = zip(self.reverse_price_history, self.highs, self.lows, self.opens)
+            comb = zip(self.reverse_price_history, self.reverse_price_history, self.highs, self.lows) #, self.opens)
             hlc = []
             for values in comb:
                 hlc.append(sum(values) / 4)
