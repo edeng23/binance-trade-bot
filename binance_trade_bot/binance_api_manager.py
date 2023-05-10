@@ -409,16 +409,20 @@ class BinanceAPIManager:
     def _should_cancel_order(self, order_status):
         minutes = (time.time() - order_status.time / 1000) / 60
         timeout = 0
+        current_time = datetime.datetime.now()
+        current_minute = current_time.minute
 
         if order_status.side == "SELL":
             timeout = float(self.config.SELL_TIMEOUT)
         else:
             timeout = float(self.config.BUY_TIMEOUT)
-
-        if timeout and minutes > timeout and order_status.status == "NEW":
+        
+        minutes = (current_minute - int(current_minute / timeout) * timeout) - minutes
+        
+        if timeout and minutes < 0 and order_status.status == "NEW":
             return True
 
-        if timeout and minutes > timeout and order_status.status == "PARTIALLY_FILLED":
+        if timeout and minutes < 0 timeout and order_status.status == "PARTIALLY_FILLED":
             if order_status.side == "SELL":
                 return True
 
