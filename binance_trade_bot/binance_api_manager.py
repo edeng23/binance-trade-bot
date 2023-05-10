@@ -409,7 +409,7 @@ class BinanceAPIManager:
     def _should_cancel_order(self, order_status):
         minutes = (time.time() - order_status.time / 1000) / 60
         timeout = 0
-        current_time = datetime.datetime.now()
+        current_time = datetime.now()
         current_minute = current_time.minute
 
         if order_status.side == "SELL":
