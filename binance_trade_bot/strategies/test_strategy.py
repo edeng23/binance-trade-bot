@@ -203,7 +203,7 @@ class Strategy(AutoTrader):
 
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
 
-            if not self.macd and (self.rv_pre_rsi > self.rv_rsi and ((self.from_coin_direction < 0 and self.from_coin_price < self.active_threshold) or self.volume[-1] / self.volume_sma >= 1.5) or self.from_coin_direction < self.dir_threshold or self.from_coin_price > self.active_threshold > self.next_price and self.equi) or self.rv_rsi > 80 or max(self.vector[:-2]) <= self.vector[-1]: # or self.strikes >= 3:
+            if not self.macd and (self.rv_pre_rsi > self.rv_rsi and ((self.from_coin_direction < 0 and self.from_coin_price < self.active_threshold) or self.volume[-1] / self.volume_sma >= 1.5) or self.from_coin_direction < self.dir_threshold) or self.from_coin_price > self.active_threshold > self.next_price and self.equi or self.rv_rsi > 80 or max(self.vector[:-2]) <= self.vector[-1]: # or self.strikes >= 3:
                 if self.rsi:
                     print("")
                     self.logger.info(f"{current_coin} exhausted, jumping to {self.best_pair.to_coin_id}")
@@ -272,7 +272,7 @@ class Strategy(AutoTrader):
 
             self.panic_time = self.manager.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
 
-            if self.macd and (self.rv_pre_rsi < self.rv_rsi and ((self.from_coin_direction > 0 and self.from_coin_price > self.active_threshold) or self.volume[-1] / self.volume_sma >= 1.5) or self.from_coin_direction > self.dir_threshold or self.from_coin_price < self.active_threshold < self.next_price and self.equi) or self.rv_rsi < 20 or min(self.vector[:-2]) >= self.vector[-1]: # or self.strikes >= 3:
+            if self.macd and (self.rv_pre_rsi < self.rv_rsi and ((self.from_coin_direction > 0 and self.from_coin_price > self.active_threshold) or self.volume[-1] / self.volume_sma >= 1.5) or self.from_coin_direction > self.dir_threshold) or self.from_coin_price < self.active_threshold < self.next_price and self.equi or self.rv_rsi < 20 or min(self.vector[:-2]) >= self.vector[-1]: # or self.strikes >= 3:
                 if self.strikes >= 2:
                     self.logger.info("!!! Striked out !!!")
                     self.active_threshold = self.from_coin_price
