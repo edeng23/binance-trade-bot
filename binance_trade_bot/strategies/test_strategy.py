@@ -169,7 +169,7 @@ class Strategy(AutoTrader):
                     self.transaction_through_bridge(self.best_pair, round(max(self.from_coin_price, self.rv_tema), self.d), round(min(self.to_coin_price, self.tema), self.v))
                     self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
                     self.panicked = False
-                    self.active_threshold = 0
+                    self.active_threshold = self.to_coin_price * 1.002
                     self.dir_threshold = 0
                     self.equi = False
                     self.fair_price = 0
@@ -255,7 +255,7 @@ class Strategy(AutoTrader):
                         #self.active_threshold = 0
 
                     else:
-                        self.active_threshold = self.from_coin_price * 0.998 #- stdev #max(self.reverse_price_history) * 3
+                        self.active_threshold = min(self.from_coin_price * 0.998, self.from_coin_price - stdev) #max(self.reverse_price_history) * 3
                         self.dir_threshold = 0
                         self.equi = False
                         self.fair_price = 0
@@ -303,7 +303,7 @@ class Strategy(AutoTrader):
                     #self.active_threshold = max(self.reverse_price_history) * 3
 
                 else:
-                    self.active_threshold = self.from_coin_price * 1.002 #+ stdev
+                    self.active_threshold = max(self.from_coin_price * 1.002, self.from_coin_price + stdev)
                     self.dir_threshold = 0
                     self.equi = False
                     self.fair_price = 0
