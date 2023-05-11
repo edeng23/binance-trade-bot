@@ -166,7 +166,7 @@ class Strategy(AutoTrader):
                 if self.to_coin_direction >= 0 and (self.rsi > self.pre_rsi <= 30 or self.pre_rsi < self.rsi > 50) or self.rsi < 20 or base_time >= self.reinit_idle or self.strikes >= 3:
                     print("")
                     self.logger.info(f"Will be jumping from {current_coin} to {self.best_pair.to_coin_id}")
-                    self.transaction_through_bridge(self.best_pair, round(max(self.from_coin_price, self.rv_tema), self.d), round(min(self.to_coin_price, self.tema), self.v))
+                    self.transaction_through_bridge(self.best_pair, round(self.from_coin_price, self.d), round(self.to_coin_price, self.v))
                     self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
                     self.panicked = False
                     self.active_threshold = self.to_coin_price * 1.002
@@ -184,7 +184,7 @@ class Strategy(AutoTrader):
                     self.transaction_through_bridge(self.best_pair, round(max(self.from_coin_price, self.rv_tema), self.d), round(min(self.to_coin_price, self.tema), self.v))
                     self.auto_weight = int(self.config.RATIO_ADJUST_WEIGHT)
                     self.panicked = False
-                    self.active_threshold = 0
+                    self.active_threshold = self.to_coin_price * 1.002
                     self.dir_threshold = 0
                     self.equi = False
                     self.fair_price = 0
