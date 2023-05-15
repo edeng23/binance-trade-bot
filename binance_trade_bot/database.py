@@ -7,7 +7,7 @@ from typing import List, Optional, Union
 
 from socketio import Client
 from socketio.exceptions import ConnectionError as SocketIOConnectionError
-from sqlalchemy import create_engine, func
+from sqlalchemy import create_engine, func, select, update
 from sqlalchemy.orm import Session, scoped_session, sessionmaker
 
 from .config import Config
@@ -166,29 +166,47 @@ class Database:
             session.query(ScoutHistory).filter(ScoutHistory.datetime < time_diff).delete()
 
     def prune_value_history(self):
+        def _datetime_id_query(dt_format):
+            dt_column = func.strftime(dt_format, CoinValue.datetime)
+
+            grouped = select(CoinValue, func.max(CoinValue.datetime), dt_column).group_by(
+                CoinValue.coin_id, CoinValue, dt_column
+            )
+
+            return select(grouped.c.id.label("id")).select_from(grouped)
+
+        def _update_query(datetime_query, interval):
+            return (
+                update(CoinValue)
+                .where(CoinValue.id.in_(datetime_query))
+                .values(interval=interval)
+                .execution_options(synchronize_session="fetch")
+            )
+
+        # Sets the first entry for each coin for each hour as 'hourly'
+        hourly_update_query = _update_query(_datetime_id_query("%H"), Interval.HOURLY)
+
+        # Sets the first entry for each coin for each month as 'weekly'
+        # (Sunday is the start of the week)
+        weekly_update_query = _update_query(
+            _datetime_id_query("%Y-%W"),
+            Interval.WEEKLY,
+        )
+
+        # Sets the first entry for each coin for each day as 'daily'
+        daily_update_query = _update_query(
+            _datetime_id_query("%Y-%j"),
+            Interval.DAILY,
+        )
+
         session: Session
         with self.db_session() as session:
-            # Sets the first entry for each coin for each hour as 'hourly'
-            hourly_entries: List[CoinValue] = (
-                session.query(CoinValue).group_by(CoinValue.coin_id, func.strftime("%H", CoinValue.datetime)).all()
-            )
-            for entry in hourly_entries:
-                entry.interval = Interval.HOURLY
+            session.execute(hourly_update_query)
+            session.execute(daily_update_query)
+            session.execute(weekly_update_query)
 
-            # Sets the first entry for each coin for each day as 'daily'
-            daily_entries: List[CoinValue] = (
-                session.query(CoinValue).group_by(CoinValue.coin_id, func.date(CoinValue.datetime)).all()
-            )
-            for entry in daily_entries:
-                entry.interval = Interval.DAILY
-
-            # Sets the first entry for each coin for each month as 'weekly'
-            # (Sunday is the start of the week)
-            weekly_entries: List[CoinValue] = (
-                session.query(CoinValue).group_by(CoinValue.coin_id, func.strftime("%Y-%W", CoinValue.datetime)).all()
-            )
-            for entry in weekly_entries:
-                entry.interval = Interval.WEEKLY
+            # Early commit to make sure the delete statements work properly.
+            session.commit()
 
             # The last 24 hours worth of minutely entries will be kept, so
             # count(coins) * 1440 entries
