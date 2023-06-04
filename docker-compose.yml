@@ -39,5 +39,3 @@ services:
     volumes:
       - ./data/config:/config
       - ./data:/data
-    ports:
-      - 3000:3000
