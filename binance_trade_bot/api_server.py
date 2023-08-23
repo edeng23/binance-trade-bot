@@ -31,17 +31,19 @@ def filter_period(query, model):  # pylint: disable=inconsistent-return-statemen
     if period == "all":
         return query
 
-    num = float(re.search(r"(\d*)[shdwm]", "1d").group(1))
+    num = float(re.search(r"(\d*)[smhdwM]", period).group(1))
 
     if "s" in period:
         return query.filter(model.datetime >= datetime.now() - timedelta(seconds=num))
+    if "m" in period:
+        return query.filter(model.datetime >= datetime.now() - timedelta(minutes=num))
     if "h" in period:
         return query.filter(model.datetime >= datetime.now() - timedelta(hours=num))
     if "d" in period:
         return query.filter(model.datetime >= datetime.now() - timedelta(days=num))
     if "w" in period:
         return query.filter(model.datetime >= datetime.now() - timedelta(weeks=num))
-    if "m" in period:
+    if "M" in period:
         return query.filter(model.datetime >= datetime.now() - timedelta(days=28 * num))
 
 
